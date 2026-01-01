@@ -129,31 +129,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
           {/* Centered Menu Links - Hidden on Mobile, Visible on Desktop */}
           <nav className="hidden md:flex items-center space-x-8">
             <NavButton
-              active={activeTab === 'shop'}
+              isActive={activeTab === 'shop'}
               onClick={() => handleNav('shop')}
               icon={<ShoppingBag className="w-5 h-5" />}
               label="Shop"
             />
             <NavButton
-              active={activeTab === 'payments'}
+              isActive={activeTab === 'payments'}
               onClick={() => handleNav('payments')}
               icon={<CreditCard className="w-5 h-5" />}
               label="Payments"
             />
             <NavButton
-              active={activeTab === 'deliveries'}
+              isActive={activeTab === 'deliveries'}
               onClick={() => handleNav('deliveries')}
               icon={<Truck className="w-5 h-5" />}
               label="Deliveries"
             />
             <NavButton
-              active={activeTab === 'wallet'}
+              isActive={activeTab === 'wallet'}
               onClick={() => handleNav('wallet')}
               icon={<Wallet className="w-5 h-5" />}
               label="Wallet"
             />
             <NavButton
-              active={activeTab === 'service'}
+              isActive={activeTab === 'service'}
               onClick={() => handleNav('service')}
               icon={<HeadphonesIcon className="w-5 h-5" />}
               label="Customer service"
@@ -260,27 +260,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
               <MobileNavItem
                 label="Shop"
                 isActive={activeTab === 'shop'}
-                onClick={() => { setActiveTab('shop'); setShowStoreDirectory(false); setIsBookingActive(false); setActiveTrackingQuote(null); setActiveStore(null); setIsCartActive(false); setIsMobileMenuOpen(false); }}
+                onClick={() => { handleNav('shop'); setShowStoreDirectory(false); setIsBookingActive(false); setActiveTrackingQuote(null); setActiveStore(null); setIsCartActive(false); setIsMobileMenuOpen(false); }}
               />
               <MobileNavItem
                 label="Payments"
                 isActive={activeTab === 'payments'}
-                onClick={() => { setActiveTab('payments'); setShowStoreDirectory(false); setIsBookingActive(false); setActiveTrackingQuote(null); setActiveStore(null); setIsCartActive(false); setIsMobileMenuOpen(false); }}
+                onClick={() => { handleNav('payments'); setShowStoreDirectory(false); setIsBookingActive(false); setActiveTrackingQuote(null); setActiveStore(null); setIsCartActive(false); setIsMobileMenuOpen(false); }}
               />
               <MobileNavItem
                 label="Deliveries"
                 isActive={activeTab === 'deliveries'}
-                onClick={() => { setActiveTab('deliveries'); setShowStoreDirectory(false); setIsBookingActive(false); setActiveTrackingQuote(null); setActiveStore(null); setIsCartActive(false); setIsMobileMenuOpen(false); }}
+                onClick={() => { handleNav('deliveries'); setShowStoreDirectory(false); setIsBookingActive(false); setActiveTrackingQuote(null); setActiveStore(null); setIsCartActive(false); setIsMobileMenuOpen(false); }}
               />
               <MobileNavItem
                 label="Wallet"
                 isActive={activeTab === 'wallet'}
-                onClick={() => { setActiveTab('wallet'); setShowStoreDirectory(false); setIsBookingActive(false); setActiveTrackingQuote(null); setActiveStore(null); setIsCartActive(false); setIsMobileMenuOpen(false); }}
+                onClick={() => { handleNav('wallet'); setShowStoreDirectory(false); setIsBookingActive(false); setActiveTrackingQuote(null); setActiveStore(null); setIsCartActive(false); setIsMobileMenuOpen(false); }}
               />
               <MobileNavItem
                 label="Customer service"
                 isActive={activeTab === 'service'}
-                onClick={() => { setActiveTab('service'); setShowStoreDirectory(false); setIsBookingActive(false); setActiveTrackingQuote(null); setActiveStore(null); setIsCartActive(false); setIsMobileMenuOpen(false); }}
+                onClick={() => { handleNav('service'); setShowStoreDirectory(false); setIsBookingActive(false); setActiveTrackingQuote(null); setActiveStore(null); setIsCartActive(false); setIsMobileMenuOpen(false); }}
               />
             </nav>
           </div>
@@ -313,7 +313,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
               quote={activeTrackingQuote}
               onReset={() => {
                 setActiveTrackingQuote(null);
-                setActiveTab('deliveries');
+                navigate('/deliveries');
               }}
             />
           </div>
@@ -696,13 +696,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
 
 // Sub-components
 
-const NavButton = ({ label, isActive, onClick, mobile }: { label: string, isActive: boolean, onClick: () => void, mobile?: boolean }) => (
+const NavButton = ({ label, isActive, onClick, icon, mobile }: { label: string, isActive: boolean, onClick: () => void, icon?: React.ReactNode, mobile?: boolean }) => (
   <button
     onClick={onClick}
-    className={`relative font-bold text-sm transition-colors ${isActive ? 'text-black' : 'text-gray-500 hover:text-black'
+    className={`relative font-bold text-sm transition-colors flex items-center space-x-2 ${isActive ? 'text-black' : 'text-gray-500 hover:text-black'
       } ${mobile ? 'whitespace-nowrap' : ''}`}
   >
-    {label}
+    {icon && <span className="opacity-70">{icon}</span>}
+    <span>{label}</span>
     {isActive && (
       <div className="absolute -bottom-8 left-0 right-0 h-0.5 bg-black md:block hidden"></div>
     )}
@@ -732,10 +733,10 @@ const PlaceholderState = ({ icon, title, description }: any) => (
 );
 
 const DropdownItem = ({ icon, label, isDestructive }: { icon: React.ReactNode; label: string; isDestructive?: boolean }) => (
-  <button className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium hover:bg-gray-50 transition-colors ${isDestructive ? 'text-red-600' : 'text-gray-700'}`}>
+  <div className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium hover:bg-gray-50 transition-colors ${isDestructive ? 'text-red-600' : 'text-gray-700'}`}>
     <span className={isDestructive ? 'text-red-500' : 'text-gray-400'}>{icon}</span>
     <span>{label}</span>
-  </button>
+  </div>
 );
 
 const MobileNavItem = ({ label, isActive, onClick }: { label: string; isActive: boolean; onClick: () => void }) => (

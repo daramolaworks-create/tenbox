@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { TrackingEvent, Quote, ShipmentStatus } from '../types';
-import { MessageSquare, Phone, ArrowLeft, Navigation, MapPin, Crosshair, Box, Clock } from 'lucide-react';
+import { MessageSquare, Phone, ArrowLeft, ArrowRight, Navigation, MapPin, Crosshair, Box, Clock } from 'lucide-react';
 
 interface TrackingViewProps {
   quote: Quote;
@@ -183,8 +183,8 @@ export const TrackingView: React.FC<TrackingViewProps> = ({ quote, onReset }) =>
 
               {/* Node */}
               <div className={`absolute left-0 top-1.5 h-[11px] w-[11px] border-[2px] z-10 transition-all duration-300 ${idx === 0
-                  ? 'bg-black border-black shadow-[0_0_0_4px_rgba(0,0,0,0.1)]'
-                  : 'bg-white border-gray-300'
+                ? 'bg-black border-black shadow-[0_0_0_4px_rgba(0,0,0,0.1)]'
+                : 'bg-white border-gray-300'
                 }`}></div>
 
               <div className={`transition-all duration-500 ${idx === 0 ? 'opacity-100' : 'opacity-60 grayscale'}`}>

@@ -6,7 +6,7 @@ interface StoreDirectoryProps {
     onSelectStore?: (store: Store) => void;
 }
 
-interface Store {
+export interface Store {
     id: string;
     name: string;
     category: string;
