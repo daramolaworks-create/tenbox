@@ -1,0 +1,7 @@
+{
+  "name": "tenbox",
+  "description": "The world's first delivery autopilot. You state the intent, we pick the courier.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
