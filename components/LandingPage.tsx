@@ -49,7 +49,7 @@ export const LandingPage: React.FC = () => {
                         alt="Global Lifestyle"
                         className="w-full h-full object-cover object-top opacity-70 mix-blend-overlay"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-b from-[#050B14]/80 via-[#050B14]/40 to-[#050B14]"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#050B14] via-[#050B14]/40 to-[#050B14]"></div>
                 </div>
 
                 {/* Main Content */}
@@ -59,7 +59,7 @@ export const LandingPage: React.FC = () => {
                     <div className="hidden md:grid grid-cols-2 gap-12 items-center">
 
                         {/* Left Side - Shop */}
-                        <div className="space-y-8 text-left">
+                        <div className="space-y-8 text-left animate-slide-in-left">
                             <div>
                                 <h1 className="text-8xl lg:text-9xl font-bold tracking-tighter text-white leading-none">
                                     Shop it
@@ -77,7 +77,7 @@ export const LandingPage: React.FC = () => {
                         </div>
 
                         {/* Right Side - Ship */}
-                        <div className="space-y-8 text-right">
+                        <div className="space-y-8 text-right animate-slide-in-right">
                             <div>
                                 <h1 className="text-8xl lg:text-9xl font-bold tracking-tighter text-white leading-none">
                                     Ship it
@@ -132,7 +132,7 @@ export const LandingPage: React.FC = () => {
                     <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none">
                         <div className="relative">
                             {/* Floating Status Card */}
-                            <div className="bg-white/10 backdrop-blur-lg border border-white/20 p-5 rounded-2xl shadow-2xl">
+                            <div className="bg-white/10 backdrop-blur-lg border border-white/20 p-5 rounded-2xl shadow-2xl animate-float">
                                 <div className="flex items-center space-x-4">
                                     <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
                                         <CheckCircle2 className="w-7 h-7 text-white" />
