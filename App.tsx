@@ -2,13 +2,14 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthScreen } from './components/AuthScreen';
 import { DashboardView } from './components/DashboardView';
+import { LandingPage } from './components/LandingPage';
 
 // Check if user is authenticated
 const isAuthenticated = () => localStorage.getItem('isAuthenticated') === 'true';
 
-// Protected route - redirects to home/login if not authenticated
+// Protected route - redirects to /login if not authenticated
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return isAuthenticated() ? <>{children}</> : <Navigate to="/" replace />;
+  return isAuthenticated() ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 // Public route - redirects to /shop if already authenticated
@@ -48,9 +49,19 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Homepage - shows login when not authenticated */}
+        {/* Homepage - Landing Page */}
         <Route
           path="/"
+          element={
+            <PublicRoute>
+              <LandingPage />
+            </PublicRoute>
+          }
+        />
+
+        {/* Login Route */}
+        <Route
+          path="/login"
           element={
             <PublicRoute>
               <AuthWrapper />
