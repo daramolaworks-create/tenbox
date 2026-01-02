@@ -355,7 +355,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-6 md:py-10 animate-in fade-in duration-500">
-                  <h1 className="text-2xl md:text-5xl font-bold tracking-tight text-gray-900 mb-4 md:mb-6 font-display">Discovery</h1>
+                  <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4 md:mb-6">Discovery</h1>
                   <p className="text-sm md:text-xl text-gray-500 max-w-2xl mb-8 md:mb-12 text-center px-2">
                     Explore thousands of brands and pay flexibly with Tenbox at checkout.
                   </p>
@@ -484,11 +484,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
             {
               activeTab === 'payments' && (
                 <div className="flex flex-col items-center">
-                  <h1 className="text-2xl md:text-5xl font-bold tracking-tight text-gray-900 mb-8 md:mb-16 text-center">Payments</h1>
+                  <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-gray-900 mb-8 md:mb-16 text-center">Payments</h1>
 
                   <div className="text-center mb-10 md:mb-20">
                     <p className="text-sm md:text-base text-gray-500 font-medium mb-2">Total you owe</p>
-                    <p className="text-3xl md:text-6xl font-bold tracking-tighter text-gray-900">£0.00</p>
+                    <p className="text-2xl md:text-5xl font-bold tracking-tighter text-gray-900">£0.00</p>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 w-full">
@@ -540,7 +540,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
               activeTab === 'deliveries' && (
                 <div className="max-w-3xl mx-auto">
                   <div className="flex items-center justify-between mb-6 md:mb-10">
-                    <h1 className="text-xl md:text-3xl font-bold text-gray-900 tracking-tight">Deliveries</h1>
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight">Deliveries</h1>
                     <button
                       onClick={() => navigate('/deliveries/book')}
                       className="bg-black text-white px-4 md:px-6 py-2.5 md:py-3 rounded-full font-bold text-xs md:text-sm hover:bg-gray-800 transition-all flex items-center shadow-lg hover:shadow-xl active:scale-95"
@@ -582,7 +582,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
             {
               activeTab === 'wallet' && (
                 <div className="max-w-4xl mx-auto">
-                  <h1 className="text-2xl md:text-5xl font-bold tracking-tight text-gray-900 mb-6 md:mb-10">Wallet</h1>
+                  <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-gray-900 mb-6 md:mb-10">Wallet</h1>
 
                   {/* Cards Section */}
                   {/* Cards Section */}
@@ -650,7 +650,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
                         <div className="h-6 w-6 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center font-bold text-xs">T</div>
                         <span className="font-medium text-gray-900">Tenbox balance</span>
                       </div>
-                      <div className="text-5xl font-bold tracking-tight text-gray-900">£0.00</div>
+                      <div className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">£0.00</div>
                     </div>
                     <div className="bg-gray-50 px-8 py-5 flex flex-wrap gap-4 items-center justify-between">
                       <span className="text-green-700 font-medium text-sm">Earn up to 14.00% cashback</span>

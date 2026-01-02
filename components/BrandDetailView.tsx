@@ -44,7 +44,7 @@ export const BrandDetailView: React.FC<BrandDetailViewProps> = ({ brand, onBack 
                                 />
                             </div>
 
-                            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-4">{brand.name}</h1>
+                            <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">{brand.name}</h1>
                             <div className="flex items-center space-x-2 text-lg opacity-90">
                                 <span>Simply select</span>
                                 <span className="bg-black text-white px-2 py-0.5 rounded font-bold text-sm">Tenbox</span>
@@ -72,7 +72,7 @@ export const BrandDetailView: React.FC<BrandDetailViewProps> = ({ brand, onBack 
                     {/* Left Content */}
                     <div className="flex-1 space-y-12">
                         <div>
-                            <h2 className="text-4xl font-bold text-gray-900 mb-12 leading-tight">
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-12 leading-tight">
                                 How to Check Out and Get Delivery with Tenbox at {brand.name}
                             </h2>
 
@@ -167,7 +167,7 @@ export const BrandDetailView: React.FC<BrandDetailViewProps> = ({ brand, onBack 
                         </div>
 
                         <div className="text-center md:text-right mt-8 md:mt-0 max-w-lg">
-                            <h2 className="text-3xl font-bold text-gray-900 mb-4">Join millions who use Tenbox at {brand.name} and other stores</h2>
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">Join millions who use Tenbox at {brand.name} and other stores</h2>
                             <p className="text-gray-500">111+ million people love to shop and pay with Tenbox anywhere.</p>
                         </div>
                     </div>

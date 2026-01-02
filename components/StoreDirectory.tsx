@@ -214,7 +214,7 @@ export const StoreDirectory: React.FC<StoreDirectoryProps> = ({ onBack, onSelect
                         <div className="absolute bottom-10 right-10 w-32 h-32 bg-blue-500 rounded-full blur-3xl"></div>
                     </div>
 
-                    <h1 className="text-2xl md:text-6xl font-bold tracking-tight text-gray-900 mb-3 md:mb-6 max-w-3xl mx-auto leading-tight px-2">
+                    <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-gray-900 mb-3 md:mb-6 max-w-3xl mx-auto leading-tight px-2">
                         Deliver your favourite brands with Tenbox
                     </h1>
                     <p className="text-sm md:text-lg text-gray-500 mb-6 md:mb-10">

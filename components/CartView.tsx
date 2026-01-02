@@ -83,7 +83,7 @@ export const CartView: React.FC<CartViewProps> = ({ onBack, onCheckout }) => {
                         <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <ShoppingBag className="w-10 h-10 text-gray-400" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your basket is empty</h2>
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Your basket is empty</h2>
                         <p className="text-gray-500 mb-8">Start shopping to add items to your basket.</p>
                         <button
                             onClick={onBack}
@@ -184,7 +184,7 @@ export const CartView: React.FC<CartViewProps> = ({ onBack, onCheckout }) => {
                                     <div className="flex justify-between items-end">
                                         <span className="text-gray-900 font-bold text-base md:text-xl">Total</span>
                                         <div className="text-right">
-                                            <span className="text-2xl md:text-3xl font-black block">£{total.toFixed(2)}</span>
+                                            <span className="text-xl md:text-2xl font-black block">£{total.toFixed(2)}</span>
                                             <span className="text-xs text-gray-400 font-medium">Including VAT</span>
                                         </div>
                                     </div>

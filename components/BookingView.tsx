@@ -58,12 +58,12 @@ export const BookingView: React.FC<BookingViewProps> = ({ onBook }) => {
                 <div className="mb-6 md:mb-10 text-center md:text-left">
                     {quotes ? (
                         <>
-                            <h2 className="text-xl md:text-3xl font-bold tracking-tight text-gray-900">Select Options</h2>
+                            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">Select Options</h2>
                             <p className="text-sm md:text-base text-gray-500 font-medium mt-1 md:mt-2">To {getDestinationName()}</p>
                         </>
                     ) : (
                         <>
-                            <h1 className="text-2xl md:text-5xl font-bold tracking-tight text-gray-900 leading-tight">
+                            <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-gray-900 leading-tight">
                                 Where are you <br />
                                 sending it?
                             </h1>
