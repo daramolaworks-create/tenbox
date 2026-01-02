@@ -165,11 +165,11 @@ export const LandingPage: React.FC = () => {
                     <div className="grid md:grid-cols-3 gap-8">
                         {/* Card 1 - Cyan */}
                         <div className="bg-white p-8 rounded-[2rem] border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full bg-slate-50/50 min-h-[470px]">
-                            <h3 className="text-[36px] font-bold mb-4 text-[#00C2FF] leading-tight">The "No Shipping" Wall</h3>
+                            <h3 className="text-[36px] font-bold mb-4 text-gray-900 leading-tight">The "No Shipping" Wall</h3>
                             <p className="text-gray-500 text-[19px] leading-relaxed mb-8">
                                 "Sorry, we don't ship to your country." The most annoying sentence on the internet. We give you a US/UK address so you can shop anywhere.
                             </p>
-                            <div className="mt-auto flex items-center space-x-2 text-[#00C2FF] font-bold text-base pt-6">
+                            <div className="mt-auto flex items-center space-x-2 text-blue-600 font-bold text-base pt-6">
                                 <CornerDownRight className="w-5 h-5" />
                                 <span>Global Shopping</span>
                             </div>
@@ -177,7 +177,7 @@ export const LandingPage: React.FC = () => {
 
                         {/* Card 2 - Blue */}
                         <div className="bg-white p-8 rounded-[2rem] border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full bg-slate-50/50 min-h-[470px]">
-                            <h3 className="text-[36px] font-bold mb-4 text-blue-600 leading-tight">Sending Care Packages</h3>
+                            <h3 className="text-[36px] font-bold mb-4 text-gray-900 leading-tight">Sending Care Packages</h3>
                             <p className="text-gray-500 text-[19px] leading-relaxed mb-8">
                                 Trying to figure out which courier is cheapest, safest, or fastest involves 10 open tabs. We compare them all instantly.
                             </p>
@@ -189,11 +189,11 @@ export const LandingPage: React.FC = () => {
 
                         {/* Card 3 - Indigo */}
                         <div className="bg-white p-8 rounded-[2rem] border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full bg-slate-50/50 min-h-[470px]">
-                            <h3 className="text-[36px] font-bold mb-4 text-indigo-600 leading-tight">The Customs Headache</h3>
+                            <h3 className="text-[36px] font-bold mb-4 text-gray-900 leading-tight">The Customs Headache</h3>
                             <p className="text-gray-500 text-[19px] leading-relaxed mb-8">
                                 Stuck at the border? Unexpected fees? We handle the paperwork so your package doesn't get held hostage.
                             </p>
-                            <div className="mt-auto flex items-center space-x-2 text-indigo-600 font-bold text-base pt-6">
+                            <div className="mt-auto flex items-center space-x-2 text-blue-600 font-bold text-base pt-6">
                                 <CornerDownRight className="w-5 h-5" />
                                 <span>Hassle-free Import</span>
                             </div>
