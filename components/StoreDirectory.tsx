@@ -196,38 +196,38 @@ export const StoreDirectory: React.FC<StoreDirectoryProps> = ({ onBack, onSelect
 
     return (
         <div className="min-h-screen bg-white font-sans text-gray-900 animate-in slide-in-from-right duration-300">
-            <main className="max-w-[1200px] mx-auto px-6 py-8">
+            <main className="max-w-[1200px] mx-auto px-4 md:px-6 py-4 md:py-8">
                 {/* Back Button */}
                 <button
                     onClick={onBack}
-                    className="flex items-center text-sm font-bold text-gray-500 hover:text-black transition-colors mb-8"
+                    className="flex items-center text-xs md:text-sm font-bold text-gray-500 hover:text-black transition-colors mb-4 md:mb-8"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Shop
                 </button>
 
                 {/* Hero Section */}
-                <div className="text-center mb-16 relative">
+                <div className="text-center mb-8 md:mb-16 relative">
                     {/* Floating Logos Background Effect (simplified) */}
                     <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
                         <div className="absolute top-0 left-10 w-20 h-20 bg-red-500 rounded-full blur-3xl"></div>
                         <div className="absolute bottom-10 right-10 w-32 h-32 bg-blue-500 rounded-full blur-3xl"></div>
                     </div>
 
-                    <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 mb-6 max-w-3xl mx-auto leading-tight">
+                    <h1 className="text-2xl md:text-6xl font-bold tracking-tight text-gray-900 mb-3 md:mb-6 max-w-3xl mx-auto leading-tight px-2">
                         Deliver your favourite brands with Tenbox
                     </h1>
-                    <p className="text-lg text-gray-500 mb-10">
+                    <p className="text-sm md:text-lg text-gray-500 mb-6 md:mb-10">
                         Flexible payment options everywhere you shop.
                     </p>
 
-                    <div className="max-w-2xl mx-auto relative">
+                    <div className="max-w-2xl mx-auto relative px-2 md:px-0">
                         <input
                             type="text"
                             placeholder="Search for stores"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-12 pr-4 py-4 rounded-full border border-gray-200 shadow-sm text-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+                            className="w-full pl-10 md:pl-12 pr-4 py-3 md:py-4 rounded-full border border-gray-200 shadow-sm text-sm md:text-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
                         />
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-6 h-6" />
                     </div>

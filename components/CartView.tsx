@@ -66,17 +66,18 @@ export const CartView: React.FC<CartViewProps> = ({ onBack, onCheckout }) => {
 
             {/* Header */}
             <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
-                <div className="max-w-[1200px] mx-auto px-6 h-20 flex items-center justify-between">
-                    <button onClick={onBack} className="flex items-center text-sm font-bold text-gray-500 hover:text-black transition-colors">
-                        <ArrowLeft className="w-5 h-5 mr-2" />
-                        Continue Shopping
+                <div className="max-w-[1200px] mx-auto px-4 md:px-6 h-14 md:h-20 flex items-center justify-between">
+                    <button onClick={onBack} className="flex items-center text-xs md:text-sm font-bold text-gray-500 hover:text-black transition-colors">
+                        <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 mr-1.5 md:mr-2" />
+                        <span className="hidden sm:inline">Continue Shopping</span>
+                        <span className="sm:hidden">Back</span>
                     </button>
-                    <h1 className="text-xl font-bold">Your Basket</h1>
-                    <div className="w-20"></div> {/* Spacer for centering */}
+                    <h1 className="text-base md:text-xl font-bold">Your Basket</h1>
+                    <div className="w-12 md:w-20"></div> {/* Spacer for centering */}
                 </div>
             </div>
 
-            <main className="max-w-[1200px] mx-auto px-6 py-12">
+            <main className="max-w-[1200px] mx-auto px-4 md:px-6 py-6 md:py-12">
                 {cartItems.length === 0 ? (
                     <div className="text-center py-20">
                         <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -92,39 +93,39 @@ export const CartView: React.FC<CartViewProps> = ({ onBack, onCheckout }) => {
                         </button>
                     </div>
                 ) : (
-                    <div className="flex flex-col lg:flex-row gap-12">
+                    <div className="flex flex-col lg:flex-row gap-6 md:gap-12">
 
                         {/* Left: Cart Items */}
                         <div className="flex-1">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-2xl font-bold">Imported Items ({cartItems.reduce((acc, i) => acc + i.quantity, 0)})</h2>
-                                <span className="text-sm text-green-600 flex items-center font-medium bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                                    <ShieldCheck className="w-4 h-4 mr-1.5" />
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-2">
+                                <h2 className="text-lg md:text-2xl font-bold">Imported Items ({cartItems.reduce((acc, i) => acc + i.quantity, 0)})</h2>
+                                <span className="text-xs md:text-sm text-green-600 flex items-center font-medium bg-green-50 px-2 md:px-3 py-1 rounded-full border border-green-100 w-fit">
+                                    <ShieldCheck className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-1.5" />
                                     Verified by Tenbox
                                 </span>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-3 md:space-y-4">
                                 {cartItems.map(item => (
-                                    <div key={item.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex gap-6 group">
+                                    <div key={item.id} className="bg-white p-4 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 md:gap-6 group">
                                         {/* Image Placeholder */}
-                                        <div className="w-32 h-32 bg-gray-100 rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden relative">
-                                            <ShoppingBag className="w-10 h-10 text-gray-300" />
+                                        <div className="w-full sm:w-24 md:w-32 h-24 md:h-32 bg-gray-100 rounded-lg md:rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden relative">
+                                            <ShoppingBag className="w-8 h-8 md:w-10 md:h-10 text-gray-300" />
                                             <div className="absolute inset-0 bg-gradient-to-t from-gray-50 to-white opacity-50"></div>
                                         </div>
 
                                         <div className="flex-1 flex flex-col justify-between">
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <p className="text-sm font-bold text-gray-400 mb-1">{item.brand}</p>
-                                                    <h3 className="font-bold text-lg text-gray-900">{item.name}</h3>
-                                                    <div className="text-sm text-gray-500 mt-1 space-x-3">
+                                                    <p className="text-xs md:text-sm font-bold text-gray-400 mb-0.5 md:mb-1">{item.brand}</p>
+                                                    <h3 className="font-bold text-base md:text-lg text-gray-900">{item.name}</h3>
+                                                    <div className="text-xs md:text-sm text-gray-500 mt-1 space-x-2 md:space-x-3">
                                                         <span>Size: {item.size}</span>
                                                         <span>•</span>
                                                         <span>{item.color}</span>
                                                     </div>
                                                 </div>
-                                                <p className="font-bold text-lg">£{(item.price * item.quantity).toFixed(2)}</p>
+                                                <p className="font-bold text-base md:text-lg">£{(item.price * item.quantity).toFixed(2)}</p>
                                             </div>
 
                                             <div className="flex justify-between items-center mt-4">
@@ -161,10 +162,10 @@ export const CartView: React.FC<CartViewProps> = ({ onBack, onCheckout }) => {
 
                         {/* Right: Order Summary */}
                         <div className="w-full lg:w-[400px]">
-                            <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 sticky top-28">
-                                <h3 className="text-xl font-bold mb-8">Order Summary</h3>
+                            <div className="bg-white p-5 md:p-8 rounded-2xl md:rounded-3xl shadow-lg border border-gray-100 sticky top-20 md:top-28">
+                                <h3 className="text-lg md:text-xl font-bold mb-5 md:mb-8">Order Summary</h3>
 
-                                <div className="space-y-4 mb-8">
+                                <div className="space-y-3 md:space-y-4 mb-5 md:mb-8 text-sm md:text-base">
                                     <div className="flex justify-between text-gray-600">
                                         <span>Subtotal</span>
                                         <span className="font-bold text-black">£{subtotal.toFixed(2)}</span>
@@ -179,11 +180,11 @@ export const CartView: React.FC<CartViewProps> = ({ onBack, onCheckout }) => {
                                     </div>
                                 </div>
 
-                                <div className="border-t border-gray-100 pt-6 mb-8">
+                                <div className="border-t border-gray-100 pt-4 md:pt-6 mb-5 md:mb-8">
                                     <div className="flex justify-between items-end">
-                                        <span className="text-gray-900 font-bold text-xl">Total</span>
+                                        <span className="text-gray-900 font-bold text-base md:text-xl">Total</span>
                                         <div className="text-right">
-                                            <span className="text-3xl font-black block">£{total.toFixed(2)}</span>
+                                            <span className="text-2xl md:text-3xl font-black block">£{total.toFixed(2)}</span>
                                             <span className="text-xs text-gray-400 font-medium">Including VAT</span>
                                         </div>
                                     </div>
@@ -192,7 +193,7 @@ export const CartView: React.FC<CartViewProps> = ({ onBack, onCheckout }) => {
                                 <button
                                     onClick={onCheckout}
                                     disabled={cartItems.length === 0}
-                                    className="w-full bg-black text-white py-5 rounded-full font-bold text-lg shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                    className="w-full bg-black text-white py-3.5 md:py-5 rounded-full font-bold text-sm md:text-lg shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                                 >
                                     <CreditCard className="w-5 h-5" />
                                     <span>Checkout & Deliver</span>

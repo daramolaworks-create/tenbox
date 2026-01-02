@@ -52,18 +52,18 @@ export const BookingView: React.FC<BookingViewProps> = ({ onBook }) => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto w-full">
+        <div className="max-w-2xl mx-auto w-full px-2 md:px-0">
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {/* Heading */}
-                <div className="mb-10 text-center md:text-left">
+                <div className="mb-6 md:mb-10 text-center md:text-left">
                     {quotes ? (
                         <>
-                            <h2 className="text-3xl font-bold tracking-tight text-gray-900">Select Options</h2>
-                            <p className="text-gray-500 font-medium mt-2">To {getDestinationName()}</p>
+                            <h2 className="text-xl md:text-3xl font-bold tracking-tight text-gray-900">Select Options</h2>
+                            <p className="text-sm md:text-base text-gray-500 font-medium mt-1 md:mt-2">To {getDestinationName()}</p>
                         </>
                     ) : (
                         <>
-                            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 leading-tight">
+                            <h1 className="text-2xl md:text-5xl font-bold tracking-tight text-gray-900 leading-tight">
                                 Where are you <br />
                                 sending it?
                             </h1>
@@ -74,9 +74,9 @@ export const BookingView: React.FC<BookingViewProps> = ({ onBook }) => {
                 {/* Input Form */}
                 {!quotes && (
                     <div>
-                        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden mb-8">
+                        <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border border-gray-100 overflow-hidden mb-6 md:mb-8">
                             {/* Pickup Row */}
-                            <div className="relative flex items-center px-6 py-5 transition-colors hover:bg-gray-50/50">
+                            <div className="relative flex items-center px-4 md:px-6 py-4 md:py-5 transition-colors hover:bg-gray-50/50">
                                 <div className="w-8 flex justify-center flex-shrink-0 mr-4 text-gray-400">
                                     <MapPin className="w-5 h-5" />
                                 </div>
@@ -94,7 +94,7 @@ export const BookingView: React.FC<BookingViewProps> = ({ onBook }) => {
                             <div className="ml-16 mr-6 h-px bg-gray-100"></div>
 
                             {/* Dropoff Row */}
-                            <div className="relative flex items-center px-6 py-5 transition-colors hover:bg-gray-50/50">
+                            <div className="relative flex items-center px-4 md:px-6 py-4 md:py-5 transition-colors hover:bg-gray-50/50">
                                 <div className="w-8 flex justify-center flex-shrink-0 mr-4 text-gray-900">
                                     <MapPin className="w-5 h-5 fill-current" />
                                 </div>

@@ -102,7 +102,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
     <div className="min-h-screen bg-white font-sans text-gray-900">
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-        <div className="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6 h-14 md:h-20 flex items-center justify-between">
           {/* Mobile Hamburger Button */}
           <button
             className="md:hidden p-2 -ml-2 text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
@@ -112,7 +112,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
           </button>
 
           {/* Logo Section */}
-          <div className="flex-shrink-0 w-32">
+          <div className="flex-shrink-0 w-24 md:w-32">
             <button
               onClick={() => {
                 navigate('/shop');
@@ -247,7 +247,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
           {/* Menu Panel */}
           <div className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl animate-in slide-in-from-left duration-300">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <BrandLogo />
+              <button
+                onClick={() => {
+                  navigate('/shop');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="hover:opacity-80 transition-opacity"
+              >
+                <BrandLogo />
+              </button>
               <button
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -288,7 +296,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
       )}
 
       {/* Main Content Area */}
-      <main className="max-w-[1200px] mx-auto px-6 pt-12 pb-32 animate-in fade-in duration-500">
+      <main className="max-w-[1200px] mx-auto px-4 md:px-6 pt-6 md:pt-12 pb-24 md:pb-32 animate-in fade-in duration-500">
 
         {/* SETTINGS VIEWS */}
         {activeSettingsView === 'account' && <AccountSettings onBack={() => setActiveSettingsView(null)} />}
@@ -346,19 +354,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
                   onSelectStore={(store) => setActiveStore(store)}
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center py-10 animate-in fade-in duration-500">
-                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-6 font-display">Discovery</h1>
-                  <p className="text-xl text-gray-500 max-w-2xl mb-12 text-center">
+                <div className="flex flex-col items-center justify-center py-6 md:py-10 animate-in fade-in duration-500">
+                  <h1 className="text-2xl md:text-5xl font-bold tracking-tight text-gray-900 mb-4 md:mb-6 font-display">Discovery</h1>
+                  <p className="text-sm md:text-xl text-gray-500 max-w-2xl mb-8 md:mb-12 text-center px-2">
                     Explore thousands of brands and pay flexibly with Tenbox at checkout.
                   </p>
 
                   {/* NAVIGATION CHOICES */}
-                  <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 px-4">
+                  <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 px-2 md:px-4">
 
                     {/* 1. Brands & Marketplaces -> DIRECT LINKS TO BRANDS */}
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Brands & Marketplaces</h2>
+                    <div className="bg-white p-5 md:p-8 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                      <div className="flex items-center justify-between mb-4 md:mb-6">
+                        <h2 className="text-lg md:text-2xl font-bold text-gray-900">Brands & Marketplaces</h2>
                       </div>
                       <div className="space-y-4">
                         {/* Manually creating a few featured links that simulate clicking a store */}
@@ -442,10 +450,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
                     </div>
 
                     {/* 2. Categories -> GO TO STORES PAGE */}
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex flex-col justify-between">
+                    <div className="bg-white p-5 md:p-8 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex flex-col justify-between">
                       <div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Categories</h2>
-                        <p className="text-gray-500 mb-8">Browse our full directory of stores by category.</p>
+                        <h2 className="text-lg md:text-2xl font-bold text-gray-900 mb-3 md:mb-4">Categories</h2>
+                        <p className="text-sm md:text-base text-gray-500 mb-4 md:mb-8">Browse our full directory of stores by category.</p>
 
                         <div className="flex flex-wrap gap-2 mb-8">
                           {['Electronics', 'Fashion', 'Sports', 'Home'].map(cat => (
@@ -459,7 +467,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
 
                       <button
                         onClick={() => navigate('/shop/directory')}
-                        className="w-full bg-black text-white px-8 py-4 rounded-full font-bold text-lg hover:grad hover:bg-gray-900 transition-all shadow-lg flex items-center justify-center group"
+                        className="w-full bg-black text-white px-6 md:px-8 py-3 md:py-4 rounded-full font-bold text-sm md:text-lg hover:bg-gray-900 transition-all shadow-lg flex items-center justify-center group"
                       >
                         <span>Browse Stores</span>
                         <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -476,14 +484,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
             {
               activeTab === 'payments' && (
                 <div className="flex flex-col items-center">
-                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-16 text-center">Payments</h1>
+                  <h1 className="text-2xl md:text-5xl font-bold tracking-tight text-gray-900 mb-8 md:mb-16 text-center">Payments</h1>
 
-                  <div className="text-center mb-20">
-                    <p className="text-gray-500 font-medium mb-2">Total you owe</p>
-                    <p className="text-5xl md:text-6xl font-bold tracking-tighter text-gray-900">£0.00</p>
+                  <div className="text-center mb-10 md:mb-20">
+                    <p className="text-sm md:text-base text-gray-500 font-medium mb-2">Total you owe</p>
+                    <p className="text-3xl md:text-6xl font-bold tracking-tighter text-gray-900">£0.00</p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 w-full">
                     <DashboardCard
                       icon={<ShoppingBag className="w-6 h-6" />}
                       title="All purchases"
@@ -531,18 +539,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
             {
               activeTab === 'deliveries' && (
                 <div className="max-w-3xl mx-auto">
-                  <div className="flex items-center justify-between mb-10">
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Deliveries</h1>
+                  <div className="flex items-center justify-between mb-6 md:mb-10">
+                    <h1 className="text-xl md:text-3xl font-bold text-gray-900 tracking-tight">Deliveries</h1>
                     <button
                       onClick={() => navigate('/deliveries/book')}
-                      className="bg-black text-white px-6 py-3 rounded-full font-bold text-sm hover:bg-gray-800 transition-all flex items-center shadow-lg hover:shadow-xl active:scale-95"
+                      className="bg-black text-white px-4 md:px-6 py-2.5 md:py-3 rounded-full font-bold text-xs md:text-sm hover:bg-gray-800 transition-all flex items-center shadow-lg hover:shadow-xl active:scale-95"
                     >
-                      <Plus className="w-5 h-5 mr-2" />
+                      <Plus className="w-4 h-4 md:w-5 md:h-5 mr-1.5 md:mr-2" />
                       New booking
                     </button>
                   </div>
 
-                  <div className="bg-gray-50 rounded-3xl p-8 text-center mb-10 border border-gray-100">
+                  <div className="bg-gray-50 rounded-2xl md:rounded-3xl p-5 md:p-8 text-center mb-6 md:mb-10 border border-gray-100">
                     <div className="bg-white w-16 h-16 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
                       <Package className="w-8 h-8 text-blue-600" />
                     </div>
@@ -561,7 +569,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 px-2">Recent Activity</h3>
+                    <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4 px-2">Recent Activity</h3>
                     <HistoryView />
                   </div>
                 </div>
@@ -574,7 +582,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNewBooking, onLo
             {
               activeTab === 'wallet' && (
                 <div className="max-w-4xl mx-auto">
-                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-10">Wallet</h1>
+                  <h1 className="text-2xl md:text-5xl font-bold tracking-tight text-gray-900 mb-6 md:mb-10">Wallet</h1>
 
                   {/* Cards Section */}
                   {/* Cards Section */}

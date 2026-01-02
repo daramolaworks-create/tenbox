@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { BrandLogo } from './components/BrandLogo';
 import { AuthScreen } from './components/AuthScreen';
 import { DashboardView } from './components/DashboardView';
 
+// Check if user is authenticated
+const isAuthenticated = () => localStorage.getItem('isAuthenticated') === 'true';
+
+// Protected route - redirects to home/login if not authenticated
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Determine if authenticated (mock logic for now, could be localStorage)
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  return isAuthenticated() ? <>{children}</> : <Navigate to="/" replace />;
 };
 
+// Public route - redirects to /shop if already authenticated
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return isAuthenticated() ? <Navigate to="/shop" replace /> : <>{children}</>;
+};
+
+// Auth wrapper with login handler
 const AuthWrapper: React.FC = () => {
   const navigate = useNavigate();
   return (
@@ -22,28 +29,44 @@ const AuthWrapper: React.FC = () => {
   );
 };
 
+// Dashboard wrapper with logout handler
+const DashboardWrapper: React.FC = () => {
+  const navigate = useNavigate();
+  return (
+    <DashboardView
+      onNewBooking={() => { }}
+      onLogout={() => {
+        localStorage.removeItem('isAuthenticated');
+        navigate('/');
+      }}
+      onBook={() => { }}
+    />
+  );
+};
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<AuthWrapper />} />
+        {/* Homepage - shows login when not authenticated */}
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <AuthWrapper />
+            </PublicRoute>
+          }
+        />
+
+        {/* All protected routes */}
         <Route
           path="/*"
           element={
             <PrivateRoute>
-              <DashboardView
-                onNewBooking={() => { }}
-                onLogout={() => {
-                  localStorage.removeItem('isAuthenticated');
-                  // Force refresh or navigation handled by component usage
-                }}
-                onBook={() => { }}
-              />
+              <DashboardWrapper />
             </PrivateRoute>
           }
         />
-        {/* Default redirect */}
-        <Route path="/" element={<Navigate to="/shop" replace />} />
       </Routes>
     </BrowserRouter>
   );
