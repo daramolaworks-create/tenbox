@@ -10,7 +10,9 @@ import {
   Image,
   Dimensions,
   StatusBar,
-  Alert
+  Alert,
+  Platform,
+  UIManager
 } from 'react-native';
 import {
   Home as HomeIcon,
@@ -65,6 +67,11 @@ const App: React.FC = () => {
   const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
+    if (Platform.OS === 'android') {
+      if (UIManager.setLayoutAnimationEnabledExperimental) {
+        UIManager.setLayoutAnimationEnabledExperimental(true);
+      }
+    }
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 2500);
@@ -134,8 +141,8 @@ const App: React.FC = () => {
             <Text style={styles.featuredTitle}>Shop the World</Text>
             <Text style={styles.featuredDesc}>Import from Amazon, Apple, and more.</Text>
             <View style={styles.featuredLogos}>
-              <Image source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png' }} style={{ width: 50, height: 20 }} resizeMode="contain" />
-              <Image source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/833px-Apple_logo_black.svg.png' }} style={{ width: 20, height: 20 }} resizeMode="contain" />
+              <Image source={require('./assets/logos/amazon.png')} style={{ width: 50, height: 20 }} resizeMode="contain" />
+              <Image source={require('./assets/logos/apple.png')} style={{ width: 20, height: 20 }} resizeMode="contain" />
             </View>
           </View>
           <View style={styles.featuredIcon}>
@@ -342,16 +349,16 @@ const App: React.FC = () => {
       <Text style={styles.sectionLabel}>PARTNER STORES</Text>
       <View style={styles.storeGrid}>
         {[
-          { name: 'Amazon', url: 'https://www.amazon.com', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png' },
-          { name: 'Apple', url: 'https://www.apple.com', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/833px-Apple_logo_black.svg.png' },
+          { name: 'Amazon', url: 'https://www.amazon.com', logo: require('./assets/logos/amazon.png') },
+          { name: 'Apple', url: 'https://www.apple.com', logo: require('./assets/logos/apple.png') },
           { name: 'ASOS', url: 'https://www.asos.com', logo: require('./assets/asos.png') },
           { name: 'Walmart', url: 'https://www.walmart.com', logo: require('./assets/walmart.png') },
-          { name: 'H&M', url: 'https://www2.hm.com', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/H%26M-Logo.svg/1200px-H%26M-Logo.svg.png' },
-          { name: 'Nike', url: 'https://www.nike.com', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Logo_NIKE.svg/1200px-Logo_NIKE.svg.png' },
-          { name: 'Zara', url: 'https://www.zara.com', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Zara_Logo.svg/1200px-Zara_Logo.svg.png' },
-          { name: 'eBay', url: 'https://www.ebay.com', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/1200px-EBay_logo.svg.png' },
-          { name: 'Target', url: 'https://www.target.com', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Target_Corporation_logo_%28vector%29.svg/1200px-Target_Corporation_logo_%28vector%29.svg.png' },
-          { name: 'Best Buy', url: 'https://www.bestbuy.com', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Best_Buy_Logo.svg/1200px-Best_Buy_Logo.svg.png' }
+          { name: 'H&M', url: 'https://www2.hm.com', logo: require('./assets/logos/hm.png') },
+          { name: 'Nike', url: 'https://www.nike.com', logo: require('./assets/logos/nike.png') },
+          { name: 'Zara', url: 'https://www.zara.com', logo: require('./assets/logos/zara.png') },
+          { name: 'eBay', url: 'https://www.ebay.com', logo: require('./assets/logos/ebay.png') },
+          { name: 'Target', url: 'https://www.target.com', logo: require('./assets/logos/target.png') },
+          { name: 'Best Buy', url: 'https://www.bestbuy.com', logo: require('./assets/logos/bestbuy.png') }
         ].map(s => (
           <TouchableOpacity key={s.name} activeOpacity={0.7} onPress={() => handleOpenBrowser(s.url, s.name)}>
             <Card style={styles.storeCard}>
@@ -436,7 +443,11 @@ const App: React.FC = () => {
           <Image source={require('./assets/logo.png')} style={{ width: 120, height: 40 }} resizeMode="contain" />
         </View>
         <TouchableOpacity style={styles.profileBtn} onPress={() => setShowSettings(true)}>
-          <User color="#0223E6" size={20} />
+          {user.avatar ? (
+            <Image source={{ uri: user.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+          ) : (
+            <User color="#0223E6" size={20} />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -525,7 +536,7 @@ const App: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F7' },
+  container: { flex: 1, backgroundColor: '#F2F2F7', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 12, paddingBottom: 16 },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   logoBox: { backgroundColor: '#0223E6', padding: 8, borderRadius: 10, display: 'none' }, // hidden

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Alert, LayoutAnimation, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Alert, LayoutAnimation, ActivityIndicator, Image, Platform } from 'react-native';
 import { Button, Input, Card } from './UI';
 import { useCartStore } from '../store';
 import { X, Check, MapPin, Truck, ChevronRight, CreditCard, Plus, ArrowLeft } from 'lucide-react-native';
@@ -85,7 +85,12 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
     if (!visible) return null;
 
     return (
-        <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+        <Modal
+            visible={visible}
+            animationType="slide"
+            presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'overFullScreen'}
+            transparent={Platform.OS !== 'ios'}
+        >
             <View style={styles.container}>
                 {/* Header */}
                 <View style={styles.header}>

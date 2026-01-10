@@ -67,12 +67,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
                         <View style={styles.socialCol}>
                             <TouchableOpacity style={styles.socialBtn} onPress={onLogin}>
-                                <Image source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png' }} style={{ width: 24, height: 24 }} />
+                                <Image source={require('../assets/logos/google.png')} style={{ width: 24, height: 24 }} />
                                 <Text style={styles.socialText}>Continue with Google</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={[styles.socialBtn, { backgroundColor: '#000' }]} onPress={onLogin}>
-                                <Image source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/833px-Apple_logo_black.svg.png' }} style={{ width: 20, height: 24, tintColor: '#fff' }} resizeMode="contain" />
+                                <Image source={require('../assets/logos/apple.png')} style={{ width: 20, height: 24, tintColor: '#fff' }} resizeMode="contain" />
                                 <Text style={[styles.socialText, { color: '#fff' }]}>Continue with Apple</Text>
                             </TouchableOpacity>
                         </View>

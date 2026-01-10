@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, SafeAreaView, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, SafeAreaView, LayoutAnimation, Platform, UIManager, Image } from 'react-native';
 import { X, User, MapPin, Clock, LogOut, ChevronRight, Bell, Shield, HelpCircle, ChevronLeft } from 'lucide-react-native';
 import { useCartStore } from '../store';
 import AddressesView from './AddressesView';
@@ -73,7 +73,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, onLogou
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
             <View style={styles.profileSection}>
                 <View style={styles.avatar}>
-                    <User color="#fff" size={40} />
+                    {user.avatar ? (
+                        <Image source={{ uri: user.avatar }} style={styles.avatarImg} />
+                    ) : (
+                        <User color="#fff" size={40} />
+                    )}
                 </View>
                 <Text style={styles.name}>{user.name}</Text>
                 <Text style={styles.email}>{user.email}</Text>
@@ -147,7 +151,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, onLogou
     );
 
     return (
-        <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+        <Modal
+            visible={visible}
+            animationType="slide"
+            presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'overFullScreen'}
+            transparent={Platform.OS !== 'ios'}
+        >
             <SafeAreaView style={styles.container}>
                 {renderHeader()}
                 <View style={{ flex: 1, backgroundColor: '#F2F2F7' }}>
@@ -225,6 +234,12 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
+        overflow: 'hidden'
+    },
+    avatarImg: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
     },
     name: {
         fontSize: 22,

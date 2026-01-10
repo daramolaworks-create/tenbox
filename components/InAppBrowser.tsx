@@ -1,6 +1,6 @@
 
 import React, { useRef } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, StyleSheet, Modal, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, StyleSheet, Modal, ActivityIndicator, Alert, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Plus } from 'lucide-react-native';
 
@@ -13,12 +13,24 @@ interface InAppBrowserProps {
 }
 
 const INJECTED_JAVASCRIPT = `
-  function extractProduct() {
-    const getMeta = (prop) => document.querySelector('meta[property="' + prop + '"]')?.content || document.querySelector('meta[name="' + prop + '"]')?.content;
-    const title = getMeta('og:title') || document.title;
-    const image = getMeta('og:image') || document.querySelector('img')?.src;
-    const url = window.location.href;
-    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'PRODUCT_EXTRACT', payload: { title, image, url } }));
+  window.extractProduct = function() {
+    try {
+      const getMeta = (prop) => document.querySelector('meta[property="' + prop + '"]')?.content || document.querySelector('meta[name="' + prop + '"]')?.content;
+      const title = getMeta('og:title') || document.title;
+      const image = getMeta('og:image') || document.querySelector('img')?.src;
+      const url = window.location.href;
+      
+      const payload = JSON.stringify({ type: 'PRODUCT_EXTRACT', payload: { title, image, url } });
+      
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(payload);
+      } else {
+        // Fallback for some Android versions or if injection delayed
+        console.log('ReactNativeWebView not ready');
+      }
+    } catch(e) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ERROR', message: e.toString() }));
+    }
   }
   true;
 `;
@@ -27,7 +39,8 @@ const InAppBrowser: React.FC<InAppBrowserProps> = ({ isVisible, url, storeName, 
     const webViewRef = useRef<WebView>(null);
 
     const handleFabPress = () => {
-        webViewRef.current?.injectJavaScript('extractProduct(); true;');
+        // Call the globally attached function
+        webViewRef.current?.injectJavaScript('window.extractProduct(); true;');
     };
 
     const handleMessage = (event: any) => {
@@ -38,14 +51,18 @@ const InAppBrowser: React.FC<InAppBrowserProps> = ({ isVisible, url, storeName, 
             }
         } catch (e) {
             console.log('Failed to parse webview message', e);
-            // Fallback if extraction fails but button was clicked (unlikely to error here, but safe fallback)
             onAddToCart({ url });
         }
     };
 
     return (
-        <Modal visible={isVisible} animationType="slide" presentationStyle="pageSheet">
-            <SafeAreaView style={styles.container}>
+        <Modal
+            visible={isVisible}
+            animationType="slide"
+            presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'overFullScreen'}
+            transparent={Platform.OS !== 'ios'}
+        >
+            <SafeAreaView style={[styles.container, { paddingTop: Platform.OS === 'android' ? 24 : 0 }]}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                         <Text style={styles.closeText}>Done</Text>
@@ -70,9 +87,13 @@ const InAppBrowser: React.FC<InAppBrowserProps> = ({ isVisible, url, storeName, 
                         </View>
                     )}
                     sharedCookiesEnabled={true}
+                    domStorageEnabled={true}
+                    javaScriptEnabled={true}
+                    mixedContentMode="always"
                     allowsBackForwardNavigationGestures={true}
                     injectedJavaScript={INJECTED_JAVASCRIPT}
                     onMessage={handleMessage}
+                    userAgent="Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36"
                 />
 
                 <TouchableOpacity style={styles.fab} onPress={handleFabPress} activeOpacity={0.8}>
