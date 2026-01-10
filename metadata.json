@@ -1,0 +1,7 @@
+{
+  "name": "Tenbox Mobile Starter",
+  "description": "A high-fidelity mobile-first starter for the Tenbox logistics and shopping platform, featuring a dark technical aesthetic, Zustand state management, and an intuitive import workflow.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
