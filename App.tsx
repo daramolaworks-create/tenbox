@@ -46,6 +46,7 @@ import AddressesView from './components/AddressesView';
 import OrdersView from './components/OrdersView';
 import EditProfileView from './components/EditProfileView';
 import CheckoutFlow from './components/CheckoutFlow';
+import OfferSlider from './components/OfferSlider';
 import * as Clipboard from 'expo-clipboard';
 
 const { width } = Dimensions.get('window');
@@ -129,10 +130,12 @@ const App: React.FC = () => {
 
   const renderHome = () => (
     <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-      <View style={{ marginTop: 10, marginBottom: 30 }}>
+      <View style={{ marginTop: 10, marginBottom: 24 }}>
         <Text style={styles.heroText}>Good Morning,</Text>
-        <Text style={[styles.heroText, { color: '#0223E6' }]}>Wudan.</Text>
+        <Text style={[styles.heroText, { color: '#0223E6' }]}>{user.name}.</Text>
       </View>
+
+      <OfferSlider />
 
       <TouchableOpacity activeOpacity={0.9} onPress={() => setActiveTab('shop')}>
         <View style={styles.featuredCard}>
