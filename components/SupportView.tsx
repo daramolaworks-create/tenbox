@@ -43,11 +43,13 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#000',
         marginBottom: 8,
+        fontFamily: 'ZalandoBold',
     },
     sub: {
         fontSize: 16,
         color: '#8E8E93',
         marginBottom: 32,
+        fontFamily: 'ZalandoRegular',
     },
     form: {
         gap: 20,
@@ -65,6 +67,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#000',
         textAlignVertical: 'top',
+        fontFamily: 'ZalandoRegular',
     }
 });
 

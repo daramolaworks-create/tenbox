@@ -18,6 +18,7 @@ interface ButtonProps extends TouchableOpacityProps {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg' | 'icon';
   isLoading?: boolean;
+  icon?: React.ReactNode;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -48,9 +49,12 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color="#fff" />
+        <ActivityIndicator color={textStyles[0].color} />
       ) : (
-        <Text style={textStyles}>{children}</Text>
+        <>
+          {props.icon && <View style={{ marginRight: 8 }}>{props.icon}</View>}
+          <Text style={textStyles}>{children}</Text>
+        </>
       )}
     </TouchableOpacity>
   );
@@ -113,6 +117,7 @@ const styles = StyleSheet.create({
   btnText: {
     fontWeight: '600',
     fontSize: 15,
+    fontFamily: 'ZalandoMedium',
   },
   input: {
     backgroundColor: '#FFFFFF',
@@ -123,6 +128,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
     fontSize: 16,
+    fontFamily: 'ZalandoRegular',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -139,5 +145,6 @@ const styles = StyleSheet.create({
     color: '#000',
     marginBottom: 6,
     marginLeft: 4,
+    fontFamily: 'ZalandoMedium',
   },
 });

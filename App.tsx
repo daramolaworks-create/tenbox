@@ -53,9 +53,22 @@ import * as Clipboard from 'expo-clipboard';
 
 import { STORES } from './data/stores';
 
+import {
+  useFonts,
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_700Bold
+} from '@expo-google-fonts/outfit';
+
 const { width } = Dimensions.get('window');
 
 const App: React.FC = () => {
+  const [fontsLoaded] = useFonts({
+    'ZalandoRegular': require('./assets/fonts/Zalando_Sans_Expanded/static/ZalandoSansExpanded-Regular.ttf'),
+    'ZalandoMedium': require('./assets/fonts/Zalando_Sans_Expanded/static/ZalandoSansExpanded-Medium.ttf'),
+    'ZalandoBold': require('./assets/fonts/Zalando_Sans_Expanded/static/ZalandoSansExpanded-Bold.ttf'),
+  });
+
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -67,7 +80,7 @@ const App: React.FC = () => {
   const [browserUrl, setBrowserUrl] = useState<string | null>(null);
   const [activeStoreName, setActiveStoreName] = useState('');
   const [extractedData, setExtractedData] = useState<{ title?: string; image?: string }>({});
-  const { items, addItem, removeItem, updateQuantity, shipments, user } = useCartStore();
+  const { items, addItem, removeItem, updateQuantity, shipments, user, addresses } = useCartStore();
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [settingsView, setSettingsView] = useState<'list' | 'account' | 'addresses' | 'orders'>('list');
   const [showCheckout, setShowCheckout] = useState(false);
@@ -315,7 +328,7 @@ const App: React.FC = () => {
         <View style={styles.screen}>
           <TouchableOpacity onPress={() => setSettingsView('list')} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
             <ChevronRight size={24} color="#0223E6" style={{ transform: [{ rotate: '180deg' }] }} />
-            <Text style={{ fontSize: 17, color: '#0223E6', marginLeft: 4, fontWeight: '600' }}>Back to Settings</Text>
+            <Text style={{ fontSize: 17, color: '#0223E6', marginLeft: 4, fontWeight: '600', fontFamily: 'ZalandoMedium' }}>Back to Settings</Text>
           </TouchableOpacity>
 
           {settingsView === 'account' && (
@@ -476,7 +489,7 @@ const App: React.FC = () => {
     </View>
   );
 
-  if (isLoading) {
+  if (isLoading || !fontsLoaded) {
     return <LoaderScreen />;
   }
 
@@ -488,9 +501,30 @@ const App: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
-        <View style={styles.logoRow}>
-          <Image source={require('./assets/logo.png')} style={{ width: 120, height: 40 }} resizeMode="contain" />
-        </View>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => {
+            setSettingsView('addresses');
+            setActiveTab('settings');
+          }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
+        >
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
+            <MapPin size={20} color="#0223E6" fill="#0223E6" />
+          </View>
+          <View>
+            <Text style={{ fontSize: 11, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: 'ZalandoBold' }}>
+              Delivering to
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={{ fontSize: 15, color: '#000', fontWeight: '700', fontFamily: 'ZalandoBold' }}>
+                {addresses.find(a => a.default)?.label || addresses[0]?.label || 'Set Location'}
+              </Text>
+              <ChevronRight size={14} color="#0223E6" style={{ transform: [{ rotate: '90deg' }] }} />
+            </View>
+          </View>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.profileBtn} onPress={() => setShowSettings(true)}>
           {user.avatar ? (
             <Image source={{ uri: user.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />

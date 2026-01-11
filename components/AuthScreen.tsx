@@ -94,30 +94,30 @@ const styles = StyleSheet.create({
     content: { flex: 1, padding: 24, justifyContent: 'center' },
     logoSection: { alignItems: 'center', marginBottom: 40 },
     logo: { width: 160, height: 48 },
-    subtitle: { color: '#8E8E93', fontSize: 16, marginTop: 12 },
+    subtitle: { color: '#8E8E93', fontSize: 16, marginTop: 12, fontFamily: 'ZalandoMedium' },
 
     card: { backgroundColor: '#fff', borderRadius: 24, padding: 24, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 5 } },
 
     tabRow: { flexDirection: 'row', marginBottom: 24, backgroundColor: '#F2F2F7', padding: 4, borderRadius: 12 },
     tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
     activeTab: { backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
-    tabText: { color: '#8E8E93', fontWeight: '600', fontSize: 14 },
-    activeTabText: { color: '#000', fontWeight: '700' },
+    tabText: { color: '#8E8E93', fontWeight: '600', fontSize: 14, fontFamily: 'ZalandoBold' },
+    activeTabText: { color: '#000', fontWeight: '700', fontFamily: 'ZalandoBold' },
 
     form: { gap: 16 },
     forgotBtn: { alignSelf: 'flex-end' },
-    forgotText: { color: '#0223E6', fontSize: 13, fontWeight: '600' },
+    forgotText: { color: '#0223E6', fontSize: 13, fontWeight: '600', fontFamily: 'ZalandoBold' },
     submitBtn: { marginTop: 8, shadowColor: '#0223E6', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
 
     divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 24 },
     line: { flex: 1, height: 1, backgroundColor: '#E5E5EA' },
-    orText: { marginHorizontal: 12, color: '#8E8E93', fontSize: 12, fontWeight: '600' },
+    orText: { marginHorizontal: 12, color: '#8E8E93', fontSize: 12, fontWeight: '600', fontFamily: 'ZalandoBold' },
 
     socialCol: { gap: 12 },
     socialBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E5E5EA', gap: 12 },
-    socialText: { fontSize: 15, fontWeight: '600', color: '#000' },
+    socialText: { fontSize: 15, fontWeight: '600', color: '#000', fontFamily: 'ZalandoBold' },
 
-    footerText: { textAlign: 'center', color: '#8E8E93', fontSize: 12, marginTop: 40, paddingHorizontal: 20, lineHeight: 18 }
+    footerText: { textAlign: 'center', color: '#8E8E93', fontSize: 12, marginTop: 40, paddingHorizontal: 20, lineHeight: 18, fontFamily: 'ZalandoRegular' }
 });
 
 export default AuthScreen;

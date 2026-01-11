@@ -220,11 +220,13 @@ const styles = StyleSheet.create({
         color: '#1C1C1E',
         flex: 1,
         marginRight: 8,
+        fontFamily: 'ZalandoBold',
     },
     listPrice: {
         fontSize: 16,
         fontWeight: '700',
         color: '#1C1C1E',
+        fontFamily: 'ZalandoBold',
     },
     moreItemsBadge: {
         position: 'absolute',
@@ -241,11 +243,13 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 10,
         fontWeight: '700',
+        fontFamily: 'ZalandoBold',
     },
     listDate: {
         fontSize: 13,
         color: '#8E8E93',
         fontWeight: '500',
+        fontFamily: 'ZalandoMedium',
     },
     miniStatus: {
         paddingHorizontal: 8,
@@ -256,18 +260,21 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontWeight: '700',
         textTransform: 'uppercase',
+        fontFamily: 'ZalandoBold',
     },
     orderIdSm: {
         fontSize: 12,
         color: '#8E8E93',
         fontWeight: '600',
         letterSpacing: 0.5,
+        fontFamily: 'ZalandoMedium',
     },
     viewDetails: {
         fontSize: 13,
         color: '#0223E6',
         fontWeight: '600',
         marginRight: 2,
+        fontFamily: 'ZalandoMedium',
     },
 
     // DETAIL VIEW
@@ -302,11 +309,13 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 1,
         marginBottom: 4,
+        fontFamily: 'ZalandoMedium',
     },
     receiptId: {
         fontSize: 28,
         fontWeight: '800',
         color: '#fff',
+        fontFamily: 'ZalandoBold',
     },
     metaRow: {
         flexDirection: 'row',
@@ -320,11 +329,13 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginBottom: 4,
         textTransform: 'uppercase',
+        fontFamily: 'ZalandoMedium',
     },
     metaValue: {
         fontSize: 16,
         color: '#1C1C1E',
         fontWeight: '600',
+        fontFamily: 'ZalandoBold',
     },
     statusPill: {
         paddingHorizontal: 16,
@@ -334,6 +345,7 @@ const styles = StyleSheet.create({
     statusPillText: {
         fontSize: 14,
         fontWeight: '700',
+        fontFamily: 'ZalandoBold',
     },
     dashedLine: {
         height: 1,
@@ -363,15 +375,18 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#1C1C1E',
         marginBottom: 2,
+        fontFamily: 'ZalandoBold',
     },
     itemVariant: {
         fontSize: 13,
         color: '#8E8E93',
+        fontFamily: 'ZalandoRegular',
     },
     itemPrice: {
         fontSize: 15,
         fontWeight: '600',
         color: '#1C1C1E',
+        fontFamily: 'ZalandoBold',
     },
     summarySection: {
         padding: 24,
@@ -385,11 +400,13 @@ const styles = StyleSheet.create({
     summaryLabel: {
         fontSize: 15,
         color: '#8E8E93',
+        fontFamily: 'ZalandoMedium',
     },
     summaryValue: {
         fontSize: 15,
         color: '#1C1C1E',
         fontWeight: '500',
+        fontFamily: 'ZalandoBold',
     },
     totalRow: {
         marginTop: 12,
@@ -402,11 +419,13 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: '700',
         color: '#1C1C1E',
+        fontFamily: 'ZalandoBold',
     },
     totalValue: {
         fontSize: 24,
         fontWeight: '800',
         color: '#0223E6',
+        fontFamily: 'ZalandoBold',
     },
     card: {
         backgroundColor: '#fff',
@@ -421,12 +440,14 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#1C1C1E',
         letterSpacing: 0.5,
+        fontFamily: 'ZalandoBold',
     },
     addressText: {
         fontSize: 16,
         color: '#3A3A3C',
         lineHeight: 24,
         fontWeight: '500',
+        fontFamily: 'ZalandoMedium',
     },
 });
 

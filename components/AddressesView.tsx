@@ -77,38 +77,57 @@ const AddressesView = () => {
     };
 
     return (
-        <View style={{ flex: 1 }}>
-            <ScrollView contentContainerStyle={{ padding: 20 }}>
+        <View style={{ flex: 1, backgroundColor: '#F2F2F7' }}>
+            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+
                 {addresses.map((addr) => (
-                    <View key={addr.id} style={styles.addressCard}>
-                        <View style={styles.cardHeader}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                <MapPin size={16} color="#0223E6" />
-                                <Text style={styles.label}>{addr.label}</Text>
-                                {addr.default && <View style={styles.defaultBadge}><Text style={styles.defaultText}>Default</Text></View>}
+                    <TouchableOpacity
+                        key={addr.id}
+                        style={[styles.addressCard, addr.default && styles.activeCard]}
+                        activeOpacity={0.9}
+                        onPress={() => handleSetDefault(addr.id)}
+                    >
+                        <View style={styles.cardContent}>
+                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}>
+                                <View style={[styles.iconBox, addr.default ? styles.activeIconBox : null]}>
+                                    <MapPin size={24} color={addr.default ? '#0223E6' : '#8E8E93'} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                        <Text style={[styles.label, addr.default && { color: '#0223E6' }]}>{addr.label}</Text>
+                                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                                            <TouchableOpacity onPress={() => openEditModal(addr)} hitSlop={10}>
+                                                <Edit2 size={16} color="#C7C7CC" />
+                                            </TouchableOpacity>
+                                            <TouchableOpacity onPress={() => handleDelete(addr.id)} hitSlop={10}>
+                                                <Trash2 size={16} color="#FF3B30" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                    <Text style={styles.addressText}>{addr.street}</Text>
+                                    <Text style={styles.addressText}>{addr.city}, {addr.country} {addr.zip}</Text>
+                                </View>
                             </View>
-                            <View style={{ flexDirection: 'row', gap: 12 }}>
-                                <TouchableOpacity onPress={() => openEditModal(addr)}>
-                                    <Edit2 size={18} color="#8E8E93" />
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => handleDelete(addr.id)}>
-                                    <Trash2 size={18} color="#FF3B30" />
-                                </TouchableOpacity>
+
+                            <View style={styles.selectionIndicator}>
+                                {addr.default ? (
+                                    <View style={styles.radioSelected}>
+                                        <Check size={12} color="#fff" strokeWidth={4} />
+                                    </View>
+                                ) : (
+                                    <View style={styles.radioUnselected} />
+                                )}
                             </View>
                         </View>
-                        <Text style={styles.addressText}>{addr.street}</Text>
-                        <Text style={styles.addressText}>{addr.city}, {addr.country} {addr.zip}</Text>
-
-                        {!addr.default && (
-                            <TouchableOpacity style={styles.setDefaultBtn} onPress={() => handleSetDefault(addr.id)}>
-                                <Text style={styles.setDefaultText}>Set as Default</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
+                    </TouchableOpacity>
                 ))}
 
-                <Button onPress={openAddModal} variant="outline" style={{ marginTop: 12 }}>
-                    <Plus size={20} color="#0223E6" style={{ marginRight: 8 }} />
+                <Button
+                    onPress={openAddModal}
+                    style={styles.addBtn}
+                    size="lg"
+                    icon={<Plus size={24} color="#fff" />}
+                >
                     Add New Address
                 </Button>
             </ScrollView>
@@ -138,49 +157,83 @@ const AddressesView = () => {
 };
 
 const styles = StyleSheet.create({
-    addressCard: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: '#E5E5EA',
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    label: {
-        fontSize: 16,
+    headerTitle: {
+        fontSize: 28,
         fontWeight: '700',
         color: '#000',
+        marginBottom: 24,
+        letterSpacing: -0.5,
+        fontFamily: 'ZalandoBold',
     },
-    defaultBadge: {
+    addressCard: {
+        backgroundColor: '#fff',
+        borderRadius: 24,
+        padding: 20,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 12,
+        shadowOpacity: 0.04,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    activeCard: {
+        borderColor: '#0223E6',
+        backgroundColor: '#F5F7FF',
+    },
+    cardContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    iconBox: {
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        backgroundColor: '#F2F2F7',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    activeIconBox: {
         backgroundColor: '#E0E7FF',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
     },
-    defaultText: {
-        color: '#0223E6',
-        fontSize: 10,
+    label: {
+        fontSize: 17,
         fontWeight: '700',
+        color: '#000',
+        fontFamily: 'ZalandoBold',
     },
     addressText: {
-        fontSize: 15,
-        color: '#3A3A3C',
+        fontSize: 14,
+        color: '#8E8E93',
+        fontWeight: '500',
         lineHeight: 20,
+        fontFamily: 'ZalandoRegular',
     },
-    setDefaultBtn: {
-        marginTop: 12,
-        alignSelf: 'flex-start',
+    selectionIndicator: {
+        marginLeft: 12,
     },
-    setDefaultText: {
-        fontSize: 13,
-        color: '#0223E6',
-        fontWeight: '600',
+    radioUnselected: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#C7C7CC',
+    },
+    radioSelected: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#0223E6',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    addBtn: {
+        marginTop: 24,
+        shadowColor: '#0223E6',
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
     },
     modalContainer: {
         flex: 1,
@@ -188,10 +241,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     modalTitle: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: '700',
         marginBottom: 32,
         marginTop: 16,
+        fontFamily: 'ZalandoBold',
     },
 });
 
