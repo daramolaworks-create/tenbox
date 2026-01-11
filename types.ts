@@ -31,4 +31,5 @@ export interface Shipment {
   estimatedDelivery: string;
   events: ShipmentEvent[];
   itemsString: string; // e.g., "Nike Shoes + 2 others"
+  image?: string;
 }

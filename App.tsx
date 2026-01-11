@@ -12,7 +12,8 @@ import {
   StatusBar,
   Alert,
   Platform,
-  UIManager
+  UIManager,
+  ActivityIndicator
 } from 'react-native';
 import {
   Home as HomeIcon,
@@ -41,6 +42,7 @@ import SettingsModal from './components/SettingsModal';
 import ShipFlow from './components/ShipFlow';
 import AuthScreen from './components/AuthScreen';
 import LoaderScreen from './components/LoaderScreen';
+
 import InAppBrowser from './components/InAppBrowser';
 import AddressesView from './components/AddressesView';
 import OrdersView from './components/OrdersView';
@@ -49,6 +51,8 @@ import CheckoutFlow from './components/CheckoutFlow';
 import OfferSlider from './components/OfferSlider';
 import * as Clipboard from 'expo-clipboard';
 
+import { STORES } from './data/stores';
+
 const { width } = Dimensions.get('window');
 
 const App: React.FC = () => {
@@ -56,6 +60,7 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [importUrl, setImportUrl] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showShipFlow, setShowShipFlow] = useState(false);
@@ -174,21 +179,48 @@ const App: React.FC = () => {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
-        <TouchableOpacity><Text style={styles.seeAll}>See All</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => { setSettingsView('orders'); setActiveTab('settings'); }}>
+          <Text style={styles.seeAll}>See All</Text>
+        </TouchableOpacity>
       </View>
 
-      {shipments.slice(0, 1).map(s => (
-        <Card key={s.id} style={styles.activityCard}>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(s.status), marginTop: 6 }]} />
-            <View>
-              <Text style={styles.activityStatus}>Shipment {s.status.replace('_', ' ')}</Text>
-              <Text style={styles.activityDesc}>{s.itemsString}</Text>
-              <Text style={styles.activityTime}>Updated {s.events[0]?.date}</Text>
+      {shipments.slice(0, 3).map(s => {
+        const Icon = s.status === 'delivered' ? CheckCircle : Truck;
+        const color = getStatusColor(s.status);
+
+        return (
+          <TouchableOpacity key={s.id} style={styles.orderCard} activeOpacity={0.9} onPress={() => setActiveTab('track')}>
+            <View style={styles.cardTop}>
+              <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+                <View style={[styles.statusIconBox, { backgroundColor: color + '15' }]}>
+                  <Icon size={24} color={color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.activityTitle} numberOfLines={1}>{s.itemsString}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 6 }}>
+                    <Text style={styles.activityMeta}>
+                      {s.status === 'delivered' ? 'Delivered' : 'Arriving'} • {s.estimatedDelivery}
+                    </Text>
+                  </View>
+                </View>
+                <View style={[styles.miniStatus, { backgroundColor: color + '15' }]}>
+                  <Text style={[styles.miniStatusText, { color: color }]}>{s.status.replace('_', ' ')}</Text>
+                </View>
+              </View>
             </View>
-          </View>
-        </Card>
-      ))}
+            <View style={styles.cardBottom}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Image source={require('./assets/logo.png')} style={{ width: 16, height: 16, tintColor: '#8E8E93' }} resizeMode="contain" />
+                <Text style={styles.orderIdSm}>{s.carrier} • #{s.trackingNumber.split('-')[1]}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.viewDetails}>Track</Text>
+                <ChevronRight size={14} color="#0223E6" />
+              </View>
+            </View>
+          </TouchableOpacity>
+        );
+      })}
 
       {shipments.length === 0 && (
         <View style={styles.emptyActivity}>
@@ -196,6 +228,15 @@ const App: React.FC = () => {
           <Text style={styles.emptyText}>No recent activity.</Text>
         </View>
       )}
+
+      {/* Banner Ad */}
+      <TouchableOpacity activeOpacity={0.9} style={{ marginTop: 20 }}>
+        <Image
+          source={require('./assets/offers/banner_ad.png')}
+          style={{ width: '100%', height: 100, borderRadius: 12 }}
+          resizeMode="cover"
+        />
+      </TouchableOpacity>
     </ScrollView>
   );
 
@@ -303,17 +344,23 @@ const App: React.FC = () => {
       <View style={styles.screen}>
         <Text style={styles.screenTitle}>Settings</Text>
 
-        <View style={styles.profileHeader}>
+        <TouchableOpacity style={styles.profileHeader} activeOpacity={0.8} onPress={() => setSettingsView('account')}>
           <View style={styles.profileAvatarLarge}>
-            <User color="#fff" size={32} />
+            {user.avatar ? (
+              <Image source={{ uri: user.avatar }} style={{ width: 80, height: 80, borderRadius: 40 }} />
+            ) : (
+              <User color="#fff" size={32} />
+            )}
+            <View style={styles.editBadge}>
+              <Text style={styles.editBadgeText}>EDIT</Text>
+            </View>
           </View>
           <Text style={styles.profileName}>{user.name}</Text>
           <Text style={styles.profileEmail}>{user.email}</Text>
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.settingsList}>
           {[
-            { icon: User, label: 'Account Information', action: () => setSettingsView('account') },
             { icon: MapPin, label: 'Saved Addresses', action: () => setSettingsView('addresses') },
             { icon: Clock, label: 'Order History', action: () => setSettingsView('orders') },
             { icon: LogOut, label: 'Log Out', color: '#FF3B30', action: () => setIsAuthenticated(false) }
@@ -350,25 +397,24 @@ const App: React.FC = () => {
       </View>
 
       <Text style={styles.sectionLabel}>PARTNER STORES</Text>
+
+      <View style={styles.searchContainer}>
+        <Input
+          placeholder="Search stores (e.g. Amazon, ASOS)..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={{ marginBottom: 16 }}
+        />
+      </View>
+
       <View style={styles.storeGrid}>
-        {[
-          { name: 'Amazon', url: 'https://www.amazon.com', logo: require('./assets/logos/amazon.png') },
-          { name: 'Apple', url: 'https://www.apple.com', logo: require('./assets/logos/apple.png') },
-          { name: 'ASOS', url: 'https://www.asos.com', logo: require('./assets/asos.png') },
-          { name: 'Walmart', url: 'https://www.walmart.com', logo: require('./assets/walmart.png') },
-          { name: 'H&M', url: 'https://www2.hm.com', logo: require('./assets/logos/hm.png') },
-          { name: 'Nike', url: 'https://www.nike.com', logo: require('./assets/logos/nike.png') },
-          { name: 'Zara', url: 'https://www.zara.com', logo: require('./assets/logos/zara.png') },
-          { name: 'eBay', url: 'https://www.ebay.com', logo: require('./assets/logos/ebay.png') },
-          { name: 'Target', url: 'https://www.target.com', logo: require('./assets/logos/target.png') },
-          { name: 'Best Buy', url: 'https://www.bestbuy.com', logo: require('./assets/logos/bestbuy.png') }
-        ].map(s => (
+        {STORES.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map(s => (
           <TouchableOpacity key={s.name} activeOpacity={0.7} onPress={() => handleOpenBrowser(s.url, s.name)}>
             <Card style={styles.storeCard}>
               <View style={styles.storeIconPlaceholder}>
                 <Image source={typeof s.logo === 'string' ? { uri: s.logo } : s.logo} style={{ width: 40, height: 40 }} resizeMode="contain" />
               </View>
-              <Text style={styles.storeName}>{s.name}</Text>
+              <Text style={styles.storeName} numberOfLines={1}>{s.name}</Text>
             </Card>
           </TouchableOpacity>
         ))}
@@ -568,6 +614,7 @@ const styles = StyleSheet.create({
   importRow: { flexDirection: 'row', gap: 12, marginTop: 24 },
   flex1: { flex: 1 },
   sectionLabel: { color: '#8E8E93', fontSize: 13, fontWeight: '500', letterSpacing: 0.4, marginTop: 32, marginBottom: 16 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   storeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   storeCard: { width: (width - 60) / 2, padding: 20, alignItems: 'center', shadowOpacity: 0.03 },
   storeIconPlaceholder: { width: 50, height: 50, backgroundColor: '#F2F2F7', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
@@ -611,6 +658,8 @@ const styles = StyleSheet.create({
   eventLocation: { color: '#8E8E93', fontSize: 11 },
   profileHeader: { alignItems: 'center', marginVertical: 32 },
   profileAvatarLarge: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#0223E6', alignItems: 'center', justifyContent: 'center', marginBottom: 16, shadowColor: '#0223E6', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
+  editBadge: { position: 'absolute', bottom: -6, backgroundColor: '#000', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  editBadgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
   profileName: { color: '#000', fontSize: 24, fontWeight: '700', letterSpacing: -0.5 },
   profileEmail: { color: '#8E8E93', fontSize: 15, marginTop: 4 },
   settingsList: { gap: 12 },
@@ -636,7 +685,103 @@ const styles = StyleSheet.create({
   activityStatus: { color: '#000', fontSize: 15, fontWeight: '600', textTransform: 'capitalize' },
   activityDesc: { color: '#8E8E93', fontSize: 13, marginTop: 2 },
   activityTime: { color: '#C7C7CC', fontSize: 11, marginTop: 6 },
-  emptyActivity: { padding: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderRadius: 20 }
+  emptyActivity: { padding: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderRadius: 20 },
+
+  // Ported Order Card Styles
+  orderCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    marginBottom: 16,
+    shadowColor: 'rgba(0,0,0,0.04)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    shadowOpacity: 1,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.02)',
+    overflow: 'hidden',
+  },
+  cardTop: { padding: 16 },
+  cardBottom: {
+    backgroundColor: '#FAFAFC',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F2F2F7',
+  },
+  listIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: '#F2F2F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  listThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: '#F2F2F7',
+  },
+  listTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    flex: 1,
+    marginRight: 8,
+  },
+  listPrice: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#8E8E93',
+  },
+  listDate: {
+    fontSize: 13,
+    color: '#8E8E93',
+    fontWeight: '500',
+  },
+  miniStatus: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  miniStatusText: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  orderIdSm: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  viewDetails: {
+    fontSize: 13,
+    color: '#0223E6',
+    fontWeight: '600',
+    marginRight: 2,
+  },
+  statusIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1C1C1E',
+    marginBottom: 2,
+  },
+  activityMeta: {
+    fontSize: 13,
+    color: '#8E8E93',
+    fontWeight: '500',
+  }
 });
 
 export default App;

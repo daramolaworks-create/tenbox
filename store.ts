@@ -88,6 +88,7 @@ export const useCartStore = create<AppState>((set) => ({
       destination: 'San Francisco, US',
       estimatedDelivery: 'Jan 14',
       itemsString: 'Sony WH-1000XM5',
+      image: 'https://m.media-amazon.com/images/I/51SKmu2G9FL._AC_UF1000,1000_QL80_.jpg',
       events: [
         { date: 'Jan 09, 10:00 AM', status: 'in_transit', description: 'Arrived at sorting facility', location: 'Los Angeles Gateway' },
         { date: 'Jan 08, 04:30 PM', status: 'in_transit', description: 'Departed origin country', location: 'Narita Intl Airport' },
@@ -103,6 +104,7 @@ export const useCartStore = create<AppState>((set) => ({
       destination: 'New York, US',
       estimatedDelivery: 'Jan 05',
       itemsString: 'ASOS Summer Collection',
+      image: 'https://images.asos-media.com/products/asos-design-oversized-t-shirt-with-crew-neck-in-white/201217036-1-white?$n_640w$&wid=513&fit=constrain',
       events: [
         { date: 'Jan 05, 02:45 PM', status: 'delivered', description: 'Delivered to front porch', location: 'New York, NY' },
         { date: 'Jan 05, 08:30 AM', status: 'out_for_delivery', description: 'Out for delivery', location: 'Brooklyn Facility' },
