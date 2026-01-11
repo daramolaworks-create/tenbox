@@ -322,11 +322,11 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F2F2F7' },
     navBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
     closeBtn: { padding: 4 },
-    navTitle: { fontSize: 16, fontWeight: '600', fontFamily: 'ZalandoBold' },
+    navTitle: { fontSize: 16, fontWeight: '600' },
     stepContainer: { flexDirection: 'row', paddingHorizontal: 40, marginBottom: 24 },
     stepDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#E5E5EA', alignItems: 'center', justifyContent: 'center' },
     stepDotActive: { backgroundColor: '#0223E6' },
-    stepNum: { fontSize: 12, fontWeight: '600', color: '#8E8E93', fontFamily: 'ZalandoMedium' },
+    stepNum: { fontSize: 12, fontWeight: '600', color: '#8E8E93' },
     stepNumActive: { color: '#fff' },
     stepLine: { flex: 1, height: 2, backgroundColor: '#E5E5EA', marginHorizontal: 8 },
     stepLineActive: { backgroundColor: '#0223E6' },
@@ -334,8 +334,8 @@ const styles = StyleSheet.create({
     contentArea: { flex: 1 },
     stepContent: { flex: 1, paddingHorizontal: 24 },
     headerBlock: { marginBottom: 32 },
-    stepTitle: { fontSize: 28, fontWeight: '700', color: '#000', marginBottom: 8, letterSpacing: -0.5, fontFamily: 'ZalandoBold' },
-    stepSub: { fontSize: 16, color: '#8E8E93', fontFamily: 'ZalandoRegular' },
+    stepTitle: { fontSize: 28, fontWeight: '700', color: '#000', marginBottom: 8, letterSpacing: -0.5 },
+    stepSub: { fontSize: 16, color: '#8E8E93' },
 
     // Route
     routeCard: { backgroundColor: '#fff', borderRadius: 20, padding: 24, flexDirection: 'row', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
@@ -344,43 +344,43 @@ const styles = StyleSheet.create({
     timelineLine: { width: 2, height: 80, backgroundColor: '#E5E5EA', marginVertical: 4 },
     routeInputs: { flex: 1, gap: 24 },
     locationBlock: {},
-    inputLabel: { fontSize: 11, fontWeight: '700', color: '#8E8E93', letterSpacing: 0.5, marginBottom: 8, fontFamily: 'ZalandoBold' },
+    inputLabel: { fontSize: 11, fontWeight: '700', color: '#8E8E93', letterSpacing: 0.5, marginBottom: 8 },
     inputRow: { flexDirection: 'row', gap: 12 },
 
     // Details
     formSection: { gap: 20 },
     gridRow: { flexDirection: 'row', gap: 12 },
     gridRow3: { flexDirection: 'row', gap: 12 },
-    sectionLabel: { fontSize: 12, fontWeight: '700', color: '#8E8E93', letterSpacing: 0.5, marginTop: 8, fontFamily: 'ZalandoBold' },
+    sectionLabel: { fontSize: 12, fontWeight: '700', color: '#8E8E93', letterSpacing: 0.5, marginTop: 8 },
 
     mainBtn: { marginTop: 40 },
 
     // Quotes
     loadingContainer: { alignItems: 'center', marginTop: 80 },
-    loadingText: { marginTop: 16, color: '#8E8E93', fontSize: 16, fontFamily: 'ZalandoRegular' },
+    loadingText: { marginTop: 16, color: '#8E8E93', fontSize: 16 },
     rateList: { paddingBottom: 40 },
     ticketCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, overflow: 'hidden' },
     ticketLeft: { flexDirection: 'row', alignItems: 'center', gap: 16 },
     carrierLogo: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-    ticketName: { fontSize: 16, fontWeight: '700', color: '#000', fontFamily: 'ZalandoBold' },
-    ticketService: { fontSize: 13, color: '#8E8E93', marginTop: 2, fontFamily: 'ZalandoRegular' },
+    ticketName: { fontSize: 16, fontWeight: '700', color: '#000' },
+    ticketService: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
     ticketRight: { alignItems: 'flex-end' },
-    ticketPrice: { fontSize: 18, fontWeight: '700', color: '#0223E6', fontFamily: 'ZalandoBold' },
-    ticketTime: { fontSize: 13, color: '#8E8E93', marginTop: 2, fontFamily: 'ZalandoRegular' },
+    ticketPrice: { fontSize: 18, fontWeight: '700', color: '#0223E6' },
+    ticketTime: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
     ticketBadge: { position: 'absolute', top: 0, right: 0, paddingHorizontal: 8, paddingVertical: 4, borderBottomLeftRadius: 10 },
-    ticketBadgeText: { color: '#fff', fontSize: 9, fontWeight: '800', fontFamily: 'ZalandoBold' },
+    ticketBadgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
 
     // Success
     successContainer: { flex: 1, padding: 24, alignItems: 'center', justifyContent: 'center' },
     confettiBox: { marginBottom: 24 },
-    successTitle: { fontSize: 30, fontWeight: '800', textAlign: 'center', marginBottom: 8, fontFamily: 'ZalandoBold' },
-    successSub: { fontSize: 16, color: '#8E8E93', textAlign: 'center', marginBottom: 40, fontFamily: 'ZalandoRegular' },
+    successTitle: { fontSize: 30, fontWeight: '800', textAlign: 'center', marginBottom: 8 },
+    successSub: { fontSize: 16, color: '#8E8E93', textAlign: 'center', marginBottom: 40 },
     finalCard: { backgroundColor: '#fff', width: '100%', padding: 32, borderRadius: 24, alignItems: 'center', shadowOpacity: 0.08 },
     finalRouteRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-    finalCity: { fontSize: 18, fontWeight: '600', fontFamily: 'ZalandoBold' },
+    finalCity: { fontSize: 18, fontWeight: '600' },
     finalDivider: { width: '100%', height: 1, backgroundColor: '#E5E5EA', marginVertical: 24 },
-    finalLabel: { fontSize: 11, fontWeight: '700', color: '#8E8E93', letterSpacing: 1, fontFamily: 'ZalandoBold' },
-    finalTrack: { fontSize: 22, fontWeight: '700', color: '#000', marginTop: 8, letterSpacing: 0.5, fontFamily: 'ZalandoBold' }
+    finalLabel: { fontSize: 11, fontWeight: '700', color: '#8E8E93', letterSpacing: 1 },
+    finalTrack: { fontSize: 22, fontWeight: '700', color: '#000', marginTop: 8, letterSpacing: 0.5 }
 });
 
 export default ShipFlow;

@@ -117,7 +117,6 @@ const styles = StyleSheet.create({
   btnText: {
     fontWeight: '600',
     fontSize: 15,
-    fontFamily: 'ZalandoMedium',
   },
   input: {
     backgroundColor: '#FFFFFF',
@@ -128,7 +127,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
     fontSize: 16,
-    fontFamily: 'ZalandoRegular',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -145,6 +143,5 @@ const styles = StyleSheet.create({
     color: '#000',
     marginBottom: 6,
     marginLeft: 4,
-    fontFamily: 'ZalandoMedium',
   },
 });

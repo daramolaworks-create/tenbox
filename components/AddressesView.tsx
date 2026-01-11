@@ -163,7 +163,6 @@ const styles = StyleSheet.create({
         color: '#000',
         marginBottom: 24,
         letterSpacing: -0.5,
-        fontFamily: 'ZalandoBold',
     },
     addressCard: {
         backgroundColor: '#fff',
@@ -201,14 +200,12 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: '700',
         color: '#000',
-        fontFamily: 'ZalandoBold',
     },
     addressText: {
         fontSize: 14,
         color: '#8E8E93',
         fontWeight: '500',
         lineHeight: 20,
-        fontFamily: 'ZalandoRegular',
     },
     selectionIndicator: {
         marginLeft: 12,
@@ -245,7 +242,6 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         marginBottom: 32,
         marginTop: 16,
-        fontFamily: 'ZalandoBold',
     },
 });
 

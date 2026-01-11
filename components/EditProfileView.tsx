@@ -120,7 +120,6 @@ const styles = StyleSheet.create({
         color: '#0223E6',
         fontWeight: '600',
         marginBottom: 20,
-        fontFamily: 'ZalandoBold'
     },
     card: {
         backgroundColor: '#fff',

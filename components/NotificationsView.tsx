@@ -52,13 +52,11 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#000',
         marginBottom: 4,
-        fontFamily: 'ZalandoBold',
     },
     sub: {
         fontSize: 13,
         color: '#8E8E93',
         lineHeight: 18,
-        fontFamily: 'ZalandoRegular',
     },
     divider: {
         height: 1,

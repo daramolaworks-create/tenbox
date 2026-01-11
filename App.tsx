@@ -64,9 +64,6 @@ const { width } = Dimensions.get('window');
 
 const App: React.FC = () => {
   const [fontsLoaded] = useFonts({
-    'ZalandoRegular': require('./assets/fonts/Zalando_Sans_Expanded/static/ZalandoSansExpanded-Regular.ttf'),
-    'ZalandoMedium': require('./assets/fonts/Zalando_Sans_Expanded/static/ZalandoSansExpanded-Medium.ttf'),
-    'ZalandoBold': require('./assets/fonts/Zalando_Sans_Expanded/static/ZalandoSansExpanded-Bold.ttf'),
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -765,16 +762,19 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
     flex: 1,
     marginRight: 8,
+    fontFamily: undefined,
   },
   listPrice: {
     fontSize: 14,
     fontWeight: '700',
     color: '#8E8E93',
+    fontFamily: undefined,
   },
   listDate: {
     fontSize: 13,
     color: '#8E8E93',
     fontWeight: '500',
+    fontFamily: undefined,
   },
   miniStatus: {
     paddingHorizontal: 8,
@@ -785,18 +785,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
+    fontFamily: undefined,
   },
   orderIdSm: {
     fontSize: 12,
     color: '#8E8E93',
     fontWeight: '600',
     letterSpacing: 0.5,
+    fontFamily: undefined,
   },
   viewDetails: {
     fontSize: 13,
     color: '#0223E6',
     fontWeight: '600',
     marginRight: 2,
+    fontFamily: undefined,
   },
   statusIconBox: {
     width: 48,
@@ -810,11 +813,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1C1C1E',
     marginBottom: 2,
+    fontFamily: undefined,
   },
   activityMeta: {
     fontSize: 13,
     color: '#8E8E93',
     fontWeight: '500',
+    fontFamily: undefined,
   }
 });
 

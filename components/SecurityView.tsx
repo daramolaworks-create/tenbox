@@ -40,13 +40,11 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: '700',
         color: '#000',
-        fontFamily: 'ZalandoBold',
     },
     subText: {
         fontSize: 14,
         color: '#8E8E93',
         lineHeight: 20,
-        fontFamily: 'ZalandoRegular',
     }
 });
 

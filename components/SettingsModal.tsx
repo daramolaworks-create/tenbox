@@ -193,7 +193,6 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: '600',
         color: '#000',
-        fontFamily: 'ZalandoBold',
     },
     backBtn: {
         flexDirection: 'row',
@@ -204,7 +203,6 @@ const styles = StyleSheet.create({
         fontSize: 17,
         color: '#0223E6',
         marginLeft: -4,
-        fontFamily: 'ZalandoRegular',
     },
     closeBtn: {
         width: 60,
@@ -214,7 +212,6 @@ const styles = StyleSheet.create({
         color: '#0223E6',
         fontSize: 17,
         fontWeight: '600',
-        fontFamily: 'ZalandoBold',
     },
     content: {
         paddingBottom: 40,
@@ -249,13 +246,11 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#000',
         marginBottom: 4,
-        fontFamily: 'ZalandoBold',
     },
     email: {
         fontSize: 15,
         color: '#8E8E93',
         marginBottom: 16,
-        fontFamily: 'ZalandoRegular',
     },
     editProfileBtn: {
         paddingHorizontal: 20,
@@ -267,7 +262,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '600',
         color: '#000',
-        fontFamily: 'ZalandoBold',
     },
     section: {
         backgroundColor: '#fff',
@@ -283,7 +277,6 @@ const styles = StyleSheet.create({
         marginLeft: 20,
         marginTop: 16,
         marginBottom: 8,
-        fontFamily: 'ZalandoBold',
     },
     row: {
         flexDirection: 'row',
@@ -310,7 +303,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
         color: '#000',
-        fontFamily: 'ZalandoMedium',
     },
     logoutBtn: {
         backgroundColor: '#fff',
@@ -325,14 +317,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: '#FF3B30',
-        fontFamily: 'ZalandoBold',
     },
     version: {
         textAlign: 'center',
         color: '#C7C7CC',
         fontSize: 12,
         marginTop: 24,
-        fontFamily: 'ZalandoRegular',
     }
 });
 

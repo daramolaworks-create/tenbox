@@ -127,7 +127,6 @@ const styles = StyleSheet.create({
         color: '#0223E6',
         fontSize: 17,
         fontWeight: '600',
-        fontFamily: 'ZalandoBold',
     },
     titleContainer: {
         flex: 1,
@@ -138,13 +137,11 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: '600',
         color: '#000',
-        fontFamily: 'ZalandoBold',
     },
     urlText: {
         fontSize: 12,
         color: '#8E8E93',
         marginTop: 2,
-        fontFamily: 'ZalandoRegular',
     },
     loadingPlaceholder: {
         width: 50, // To balance the layout since close button is on left
@@ -179,7 +176,6 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 15,
         fontWeight: '700',
-        fontFamily: 'ZalandoBold',
     }
 });
 
