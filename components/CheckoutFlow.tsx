@@ -4,6 +4,7 @@ import { Button, Input, Card } from './UI';
 import { useCartStore, STORE_ADDRESSES, getStoreRegion } from '../store';
 import { supabase } from '../lib/supabase';
 import { X, Check, MapPin, Truck, ChevronRight, CreditCard, Plus, ArrowLeft, RefreshCw } from 'lucide-react-native';
+import { useStripe } from '@stripe/stripe-react-native';
 
 interface CheckoutFlowProps {
     visible: boolean;
@@ -14,12 +15,24 @@ interface CheckoutFlowProps {
 const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplete }) => {
     const [step, setStep] = useState<'address' | 'delivery' | 'review'>('address');
     const { addresses, user, items, clearCart, createOrder } = useCartStore();
+    const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
     const [rates, setRates] = useState<any[]>([]);
     const [loadingRates, setLoadingRates] = useState(false);
     const [selectedRate, setSelectedRate] = useState<any>(null); // Full rate object
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // Derived Financials (Moved to Top for Scope)
+    const storeRegion = items[0]?.store ? getStoreRegion(items[0].store) : 'USA';
+    const storeConfig = STORE_ADDRESSES[storeRegion] || STORE_ADDRESSES['USA'];
+    const CURRENCY_SYMBOL = storeConfig.symbol;
+    const CURRENCY_CODE = storeConfig.currency;
+
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const deliveryPrice = selectedRate ? parseFloat(selectedRate.amount) : 0;
+    const tax = subtotal * 0.08; // 8% mock tax
+    const total = subtotal + deliveryPrice + tax;
 
     useEffect(() => {
         if (addresses.some(a => a.default) && !selectedAddressId) {
@@ -110,43 +123,95 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
         else if (step === 'delivery') setStep('address');
     };
 
+    const fetchPaymentSheetParams = async () => {
+        // Assume address/user exists or handled
+        const payload = {
+            amount: total,
+            currency: CURRENCY_CODE,
+            email: 'user@example.com',
+            name: 'Tenbox User'
+        };
+        console.log('Sending Payment Request:', JSON.stringify(payload, null, 2));
+
+        const { data, error } = await supabase.functions.invoke('payment-sheet', {
+            body: payload,
+        });
+
+        if (error) {
+            console.error('Payment Error:', error);
+            Alert.alert('Payment Init Error', error.message || JSON.stringify(error));
+            return null;
+        }
+        if (!data) {
+            Alert.alert('Error', 'No data received from backend');
+            return null;
+        }
+        return {
+            paymentIntent: data.paymentIntent,
+            ephemeralKey: data.ephemeralKey,
+            customer: data.customer,
+        };
+    };
+
     const handlePay = async () => {
         setIsProcessing(true);
+
         try {
-            const itemsSummary = items.length > 1
-                ? `${items[0].title} & ${items.length - 1} more`
-                : items[0]?.title || 'Order Items';
+            // 1. Fetch Params
+            const params = await fetchPaymentSheetParams();
+            if (!params) {
+                setIsProcessing(false);
+                return;
+            }
 
-            await createOrder(total, itemsSummary);
+            // 2. Initialize
+            const { error } = await initPaymentSheet({
+                merchantDisplayName: "Tenbox, Inc.",
+                customerId: params.customer,
+                customerEphemeralKeySecret: params.ephemeralKey,
+                paymentIntentClientSecret: params.paymentIntent,
+                allowsDelayedPaymentMethods: true,
+                defaultBillingDetails: {
+                    name: 'Tenbox User',
+                }
+            });
 
-            Alert.alert(
-                "Order Placed!",
-                "Your order has been successfully processed.",
-                [{
-                    text: "OK", onPress: () => {
-                        clearCart();
-                        onComplete();
-                    }
-                }]
-            );
-        } catch (error: any) {
-            console.error(error);
-            Alert.alert("Error", error.message || "Failed to place order.");
-        } finally {
+            if (error) {
+                Alert.alert('Error', error.message);
+                setIsProcessing(false);
+                return;
+            }
+
+            // 3. Present
+            const { error: paymentError } = await presentPaymentSheet();
+
+            if (paymentError) {
+                if (paymentError.code !== 'Canceled') {
+                    Alert.alert(`Error code: ${paymentError.code}`, paymentError.message);
+                }
+                setIsProcessing(false);
+            } else {
+                // Success!
+                const itemsSummary = items.length > 1
+                    ? `${items[0].title} & ${items.length - 1} more`
+                    : items[0]?.title || 'Order Items';
+
+                await createOrder(total, itemsSummary);
+                clearCart();
+
+                Alert.alert('Success', 'Your order is confirmed!');
+                onComplete();
+                setIsProcessing(false);
+            }
+        } catch (e: any) {
+            console.error(e);
+            Alert.alert('Error', e.message);
             setIsProcessing(false);
         }
     };
 
-    // Derived Financials
-    // Derived Financials
-    const storeRegion = items[0]?.store ? getStoreRegion(items[0].store) : 'USA';
-    const storeConfig = STORE_ADDRESSES[storeRegion] || STORE_ADDRESSES['USA'];
-    const CURRENCY_SYMBOL = storeConfig.symbol;
 
-    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const deliveryPrice = selectedRate ? parseFloat(selectedRate.amount) : 0;
-    const tax = subtotal * 0.08; // 8% mock tax
-    const total = subtotal + deliveryPrice + tax;
+
 
     const selectedAddress = addresses.find(a => a.id === selectedAddressId);
 

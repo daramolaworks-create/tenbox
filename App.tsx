@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import {
   View,
   Text,
@@ -556,125 +557,131 @@ const App: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => {
-            setSettingsView('addresses');
-            setActiveTab('settings');
-          }}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
-        >
-          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
-            <MapPin size={20} color="#0223E6" fill="#0223E6" />
-          </View>
-          <View>
-            <Text style={{ fontSize: 11, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Delivering to
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={{ fontSize: 15, color: '#000', fontWeight: '700' }}>
-                {addresses.find(a => a.default)?.label || addresses[0]?.label || 'Set Location'}
-              </Text>
-              <ChevronRight size={14} color="#0223E6" style={{ transform: [{ rotate: '90deg' }] }} />
-            </View>
-          </View>
-        </TouchableOpacity>
 
-        <TouchableOpacity style={styles.profileBtn} onPress={() => setShowSettings(true)}>
-          {user?.avatar ? (
-            <Image source={{ uri: user.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />
-          ) : (
-            <User color="#0223E6" size={20} />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.content}>
-        {activeTab === 'home' && renderHome()}
-        {activeTab === 'shop' && renderShop()}
-        {activeTab === 'cart' && renderCart()}
-        {activeTab === 'track' && renderTrack()}
-        {activeTab === 'settings' && renderSettings()}
-      </View>
-
-      <View style={styles.tabBar}>
-        {[
-          { id: 'home', icon: HomeIcon, label: 'Home' },
-          { id: 'shop', icon: ShoppingBag, label: 'Shop' },
-          { id: 'cart', icon: ShoppingCart, label: 'Cart', badge: items.length },
-          { id: 'track', icon: Search, label: 'Track' },
-          { id: 'settings', icon: Settings, label: 'Settings' }
-        ].map(tab => (
+    <StripeProvider
+      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_12345'}
+      merchantIdentifier="merchant.com.tenbox.app" // Optional, for Apple Pay
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" />
+        <View style={styles.header}>
           <TouchableOpacity
-            key={tab.id}
-            style={styles.tabItem}
-            onPress={() => setActiveTab(tab.id as TabType)}
-            activeOpacity={0.6}
+            activeOpacity={0.8}
+            onPress={() => {
+              setSettingsView('addresses');
+              setActiveTab('settings');
+            }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
           >
-            <View>
-              <tab.icon size={24} color={activeTab === tab.id ? '#0223E6' : '#8E8E93'} />
-              {tab.badge ? (
-                <View style={styles.tabBadge}>
-                  <Text style={styles.tabBadgeText}>{tab.badge}</Text>
-                </View>
-              ) : null}
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
+              <MapPin size={20} color="#0223E6" fill="#0223E6" />
             </View>
-            <Text style={[styles.tabLabel, activeTab === tab.id && { color: '#0223E6' }]}>{tab.label}</Text>
+            <View>
+              <Text style={{ fontSize: 11, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Delivering to
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={{ fontSize: 15, color: '#000', fontWeight: '700' }}>
+                  {addresses.find(a => a.default)?.label || addresses[0]?.label || 'Set Location'}
+                </Text>
+                <ChevronRight size={14} color="#0223E6" style={{ transform: [{ rotate: '90deg' }] }} />
+              </View>
+            </View>
           </TouchableOpacity>
-        ))}
-      </View>
 
-      {showModal && (
-        <ImportPreviewModal
-          url={importUrl}
-          initialTitle={extractedData.title}
-          initialImage={extractedData.image}
-          initialPrice={extractedData.price}
-          initialCurrency={extractedData.currency}
-          onClose={() => setShowModal(false)}
-          onConfirm={(item) => {
-            addItem(item);
-            setShowModal(false);
-            setImportUrl('');
-            setActiveTab('cart');
+          <TouchableOpacity style={styles.profileBtn} onPress={() => setShowSettings(true)}>
+            {user?.avatar ? (
+              <Image source={{ uri: user.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+            ) : (
+              <User color="#0223E6" size={20} />
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.content}>
+          {activeTab === 'home' && renderHome()}
+          {activeTab === 'shop' && renderShop()}
+          {activeTab === 'cart' && renderCart()}
+          {activeTab === 'track' && renderTrack()}
+          {activeTab === 'settings' && renderSettings()}
+        </View>
+
+        <View style={styles.tabBar}>
+          {[
+            { id: 'home', icon: HomeIcon, label: 'Home' },
+            { id: 'shop', icon: ShoppingBag, label: 'Shop' },
+            { id: 'cart', icon: ShoppingCart, label: 'Cart', badge: items.length },
+            { id: 'track', icon: Search, label: 'Track' },
+            { id: 'settings', icon: Settings, label: 'Settings' }
+          ].map(tab => (
+            <TouchableOpacity
+              key={tab.id}
+              style={styles.tabItem}
+              onPress={() => setActiveTab(tab.id as TabType)}
+              activeOpacity={0.6}
+            >
+              <View>
+                <tab.icon size={24} color={activeTab === tab.id ? '#0223E6' : '#8E8E93'} />
+                {tab.badge ? (
+                  <View style={styles.tabBadge}>
+                    <Text style={styles.tabBadgeText}>{tab.badge}</Text>
+                  </View>
+                ) : null}
+              </View>
+              <Text style={[styles.tabLabel, activeTab === tab.id && { color: '#0223E6' }]}>{tab.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {showModal && (
+          <ImportPreviewModal
+            url={importUrl}
+            initialTitle={extractedData.title}
+            initialImage={extractedData.image}
+            initialPrice={extractedData.price}
+            initialCurrency={extractedData.currency}
+            onClose={() => setShowModal(false)}
+            onConfirm={(item) => {
+              addItem(item);
+              setShowModal(false);
+              setImportUrl('');
+              setActiveTab('cart');
+            }}
+          />
+        )}
+        <InAppBrowser
+          isVisible={!!browserUrl}
+          url={browserUrl || ''}
+          storeName={activeStoreName}
+          onClose={handleCloseBrowser}
+          onAddToCart={handleBrowserAddToCart}
+        />
+        <SettingsModal
+          visible={showSettings}
+          onClose={() => setShowSettings(false)}
+          onLogout={() => {
+            setShowSettings(false);
+            logout();
           }}
         />
-      )}
-      <InAppBrowser
-        isVisible={!!browserUrl}
-        url={browserUrl || ''}
-        storeName={activeStoreName}
-        onClose={handleCloseBrowser}
-        onAddToCart={handleBrowserAddToCart}
-      />
-      <SettingsModal
-        visible={showSettings}
-        onClose={() => setShowSettings(false)}
-        onLogout={() => {
-          setShowSettings(false);
-          logout();
-        }}
-      />
-      <ShipFlow
-        visible={showShipFlow}
-        onClose={() => setShowShipFlow(false)}
-        onComplete={() => {
-          setShowShipFlow(false);
-          setActiveTab('track');
-        }}
-      />
-      <CheckoutFlow
-        visible={showCheckout}
-        onClose={() => setShowCheckout(false)}
-        onComplete={() => {
-          setShowCheckout(false);
-          setActiveTab('home'); // Go home after purchase
-        }}
-      />
-    </SafeAreaView>
+        <ShipFlow
+          visible={showShipFlow}
+          onClose={() => setShowShipFlow(false)}
+          onComplete={() => {
+            setShowShipFlow(false);
+            setActiveTab('track');
+          }}
+        />
+        <CheckoutFlow
+          visible={showCheckout}
+          onClose={() => setShowCheckout(false)}
+          onComplete={() => {
+            setShowCheckout(false);
+            setActiveTab('home'); // Go home after purchase
+          }}
+        />
+      </SafeAreaView>
+    </StripeProvider>
   );
 };
 
