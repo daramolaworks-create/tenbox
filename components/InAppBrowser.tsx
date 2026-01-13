@@ -161,6 +161,7 @@ const InAppBrowser: React.FC<InAppBrowserProps> = ({ isVisible, url, storeName, 
             animationType="slide"
             presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'overFullScreen'}
             transparent={Platform.OS !== 'ios'}
+            onRequestClose={onClose}
         >
             <SafeAreaView style={[styles.container, { paddingTop: Platform.OS === 'android' ? 24 : 0 }]}>
                 <View style={styles.header}>

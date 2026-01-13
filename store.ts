@@ -397,7 +397,17 @@ export const useCartStore = create<AppState>()(
           return;
         }
 
+
         if (data) {
+          // Get address snapshot strategy (Use current default as fallback for MVP)
+          const currentAddresses = get().addresses;
+          let addressStr = '';
+
+          if (currentAddresses.length > 0) {
+            const defaultAddr = currentAddresses.find(a => a.default) || currentAddresses[0];
+            addressStr = `${defaultAddr.street}, ${defaultAddr.city}, ${defaultAddr.zip}`;
+          }
+
           set({
             orderHistory: data.map(order => ({
               id: order.id,
@@ -406,7 +416,7 @@ export const useCartStore = create<AppState>()(
               total: `$${order.total}`,
               status: order.status,
               itemsList: [], // Detail view would need a separate table or JSON column
-              shippingAddress: 'See details'
+              shippingAddress: addressStr || 'No address found'
             }))
           });
         }

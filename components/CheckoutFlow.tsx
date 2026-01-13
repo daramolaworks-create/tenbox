@@ -233,6 +233,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
             animationType="slide"
             presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'overFullScreen'}
             transparent={Platform.OS !== 'ios'}
+            onRequestClose={onClose}
         >
             <View style={styles.container}>
                 {/* Header */}

@@ -56,7 +56,7 @@ const CountrySelector = ({ value, onSelect }: { value: string, onSelect: (c: typ
                 <Text style={styles.countryBtnText}>{selected ? selected.code : 'Select'}</Text>
             </TouchableOpacity>
 
-            <Modal visible={visible} animationType="fade" transparent>
+            <Modal visible={visible} animationType="fade" transparent onRequestClose={() => setVisible(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalHeader}>Select Country</Text>
@@ -92,12 +92,20 @@ const AddressSelector = ({ onSelect, onClose }: { onSelect: (addr: Address) => v
     }, []);
 
     return (
-        <Modal visible animationType="fade" transparent>
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <Modal
+            visible
+            animationType="slide"
+            presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'overFullScreen'}
+            transparent={Platform.OS !== 'ios'}
+            onRequestClose={onClose}
+        >
+            <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+                <View style={{ flex: 1, padding: 24 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                         <Text style={styles.modalHeader}>Saved Addresses</Text>
-                        <TouchableOpacity onPress={onClose}><X size={24} color="#000" /></TouchableOpacity>
+                        <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
+                            <Button variant="ghost" size="sm" onPress={onClose}><Text style={{ color: '#0223E6', fontSize: 17, fontWeight: '600' }}>Cancel</Text></Button>
+                        </TouchableOpacity>
                     </View>
 
                     <ScrollView style={{ maxHeight: 400 }}>
@@ -122,9 +130,11 @@ const AddressSelector = ({ onSelect, onClose }: { onSelect: (addr: Address) => v
                             ))
                         )}
                     </ScrollView>
-                    <Button onPress={onClose} variant="secondary" style={{ marginTop: 16 }}>Cancel</Button>
+                    <View style={{ marginTop: 'auto' }}>
+                        <Button onPress={onClose} variant="secondary">Cancel Selection</Button>
+                    </View>
                 </View>
-            </View>
+            </SafeAreaView>
         </Modal>
     );
 };
@@ -648,7 +658,13 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
     );
 
     return (
-        <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+        <Modal
+            visible={visible}
+            animationType="slide"
+            presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'overFullScreen'}
+            transparent={Platform.OS !== 'ios'}
+            onRequestClose={handleClose}
+        >
             <SafeAreaView style={styles.container}>
                 <View style={styles.navBar}>
                     <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>

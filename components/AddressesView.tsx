@@ -136,7 +136,12 @@ const AddressesView = () => {
                 </Button>
             </ScrollView>
 
-            <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet">
+            <Modal
+                visible={modalVisible}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                onRequestClose={() => setModalVisible(false)}
+            >
                 <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>{editingId ? 'Edit Address' : 'New Address'}</Text>
 

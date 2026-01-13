@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { StripeProvider } from '@stripe/stripe-react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   View,
   Text,
@@ -81,7 +82,7 @@ const App: React.FC = () => {
   const [browserUrl, setBrowserUrl] = useState<string | null>(null);
   const [activeStoreName, setActiveStoreName] = useState('');
   const [extractedData, setExtractedData] = useState<{ title?: string; image?: string; price?: string; currency?: string }>({});
-  const { items, addItem, removeItem, updateQuantity, shipments, user, addresses, checkSession, logout, products, fetchProducts, fetchAddresses, fetchShipments, initializeSubscription } = useCartStore();
+  const { items, addItem, removeItem, updateQuantity, shipments, user, addresses, orderHistory, fetchOrders, checkSession, logout, products, fetchProducts, fetchAddresses, fetchShipments, initializeSubscription } = useCartStore();
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [settingsView, setSettingsView] = useState<'list' | 'account' | 'addresses' | 'orders'>('list');
   const [showCheckout, setShowCheckout] = useState(false);
@@ -91,6 +92,7 @@ const App: React.FC = () => {
     fetchProducts();
     fetchAddresses();
     fetchShipments();
+    fetchOrders();
     initializeSubscription();
     if (Platform.OS === 'android') {
       if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -204,50 +206,93 @@ const App: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {shipments.slice(0, 3).map(s => {
-        const Icon = s.status === 'delivered' ? CheckCircle : Truck;
-        const color = getStatusColor(s.status);
 
-        return (
-          <TouchableOpacity key={s.id} style={styles.orderCard} activeOpacity={0.9} onPress={() => setActiveTab('track')}>
-            <View style={styles.cardTop}>
-              <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
-                <View style={[styles.statusIconBox, { backgroundColor: color + '15' }]}>
-                  <Icon size={24} color={color} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.activityTitle} numberOfLines={1}>{s.itemsString}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 6 }}>
-                    <Text style={styles.activityMeta}>
-                      {s.status === 'delivered' ? 'Delivered' : 'Arriving'} • {s.estimatedDelivery}
-                    </Text>
+      {/* Combined Activity Feed */}
+      {(() => {
+        // Merge & Sort
+        const allActivity = [
+          ...shipments.map(s => ({ type: 'shipment', data: s, date: new Date() })), // Shipments don't have created_at in interface yet, assuming recent
+          ...orderHistory.map(o => ({ type: 'order', data: o, date: new Date(o.date) }))
+        ].sort((a, b) => b.date.getTime() - a.date.getTime());
+
+        if (allActivity.length === 0) {
+          return (
+            <View style={styles.emptyActivity}>
+              <Clock size={24} color="#C7C7CC" />
+              <Text style={styles.emptyText}>No recent activity.</Text>
+            </View>
+          );
+        }
+
+        return allActivity.slice(0, 3).map((item: any, i) => {
+          const isShipment = item.type === 'shipment';
+          const data = item.data;
+
+          let icon, color, title, statusText, subText, idText, detailsAction;
+
+          if (isShipment) {
+            icon = data.status === 'delivered' ? CheckCircle : Truck;
+            color = getStatusColor(data.status);
+            title = data.itemsString;
+            statusText = data.status.replace('_', ' ');
+            subText = data.status === 'delivered' ? 'Delivered' : `Arriving • ${data.estimatedDelivery}`;
+            idText = `${data.carrier} • #${data.trackingNumber.split('-')[1]}`;
+            detailsAction = () => setActiveTab('track');
+          } else {
+            // Order Logic
+            icon = Package;
+            // Map Order Status to Color
+            switch (data.status.toLowerCase()) {
+              case 'processing': color = '#FF9500'; break;
+              case 'delivered': color = '#34C759'; break;
+              case 'cancelled': color = '#FF3B30'; break;
+              default: color = '#8E8E93';
+            }
+
+            title = data.items;
+            // Shorten items string if needed
+            if (title.length > 30) title = title.substring(0, 28) + '...';
+
+            statusText = data.status;
+            subText = `Placed on ${data.date}`;
+            idText = `Order #${data.id.split('-')[1]}`;
+            detailsAction = () => { setSettingsView('orders'); setActiveTab('settings'); };
+          }
+
+          const IconComponent = icon;
+
+          return (
+            <TouchableOpacity key={`${item.type}-${i}`} style={styles.orderCard} activeOpacity={0.9} onPress={detailsAction}>
+              <View style={styles.cardTop}>
+                <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+                  <View style={[styles.statusIconBox, { backgroundColor: color + '15' }]}>
+                    <IconComponent size={24} color={color} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.activityTitle} numberOfLines={1}>{title}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 6 }}>
+                      <Text style={styles.activityMeta}>{subText}</Text>
+                    </View>
+                  </View>
+                  <View style={[styles.miniStatus, { backgroundColor: color + '15' }]}>
+                    <Text style={[styles.miniStatusText, { color: color }]}>{statusText.toUpperCase()}</Text>
                   </View>
                 </View>
-                <View style={[styles.miniStatus, { backgroundColor: color + '15' }]}>
-                  <Text style={[styles.miniStatusText, { color: color }]}>{s.status.replace('_', ' ')}</Text>
+              </View>
+              <View style={styles.cardBottom}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Image source={require('./assets/logo.png')} style={{ width: 16, height: 16, tintColor: '#8E8E93' }} resizeMode="contain" />
+                  <Text style={styles.orderIdSm}>{idText}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={styles.viewDetails}>View</Text>
+                  <ChevronRight size={14} color="#0223E6" />
                 </View>
               </View>
-            </View>
-            <View style={styles.cardBottom}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Image source={require('./assets/logo.png')} style={{ width: 16, height: 16, tintColor: '#8E8E93' }} resizeMode="contain" />
-                <Text style={styles.orderIdSm}>{s.carrier} • #{s.trackingNumber.split('-')[1]}</Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.viewDetails}>Track</Text>
-                <ChevronRight size={14} color="#0223E6" />
-              </View>
-            </View>
-          </TouchableOpacity>
-        );
-      })}
-
-      {shipments.length === 0 && (
-        <View style={styles.emptyActivity}>
-          <Clock size={24} color="#C7C7CC" />
-          <Text style={styles.emptyText}>No recent activity.</Text>
-        </View>
-      )}
+            </TouchableOpacity>
+          );
+        });
+      })()}
 
       {/* Banner Ad */}
       <TouchableOpacity activeOpacity={0.9} style={{ marginTop: 20 }}>
@@ -557,131 +602,132 @@ const App: React.FC = () => {
   }
 
   return (
-
-    <StripeProvider
-      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_12345'}
-      merchantIdentifier="merchant.com.tenbox.app" // Optional, for Apple Pay
-    >
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" />
-        <View style={styles.header}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => {
-              setSettingsView('addresses');
-              setActiveTab('settings');
-            }}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
-          >
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
-              <MapPin size={20} color="#0223E6" fill="#0223E6" />
-            </View>
-            <View>
-              <Text style={{ fontSize: 11, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Delivering to
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text style={{ fontSize: 15, color: '#000', fontWeight: '700' }}>
-                  {addresses.find(a => a.default)?.label || addresses[0]?.label || 'Set Location'}
-                </Text>
-                <ChevronRight size={14} color="#0223E6" style={{ transform: [{ rotate: '90deg' }] }} />
-              </View>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.profileBtn} onPress={() => setShowSettings(true)}>
-            {user?.avatar ? (
-              <Image source={{ uri: user.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />
-            ) : (
-              <User color="#0223E6" size={20} />
-            )}
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.content}>
-          {activeTab === 'home' && renderHome()}
-          {activeTab === 'shop' && renderShop()}
-          {activeTab === 'cart' && renderCart()}
-          {activeTab === 'track' && renderTrack()}
-          {activeTab === 'settings' && renderSettings()}
-        </View>
-
-        <View style={styles.tabBar}>
-          {[
-            { id: 'home', icon: HomeIcon, label: 'Home' },
-            { id: 'shop', icon: ShoppingBag, label: 'Shop' },
-            { id: 'cart', icon: ShoppingCart, label: 'Cart', badge: items.length },
-            { id: 'track', icon: Search, label: 'Track' },
-            { id: 'settings', icon: Settings, label: 'Settings' }
-          ].map(tab => (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <StripeProvider
+        publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_12345'}
+        merchantIdentifier="merchant.com.tenbox.app" // Optional, for Apple Pay
+      >
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" />
+          <View style={styles.header}>
             <TouchableOpacity
-              key={tab.id}
-              style={styles.tabItem}
-              onPress={() => setActiveTab(tab.id as TabType)}
-              activeOpacity={0.6}
+              activeOpacity={0.8}
+              onPress={() => {
+                setSettingsView('addresses');
+                setActiveTab('settings');
+              }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
             >
-              <View>
-                <tab.icon size={24} color={activeTab === tab.id ? '#0223E6' : '#8E8E93'} />
-                {tab.badge ? (
-                  <View style={styles.tabBadge}>
-                    <Text style={styles.tabBadgeText}>{tab.badge}</Text>
-                  </View>
-                ) : null}
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
+                <MapPin size={20} color="#0223E6" fill="#0223E6" />
               </View>
-              <Text style={[styles.tabLabel, activeTab === tab.id && { color: '#0223E6' }]}>{tab.label}</Text>
+              <View>
+                <Text style={{ fontSize: 11, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Delivering to
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={{ fontSize: 15, color: '#000', fontWeight: '700' }}>
+                    {addresses.find(a => a.default)?.label || addresses[0]?.label || 'Set Location'}
+                  </Text>
+                  <ChevronRight size={14} color="#0223E6" style={{ transform: [{ rotate: '90deg' }] }} />
+                </View>
+              </View>
             </TouchableOpacity>
-          ))}
-        </View>
 
-        {showModal && (
-          <ImportPreviewModal
-            url={importUrl}
-            initialTitle={extractedData.title}
-            initialImage={extractedData.image}
-            initialPrice={extractedData.price}
-            initialCurrency={extractedData.currency}
-            onClose={() => setShowModal(false)}
-            onConfirm={(item) => {
-              addItem(item);
-              setShowModal(false);
-              setImportUrl('');
-              setActiveTab('cart');
+            <TouchableOpacity style={styles.profileBtn} onPress={() => setShowSettings(true)}>
+              {user?.avatar ? (
+                <Image source={{ uri: user.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+              ) : (
+                <User color="#0223E6" size={20} />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.content}>
+            {activeTab === 'home' && renderHome()}
+            {activeTab === 'shop' && renderShop()}
+            {activeTab === 'cart' && renderCart()}
+            {activeTab === 'track' && renderTrack()}
+            {activeTab === 'settings' && renderSettings()}
+          </View>
+
+          <View style={styles.tabBar}>
+            {[
+              { id: 'home', icon: HomeIcon, label: 'Home' },
+              { id: 'shop', icon: ShoppingBag, label: 'Shop' },
+              { id: 'cart', icon: ShoppingCart, label: 'Cart', badge: items.length },
+              { id: 'track', icon: Search, label: 'Track' },
+              { id: 'settings', icon: Settings, label: 'Settings' }
+            ].map(tab => (
+              <TouchableOpacity
+                key={tab.id}
+                style={styles.tabItem}
+                onPress={() => setActiveTab(tab.id as TabType)}
+                activeOpacity={0.6}
+              >
+                <View>
+                  <tab.icon size={24} color={activeTab === tab.id ? '#0223E6' : '#8E8E93'} />
+                  {tab.badge ? (
+                    <View style={styles.tabBadge}>
+                      <Text style={styles.tabBadgeText}>{tab.badge}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text style={[styles.tabLabel, activeTab === tab.id && { color: '#0223E6' }]}>{tab.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {showModal && (
+            <ImportPreviewModal
+              url={importUrl}
+              initialTitle={extractedData.title}
+              initialImage={extractedData.image}
+              initialPrice={extractedData.price}
+              initialCurrency={extractedData.currency}
+              onClose={() => setShowModal(false)}
+              onConfirm={(item) => {
+                addItem(item);
+                setShowModal(false);
+                setImportUrl('');
+                setActiveTab('cart');
+              }}
+            />
+          )}
+          <InAppBrowser
+            isVisible={!!browserUrl}
+            url={browserUrl || ''}
+            storeName={activeStoreName}
+            onClose={handleCloseBrowser}
+            onAddToCart={handleBrowserAddToCart}
+          />
+          <SettingsModal
+            visible={showSettings}
+            onClose={() => setShowSettings(false)}
+            onLogout={() => {
+              setShowSettings(false);
+              logout();
             }}
           />
-        )}
-        <InAppBrowser
-          isVisible={!!browserUrl}
-          url={browserUrl || ''}
-          storeName={activeStoreName}
-          onClose={handleCloseBrowser}
-          onAddToCart={handleBrowserAddToCart}
-        />
-        <SettingsModal
-          visible={showSettings}
-          onClose={() => setShowSettings(false)}
-          onLogout={() => {
-            setShowSettings(false);
-            logout();
-          }}
-        />
-        <ShipFlow
-          visible={showShipFlow}
-          onClose={() => setShowShipFlow(false)}
-          onComplete={() => {
-            setShowShipFlow(false);
-            setActiveTab('track');
-          }}
-        />
-        <CheckoutFlow
-          visible={showCheckout}
-          onClose={() => setShowCheckout(false)}
-          onComplete={() => {
-            setShowCheckout(false);
-            setActiveTab('home'); // Go home after purchase
-          }}
-        />
-      </SafeAreaView>
-    </StripeProvider>
+          <ShipFlow
+            visible={showShipFlow}
+            onClose={() => setShowShipFlow(false)}
+            onComplete={() => {
+              setShowShipFlow(false);
+              setActiveTab('track');
+            }}
+          />
+          <CheckoutFlow
+            visible={showCheckout}
+            onClose={() => setShowCheckout(false)}
+            onComplete={() => {
+              setShowCheckout(false);
+              setActiveTab('home'); // Go home after purchase
+            }}
+          />
+        </SafeAreaView>
+      </StripeProvider>
+    </GestureHandlerRootView>
   );
 };
 

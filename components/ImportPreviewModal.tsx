@@ -107,7 +107,13 @@ const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({ url, initialTit
   };
 
   return (
-    <Modal transparent animationType="slide" visible={true}>
+    <Modal
+      animationType="slide"
+      visible={true}
+      presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'overFullScreen'}
+      transparent={Platform.OS !== 'ios'}
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}

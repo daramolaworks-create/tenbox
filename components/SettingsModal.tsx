@@ -156,6 +156,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, onLogou
             animationType="slide"
             presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'overFullScreen'}
             transparent={Platform.OS !== 'ios'}
+            onRequestClose={onClose}
         >
             <SafeAreaView style={styles.container}>
                 {renderHeader()}
