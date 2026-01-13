@@ -64,10 +64,13 @@ const { width } = Dimensions.get('window');
 
 const App: React.FC = () => {
   const [fontsLoaded] = useFonts({
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_700Bold
   });
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated } = useCartStore();
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [importUrl, setImportUrl] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,12 +80,17 @@ const App: React.FC = () => {
   const [browserUrl, setBrowserUrl] = useState<string | null>(null);
   const [activeStoreName, setActiveStoreName] = useState('');
   const [extractedData, setExtractedData] = useState<{ title?: string; image?: string }>({});
-  const { items, addItem, removeItem, updateQuantity, shipments, user, addresses } = useCartStore();
+  const { items, addItem, removeItem, updateQuantity, shipments, user, addresses, checkSession, logout, products, fetchProducts, fetchAddresses, fetchShipments, initializeSubscription } = useCartStore();
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [settingsView, setSettingsView] = useState<'list' | 'account' | 'addresses' | 'orders'>('list');
   const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
+    checkSession();
+    fetchProducts();
+    fetchAddresses();
+    fetchShipments();
+    initializeSubscription();
     if (Platform.OS === 'android') {
       if (UIManager.setLayoutAnimationEnabledExperimental) {
         UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -147,7 +155,7 @@ const App: React.FC = () => {
     <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
       <View style={{ marginTop: 10, marginBottom: 24 }}>
         <Text style={styles.heroText}>Good Morning,</Text>
-        <Text style={[styles.heroText, { color: '#0223E6' }]}>{user.name}.</Text>
+        <Text style={[styles.heroText, { color: '#0223E6' }]}>{user?.name}.</Text>
       </View>
 
       <OfferSlider />
@@ -325,7 +333,7 @@ const App: React.FC = () => {
         <View style={styles.screen}>
           <TouchableOpacity onPress={() => setSettingsView('list')} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
             <ChevronRight size={24} color="#0223E6" style={{ transform: [{ rotate: '180deg' }] }} />
-            <Text style={{ fontSize: 17, color: '#0223E6', marginLeft: 4, fontWeight: '600', fontFamily: 'ZalandoMedium' }}>Back to Settings</Text>
+            <Text style={{ fontSize: 17, color: '#0223E6', marginLeft: 4, fontWeight: '600' }}>Back to Settings</Text>
           </TouchableOpacity>
 
           {settingsView === 'account' && (
@@ -356,7 +364,7 @@ const App: React.FC = () => {
 
         <TouchableOpacity style={styles.profileHeader} activeOpacity={0.8} onPress={() => setSettingsView('account')}>
           <View style={styles.profileAvatarLarge}>
-            {user.avatar ? (
+            {user?.avatar ? (
               <Image source={{ uri: user.avatar }} style={{ width: 80, height: 80, borderRadius: 40 }} />
             ) : (
               <User color="#fff" size={32} />
@@ -365,15 +373,15 @@ const App: React.FC = () => {
               <Text style={styles.editBadgeText}>EDIT</Text>
             </View>
           </View>
-          <Text style={styles.profileName}>{user.name}</Text>
-          <Text style={styles.profileEmail}>{user.email}</Text>
+          <Text style={styles.profileName}>{user?.name}</Text>
+          <Text style={styles.profileEmail}>{user?.email}</Text>
         </TouchableOpacity>
 
         <View style={styles.settingsList}>
           {[
             { icon: MapPin, label: 'Saved Addresses', action: () => setSettingsView('addresses') },
             { icon: Clock, label: 'Order History', action: () => setSettingsView('orders') },
-            { icon: LogOut, label: 'Log Out', color: '#FF3B30', action: () => setIsAuthenticated(false) }
+            { icon: LogOut, label: 'Log Out', color: '#FF3B30', action: () => logout() }
           ].map((item, i) => (
             <TouchableOpacity key={i} style={styles.settingItem} onPress={item.action}>
               <View style={styles.settingLeft}>
@@ -405,6 +413,49 @@ const App: React.FC = () => {
           <Plus color="#fff" size={28} />
         </Button>
       </View>
+
+
+
+      {/* Featured Products from Supabase */}
+      {
+        products.length > 0 && (
+          <View style={{ marginBottom: 32 }}>
+            <Text style={styles.sectionLabel}>FEATURED FINDINGS</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -24, paddingHorizontal: 24 }}>
+              <View style={{ flexDirection: 'row', gap: 16 }}>
+                {products.map((product) => (
+                  <TouchableOpacity
+                    key={product.id}
+                    activeOpacity={0.8}
+                    style={{ width: 140 }}
+                    onPress={() => {
+                      // Add to cart or view details logic
+                      addItem({
+                        id: product.id,
+                        title: product.title,
+                        price: product.price,
+                        image: product.image || 'https://via.placeholder.com/150',
+                        quantity: 1,
+                        store: product.store || 'Tenbox Find',
+                        notes: '',
+                        url: product.url || ''
+                      });
+                      Alert.alert('Added to Cart', `${product.title} has been added to your cart.`);
+                    }}
+                  >
+                    <Image
+                      source={{ uri: product.image || 'https://via.placeholder.com/150' }}
+                      style={{ width: 140, height: 140, borderRadius: 16, backgroundColor: '#fff' }}
+                    />
+                    <Text numberOfLines={2} style={{ fontSize: 13, fontWeight: '600', marginTop: 8, color: '#000' }}>{product.title}</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#0223E6', marginTop: 4 }}>${product.price}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        )
+      }
 
       <Text style={styles.sectionLabel}>PARTNER STORES</Text>
 
@@ -490,8 +541,8 @@ const App: React.FC = () => {
     return <LoaderScreen />;
   }
 
-  if (!isAuthenticated) {
-    return <AuthScreen onLogin={() => setIsAuthenticated(true)} />;
+  if (!isAuthenticated || !user) {
+    return <AuthScreen onLogin={() => { }} />;
   }
 
   return (
@@ -510,11 +561,11 @@ const App: React.FC = () => {
             <MapPin size={20} color="#0223E6" fill="#0223E6" />
           </View>
           <View>
-            <Text style={{ fontSize: 11, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: 'ZalandoBold' }}>
+            <Text style={{ fontSize: 11, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
               Delivering to
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={{ fontSize: 15, color: '#000', fontWeight: '700', fontFamily: 'ZalandoBold' }}>
+              <Text style={{ fontSize: 15, color: '#000', fontWeight: '700' }}>
                 {addresses.find(a => a.default)?.label || addresses[0]?.label || 'Set Location'}
               </Text>
               <ChevronRight size={14} color="#0223E6" style={{ transform: [{ rotate: '90deg' }] }} />
@@ -523,7 +574,7 @@ const App: React.FC = () => {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.profileBtn} onPress={() => setShowSettings(true)}>
-          {user.avatar ? (
+          {user?.avatar ? (
             <Image source={{ uri: user.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />
           ) : (
             <User color="#0223E6" size={20} />
@@ -592,7 +643,7 @@ const App: React.FC = () => {
         onClose={() => setShowSettings(false)}
         onLogout={() => {
           setShowSettings(false);
-          setIsAuthenticated(false);
+          logout();
         }}
       />
       <ShipFlow
@@ -762,19 +813,19 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
     flex: 1,
     marginRight: 8,
-    fontFamily: undefined,
+
   },
   listPrice: {
     fontSize: 14,
     fontWeight: '700',
     color: '#8E8E93',
-    fontFamily: undefined,
+
   },
   listDate: {
     fontSize: 13,
     color: '#8E8E93',
     fontWeight: '500',
-    fontFamily: undefined,
+
   },
   miniStatus: {
     paddingHorizontal: 8,
@@ -785,21 +836,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
-    fontFamily: undefined,
+
   },
   orderIdSm: {
     fontSize: 12,
     color: '#8E8E93',
     fontWeight: '600',
     letterSpacing: 0.5,
-    fontFamily: undefined,
+
   },
   viewDetails: {
     fontSize: 13,
     color: '#0223E6',
     fontWeight: '600',
     marginRight: 2,
-    fontFamily: undefined,
+
   },
   statusIconBox: {
     width: 48,
@@ -813,13 +864,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1C1C1E',
     marginBottom: 2,
-    fontFamily: undefined,
+
   },
   activityMeta: {
     fontSize: 13,
     color: '#8E8E93',
     fontWeight: '500',
-    fontFamily: undefined,
+
   }
 });
 

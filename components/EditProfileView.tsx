@@ -8,9 +8,9 @@ import { User, Camera } from 'lucide-react-native';
 
 const EditProfileView = () => {
     const { user, updateProfile } = useCartStore();
-    const [name, setName] = useState(user.name);
-    const [email, setEmail] = useState(user.email);
-    const [avatar, setAvatar] = useState(user.avatar || '');
+    const [name, setName] = useState(user?.name || '');
+    const [email, setEmail] = useState(user?.email || '');
+    const [avatar, setAvatar] = useState(user?.avatar || '');
 
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({

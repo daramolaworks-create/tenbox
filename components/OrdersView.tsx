@@ -1,13 +1,18 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { Package, ChevronRight, MapPin, Receipt, HelpCircle } from 'lucide-react-native';
+import { Package, ChevronRight, MapPin, Receipt, HelpCircle, Box } from 'lucide-react-native';
 import { useCartStore } from '../store';
 import { Button } from './UI';
 
 const OrdersView = () => {
-    const { orderHistory } = useCartStore();
+    const { orderHistory, fetchOrders, shipments, fetchShipments } = useCartStore();
     const [selectedOrder, setSelectedOrder] = React.useState<any>(null);
+
+    React.useEffect(() => {
+        fetchOrders();
+        fetchShipments();
+    }, []);
 
     const getStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
@@ -92,6 +97,39 @@ const OrdersView = () => {
                     </View>
                 </View>
 
+                {/* Shipment History Card */}
+                <View style={[styles.card, { marginTop: 16, padding: 20 }]}>
+                    <Text style={styles.historyTitle}>Shipment History</Text>
+                    {shipments.length === 0 ? (
+                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 20 }}>
+                            <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4076/4076432.png' }} style={{ width: 80, height: 80, opacity: 0.3, marginBottom: 16 }} />
+                            <Text style={{ fontSize: 18, color: '#8E8E93', fontWeight: '500' }}>No orders yet</Text>
+                        </View>
+                    ) : (
+                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.historyList}>
+                            {shipments.map((shipment: any) => (
+                                <View key={shipment.id} style={styles.historyCard}>
+                                    <View style={styles.historyLeft}>
+                                        <View style={[styles.carrierIcon, { backgroundColor: '#F2F2F7' }]}>
+                                            <Box size={20} color="#000" />
+                                        </View>
+                                        <View>
+                                            <Text style={styles.historyCarrier}>{shipment.carrier}</Text>
+                                            <Text style={styles.historyTrack}>{shipment.tracking_number}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.historyRight}>
+                                        <View style={[styles.statusBadge, { backgroundColor: '#E5E5EA' }]}>
+                                            <Text style={styles.statusText}>{shipment.status.toUpperCase()}</Text>
+                                        </View>
+                                        <Text style={styles.historyDate}>{new Date(shipment.created_at).toLocaleDateString()}</Text>
+                                    </View>
+                                </View>
+                            ))}
+                        </ScrollView>
+                    )}
+                </View>
+
                 {/* Shipping Info Card */}
                 <View style={[styles.card, { marginTop: 16, padding: 20 }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
@@ -101,18 +139,74 @@ const OrdersView = () => {
                     <Text style={styles.addressText}>{selectedOrder.shippingAddress || 'No address provided'}</Text>
                 </View>
 
+                {/* Shipment History (Contextual) */}
+                {
+                    shipments.length > 0 && (
+                        <View style={[styles.card, { marginTop: 16, padding: 20 }]}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                                <Box size={20} color="#0223E6" />
+                                <Text style={styles.sectionHeader}>RELATIONSHIP HISTORY</Text>
+                            </View>
+                            {shipments.slice(0, 3).map((ship: any) => (
+                                <View key={ship.id} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                                    <Text style={{ color: '#8E8E93' }}>{new Date(ship.created_at).toLocaleDateString()}</Text>
+                                    <Text style={{ fontWeight: '600' }}>{ship.tracking_number}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    )
+                }
+
                 {/* Support Action */}
                 <Button variant="outline" style={{ marginTop: 24 }}>
                     <HelpCircle size={18} color="#000" style={{ marginRight: 8 }} />
                     Need Help with this Order?
                 </Button>
-            </ScrollView>
+            </ScrollView >
         );
     }
 
     return (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
-            {orderHistory.map((order) => {
+            <Text style={{ fontSize: 24, fontWeight: '700', marginBottom: 24 }}>Your Orders</Text>
+
+            {/* Shipments List */}
+            {shipments.length === 0 ? (
+                <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60 }}>
+                    <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4076/4076432.png' }} style={{ width: 80, height: 80, opacity: 0.3, marginBottom: 16 }} />
+                    <Text style={{ fontSize: 18, color: '#8E8E93', fontWeight: '500' }}>No orders yet</Text>
+                    <Button variant="outline" style={{ marginTop: 24 }} onPress={() => { }}>Start Shipping</Button>
+                </View>
+            ) : (
+                <View style={{ gap: 16 }}>
+                    {shipments.map((shipment: any) => (
+                        <View key={shipment.id} style={styles.orderCard}>
+                            <View style={styles.cardTop}>
+                                <View style={{ flexDirection: 'row', gap: 16 }}>
+                                    <View style={styles.listIconBox}>
+                                        <Box size={24} color="#0223E6" />
+                                    </View>
+                                    <View style={{ flex: 1, justifyContent: 'center' }}>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                            <Text style={styles.listTitle}>{shipment.carrier} Label</Text>
+                                            <Text style={styles.listPrice}>{shipment.tracking_number}</Text>
+                                        </View>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                                            <Text style={styles.listDate}>{new Date(shipment.created_at).toLocaleDateString()}</Text>
+                                            <View style={[styles.miniStatus, { backgroundColor: '#E5E5EA' }]}>
+                                                <Text style={[styles.miniStatusText, { color: '#000' }]}>{shipment.status?.toUpperCase() || 'CREATED'}</Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                </View>
+                            </View>
+                        </View>
+                    ))}
+                </View>
+            )}
+
+            {/* Legacy Store Orders (Hidden if empty) */}
+            {orderHistory.length > 0 && orderHistory.map((order) => {
                 const statusColors = getStatusColor(order.status);
                 const firstImage = order.itemsList?.[0]?.image;
 
@@ -428,6 +522,18 @@ const styles = StyleSheet.create({
         lineHeight: 24,
         fontWeight: '500',
     },
+    // HISTORY STYLES
+    historyTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
+    historyList: { gap: 12 },
+    historyCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+    historyLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    carrierIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    historyCarrier: { fontSize: 15, fontWeight: '600', color: '#000' },
+    historyTrack: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
+    historyRight: { alignItems: 'flex-end', gap: 4 },
+    statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+    statusText: { fontSize: 10, fontWeight: '700' },
+    historyDate: { fontSize: 12, color: '#8E8E93' },
 });
 
 export default OrdersView;

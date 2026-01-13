@@ -19,47 +19,51 @@ const DELIVERY_OPTIONS = [
 
 const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplete }) => {
     const [step, setStep] = useState<'address' | 'delivery' | 'review'>('address');
-    const { addresses, user, items, clearCart } = useCartStore();
+    const { addresses, user, items, clearCart, createOrder } = useCartStore();
 
-    // Selection State
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-    const [selectedDeliveryId, setSelectedDeliveryId] = useState<string>('3'); // Default to UPS
+    const [selectedDeliveryId, setSelectedDeliveryId] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // Initial load: select default address
     useEffect(() => {
-        if (visible) {
+        if (addresses.some(a => a.default) && !selectedAddressId) {
             const defaultAddr = addresses.find(a => a.default);
             if (defaultAddr) setSelectedAddressId(defaultAddr.id);
-            else if (addresses.length > 0) setSelectedAddressId(addresses[0].id);
-            setStep('address');
+        } else if (addresses.length > 0 && !selectedAddressId) {
+            setSelectedAddressId(addresses[0].id);
         }
-    }, [visible, addresses]);
+    }, [addresses, visible]);
 
     const handleNext = () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         if (step === 'address') {
             if (!selectedAddressId) {
-                Alert.alert("Address Required", "Please select a shipping address.");
+                Alert.alert('Required', 'Please select a delivery address.');
                 return;
             }
             setStep('delivery');
         } else if (step === 'delivery') {
+            if (!selectedDeliveryId) {
+                Alert.alert('Required', 'Please select a delivery method.');
+                return;
+            }
             setStep('review');
         }
     };
 
     const handleBack = () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        if (step === 'delivery') setStep('address');
         if (step === 'review') setStep('delivery');
+        else if (step === 'delivery') setStep('address');
     };
 
-    const handlePay = () => {
+    const handlePay = async () => {
         setIsProcessing(true);
-        // Mock API call
-        setTimeout(() => {
-            setIsProcessing(false);
+        try {
+            const itemsSummary = items.length > 1
+                ? `${items[0].title} & ${items.length - 1} more`
+                : items[0]?.title || 'Order Items';
+
+            await createOrder(total, itemsSummary);
+
             Alert.alert(
                 "Order Placed!",
                 "Your order has been successfully processed.",
@@ -70,7 +74,12 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                     }
                 }]
             );
-        }, 2000);
+        } catch (error: any) {
+            console.error(error);
+            Alert.alert("Error", error.message || "Failed to place order.");
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     // Derived Financials

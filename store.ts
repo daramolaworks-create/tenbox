@@ -1,5 +1,7 @@
 import { create } from 'zustand';
+import { Alert } from 'react-native';
 import { CartItem, Shipment } from './types';
+import { supabase } from './lib/supabase';
 
 export interface Address {
   id: string;
@@ -33,24 +35,39 @@ interface AppState {
 
   // Shipments
   shipments: Shipment[];
-  addShipment: (shipment: Shipment) => void;
+  fetchShipments: () => Promise<void>;
+  addShipment: (shipment: Shipment) => Promise<void>;
 
-  // User Profile
-  user: UserProfile;
+  // Products
+  products: any[];
+  fetchProducts: () => Promise<void>;
+
+  // Orders
+  orderHistory: any[];
+  fetchOrders: () => Promise<void>;
+  createOrder: (total: number, itemsSummary: string) => Promise<void>;
+  initializeSubscription: () => void;
+
+  // Auth
+  user: UserProfile | null;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, name: string) => Promise<void>;
+  logout: () => Promise<void>;
+  checkSession: () => Promise<void>;
   updateProfile: (profile: Partial<UserProfile>) => void;
 
   // Addresses
   addresses: Address[];
-  addAddress: (address: Address) => void;
-  updateAddress: (id: string, address: Partial<Address>) => void;
-  removeAddress: (id: string) => void;
+  fetchAddresses: () => Promise<void>;
+  addAddress: (address: Address) => Promise<void>;
+  updateAddress: (id: string, address: Partial<Address>) => Promise<void>;
+  removeAddress: (id: string) => Promise<void>;
 
   // Notifications
   notifications: NotificationPrefs;
   toggleNotification: (key: keyof NotificationPrefs) => void;
 
-  // Orders (History)
-  orderHistory: any[]; // Using simplified structure for now
 }
 
 export const useCartStore = create<AppState>((set) => ({
@@ -77,61 +94,235 @@ export const useCartStore = create<AppState>((set) => ({
   })),
   clearCart: () => set({ items: [] }),
 
-  // Shipments
-  shipments: [
-    {
-      id: 's1',
-      trackingNumber: 'TBX-84920156',
-      carrier: 'Tenbox Express',
-      status: 'in_transit',
-      origin: 'Tokyo, JP',
-      destination: 'San Francisco, US',
-      estimatedDelivery: 'Jan 14',
-      itemsString: 'Sony WH-1000XM5',
-      image: 'https://m.media-amazon.com/images/I/51SKmu2G9FL._AC_UF1000,1000_QL80_.jpg',
-      events: [
-        { date: 'Jan 09, 10:00 AM', status: 'in_transit', description: 'Arrived at sorting facility', location: 'Los Angeles Gateway' },
-        { date: 'Jan 08, 04:30 PM', status: 'in_transit', description: 'Departed origin country', location: 'Narita Intl Airport' },
-        { date: 'Jan 08, 09:15 AM', status: 'pre_transit', description: 'Package received by carrier', location: 'Tokyo Logistics Center' },
-      ]
-    },
-    {
-      id: 's2',
-      trackingNumber: 'TBX-11029384',
-      carrier: 'DHL',
-      status: 'delivered',
-      origin: 'London, UK',
-      destination: 'New York, US',
-      estimatedDelivery: 'Jan 05',
-      itemsString: 'ASOS Summer Collection',
-      image: 'https://images.asos-media.com/products/asos-design-oversized-t-shirt-with-crew-neck-in-white/201217036-1-white?$n_640w$&wid=513&fit=constrain',
-      events: [
-        { date: 'Jan 05, 02:45 PM', status: 'delivered', description: 'Delivered to front porch', location: 'New York, NY' },
-        { date: 'Jan 05, 08:30 AM', status: 'out_for_delivery', description: 'Out for delivery', location: 'Brooklyn Facility' },
-      ]
-    }
-  ],
-  addShipment: (shipment) => set((state) => ({ shipments: [shipment, ...state.shipments] })),
+  shipments: [],
+  fetchShipments: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
 
-  // User Profile
-  user: {
-    name: 'Wudan',
-    email: 'wudan@tenbox.com',
+    const { data, error } = await supabase
+      .from('shipments')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching shipments:', error);
+      return;
+    }
+
+    if (data) {
+      set({
+        shipments: data.map(s => ({
+          id: s.id,
+          trackingNumber: s.tracking_number,
+          carrier: s.carrier,
+          status: s.status,
+          origin: s.origin,
+          destination: s.destination,
+          estimatedDelivery: s.estimated_delivery,
+          itemsString: s.items_summary,
+          image: s.label_url || 'https://via.placeholder.com/150', // Using label_url as image for now, or placeholder
+          events: [] // Events would need a separate table join or JSON column
+        }))
+      });
+    }
   },
-  updateProfile: (profile) => set((state) => ({ user: { ...state.user, ...profile } })),
+  addShipment: async (shipment) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    const { error } = await supabase
+      .from('shipments')
+      .insert({
+        user_id: session.user.id,
+        tracking_number: shipment.trackingNumber,
+        carrier: shipment.carrier,
+        status: shipment.status,
+        origin: shipment.origin,
+        destination: shipment.destination,
+        estimated_delivery: shipment.estimatedDelivery,
+        items_summary: shipment.itemsString,
+        label_url: shipment.image
+      });
+
+    if (error) {
+      Alert.alert('Error', 'Failed to create shipment');
+      console.error(error);
+      return;
+    }
+
+    await useCartStore.getState().fetchShipments();
+  },
+
+  // User Profile & Auth
+  user: null,
+  isAuthenticated: false,
+
+  checkSession: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      set({
+        user: {
+          name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
+          email: session.user.email || '',
+          avatar: session.user.user_metadata.avatar_url,
+        },
+        isAuthenticated: true
+      });
+    }
+  },
+
+  login: async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    if (data.user) {
+      set({
+        user: {
+          name: data.user.user_metadata.full_name || data.user.email?.split('@')[0] || 'User',
+          email: data.user.email || '',
+          avatar: data.user.user_metadata.avatar_url,
+        },
+        isAuthenticated: true
+      });
+    }
+  },
+
+  signup: async (email, password, name) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name }
+      }
+    });
+    if (error) throw error;
+    if (data.user) {
+      set({
+        user: {
+          name: name,
+          email: email,
+        },
+        isAuthenticated: true
+      });
+    }
+  },
+
+  logout: async () => {
+    await supabase.auth.signOut();
+    set({ user: null, isAuthenticated: false });
+  },
+
+  updateProfile: async (profile) => {
+    const updates: any = {};
+    if (profile.name) updates.data = { full_name: profile.name };
+    // separate email update logic if needed, but for now just metadata
+    // Avatar usually goes to storage, but we can store URL in metadata
+    if (profile.avatar) updates.data = { ...updates.data, avatar_url: profile.avatar };
+
+    const { error } = await supabase.auth.updateUser(updates);
+
+    if (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'Failed to update profile');
+      return;
+    }
+
+    set((state) => ({ user: state.user ? { ...state.user, ...profile } : null }));
+  },
 
   // Addresses
-  addresses: [
-    { id: 'a1', label: 'Home', street: '123 Market St', city: 'San Francisco', zip: '94103', country: 'US', default: true },
-    { id: 'a2', label: 'Office', street: '500 Terry Francois St', city: 'San Francisco', zip: '94158', country: 'US' }
-  ],
-  addAddress: (address) => set((state) => ({ addresses: [...state.addresses, address] })),
-  updateAddress: (id, address) => set((state) => ({
-    addresses: state.addresses.map(a => a.id === id ? { ...a, ...address } : a)
-  })),
-  removeAddress: (id) => set((state) => ({
-    addresses: state.addresses.filter(a => a.id !== id)
-  })),
+  addresses: [],
+  fetchAddresses: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    const { data, error } = await supabase
+      .from('addresses')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('is_default', { ascending: false }); // Defaults first
+
+    if (error) {
+      console.error('Error fetching addresses:', error);
+      return;
+    }
+
+    if (data) {
+      set({
+        addresses: data.map(a => ({
+          id: a.id,
+          label: a.label,
+          street: a.street,
+          city: a.city,
+          zip: a.zip,
+          country: a.country,
+          default: a.is_default
+        }))
+      });
+    }
+  },
+
+  addAddress: async (address) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    const { error } = await supabase
+      .from('addresses')
+      .insert({
+        user_id: session.user.id,
+        label: address.label,
+        street: address.street,
+        city: address.city,
+        zip: address.zip,
+        country: address.country,
+        is_default: address.default || false
+      });
+
+    if (error) {
+      Alert.alert('Error', 'Failed to add address');
+      return;
+    }
+    await useCartStore.getState().fetchAddresses();
+  },
+
+  updateAddress: async (id, address) => {
+    const updates: any = {};
+    if (address.label) updates.label = address.label;
+    if (address.street) updates.street = address.street;
+    if (address.city) updates.city = address.city;
+    if (address.zip) updates.zip = address.zip;
+    if (address.country) updates.country = address.country;
+    if (address.default !== undefined) {
+      updates.is_default = address.default;
+
+      // If setting to default, untoggle others (optional, or handle in UI/Function)
+      // For simplicity, we just update this one. 
+    }
+
+    const { error } = await supabase
+      .from('addresses')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) {
+      Alert.alert('Error', 'Failed to update address');
+      return;
+    }
+    await useCartStore.getState().fetchAddresses();
+  },
+
+  removeAddress: async (id) => {
+    const { error } = await supabase
+      .from('addresses')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      Alert.alert('Error', 'Failed to delete address');
+      return;
+    }
+    await useCartStore.getState().fetchAddresses();
+  },
 
   // Notifications
   notifications: {
@@ -143,50 +334,85 @@ export const useCartStore = create<AppState>((set) => ({
     notifications: { ...state.notifications, [key]: !state.notifications[key] }
   })),
 
-  // Order History (Mock)
-  orderHistory: [
-    {
-      id: 'ord-123',
-      date: 'Jan 10, 2025',
-      items: 'Nike Air Force 1 & 1 more',
-      total: '$155.00',
-      status: 'Processing',
-      itemsList: [
-        { name: 'Nike Air Force 1', price: '$110.00', qty: 1, image: 'https://static.nike.com/a/images/t_PDP_1280_v1/f_auto,q_auto:eco/b7d9211c-26e7-431a-ac24-b0540fb3c00f/air-force-1-07-mens-shoes-jBrhbr.png' },
-        { name: 'Nike Crew Socks', price: '$35.00', qty: 3, image: 'https://static.nike.com/a/images/t_PDP_1280_v1/f_auto,q_auto:eco/a147dfc2-0ba9-4bc7-932f-04983df49c6c/everyday-plus-cushioned-training-crew-socks-6-pairs-vlRw51.png' }
-      ],
-      subtotal: '$145.00',
-      shipping: '$10.00',
-      tax: '$0.00',
-      shippingAddress: '123 Market St, San Francisco, CA 94103'
-    },
-    {
-      id: 'ord-122',
-      date: 'Dec 24, 2024',
-      items: 'MacBook Pro M4',
-      total: '$1,299.00',
-      status: 'Delivered',
-      itemsList: [
-        { name: 'MacBook Pro M4', price: '$1,199.00', qty: 1, image: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/mbp14-spacegray-select-202310?wid=904&hei=840&fmt=jpeg&qlt=90&.v=1697311054290 ' }
-      ],
-      subtotal: '$1,199.00',
-      shipping: '$0.00',
-      tax: '$100.00',
-      shippingAddress: '123 Market St, San Francisco, CA 94103'
-    },
-    {
-      id: 'ord-121',
-      date: 'Nov 15, 2024',
-      items: 'Sony WH-1000XM5',
-      total: '$348.00',
-      status: 'Delivered',
-      itemsList: [
-        { name: 'Sony WH-1000XM5', price: '$348.00', qty: 1, image: 'https://m.media-amazon.com/images/I/51SKmu2G9FL._AC_UF1000,1000_QL80_.jpg' }
-      ],
-      subtotal: '$348.00',
-      shipping: '$0.00',
-      tax: '$0.00',
-      shippingAddress: '500 Terry Francois St, San Francisco, CA 94158'
-    },
-  ]
+  // Orders (Supabase)
+  orderHistory: [],
+
+  fetchOrders: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching orders:', error);
+      return;
+    }
+
+    if (data) {
+      set({
+        orderHistory: data.map(order => ({
+          id: order.id,
+          date: new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          items: order.items_summary || 'Order Items',
+          total: `$${order.total}`,
+          status: order.status,
+          itemsList: [], // Detail view would need a separate table or JSON column
+          shippingAddress: 'See details'
+        }))
+      });
+    }
+  },
+
+  createOrder: async (total: number, itemsSummary: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    const { error } = await supabase
+      .from('orders')
+      .insert({
+        user_id: session.user.id,
+        total: total,
+        status: 'Processing',
+        items_summary: itemsSummary
+      });
+
+    if (error) throw error;
+
+    // Refresh history
+    const state = useCartStore.getState();
+    await state.fetchOrders();
+  },
+
+  // Real-time Subscription
+  initializeSubscription: () => {
+    supabase
+      .channel('public:orders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+        // Simple refresh strategy
+        useCartStore.getState().fetchOrders();
+      })
+      .subscribe();
+  },
+
+  // Products (Supabase)
+  products: [],
+  fetchProducts: async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching products:', error);
+      return;
+    }
+
+    if (data) {
+      set({ products: data });
+    }
+  }
 }));

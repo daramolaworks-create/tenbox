@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Image, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Image, LayoutAnimation, Platform, UIManager, Alert } from 'react-native';
 import { X, MapPin, Package, CheckCircle, ArrowRight, Box, Scale, DollarSign } from 'lucide-react-native';
 import { Button, Input, Card } from './UI';
 import { useCartStore } from '../store';
 import { Shipment } from '../types';
+import { supabase } from '../lib/supabase';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -16,21 +17,101 @@ interface ShipFlowProps {
     onComplete: () => void;
 }
 
-const STEPS = ['Route', 'Details', 'Quotes', 'Confirm'];
+interface Rate {
+    object_id: string; // Rate ID from Shippo
+    amount: string;
+    currency: string;
+    provider: string; // DHL, UPS, etc.
+    servicelevel: {
+        name: string; // "Express Worldwide"
+    };
+    estimated_days: number;
+    duration_terms: string; // "1-2 Days"
+    provider_image_75: string; // Logo
+}
+
+const STEPS = ['Route', 'Details', 'Quotes', 'Address', 'Success'];
+
+const COUNTRIES = [
+    { code: 'US', name: 'United States', zipLabel: 'Zip Code' },
+    { code: 'GB', name: 'United Kingdom', zipLabel: 'Postcode' },
+    { code: 'CA', name: 'Canada', zipLabel: 'Postal Code' },
+    { code: 'NG', name: 'Nigeria', zipLabel: null }, // No Zip
+    { code: 'CN', name: 'China', zipLabel: 'Postal Code' },
+    { code: 'DE', name: 'Germany', zipLabel: 'Postal Code' },
+    { code: 'FR', name: 'France', zipLabel: 'Postal Code' },
+    { code: 'JP', name: 'Japan', zipLabel: 'Postal Code' },
+    { code: 'AE', name: 'UAE', zipLabel: null },
+];
+
+const CountrySelector = ({ value, onSelect }: { value: string, onSelect: (c: typeof COUNTRIES[0]) => void }) => {
+    const [visible, setVisible] = useState(false);
+
+    // Find selected country object
+    const selected = COUNTRIES.find(c => c.code === value) || COUNTRIES[0];
+
+    return (
+        <>
+            <TouchableOpacity onPress={() => setVisible(true)} style={styles.countryBtn}>
+                <Text style={styles.countryBtnText}>{selected ? selected.code : 'Select'}</Text>
+            </TouchableOpacity>
+
+            <Modal visible={visible} animationType="fade" transparent>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalHeader}>Select Country</Text>
+                        <ScrollView style={{ maxHeight: 300 }}>
+                            {COUNTRIES.map((c) => (
+                                <TouchableOpacity
+                                    key={c.code}
+                                    style={styles.countryItem}
+                                    onPress={() => {
+                                        onSelect(c);
+                                        setVisible(false);
+                                    }}
+                                >
+                                    <Text style={styles.countryCode}>{c.code}</Text>
+                                    <Text style={styles.countryName}>{c.name}</Text>
+                                    {value === c.code && <CheckCircle size={16} color="#0223E6" />}
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                        <Button onPress={() => setVisible(false)} variant="secondary" style={{ marginTop: 16 }}>Cancel</Button>
+                    </View>
+                </View>
+            </Modal>
+        </>
+    );
+};
 
 const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => {
     const { addShipment } = useCartStore();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
+    const [rates, setRates] = useState<Rate[]>([]);
+    const [selectedRate, setSelectedRate] = useState<Rate | null>(null);
 
-    // Route Data
-    const [fromCountry, setFromCountry] = useState('');
+    // Sender Data
+    const [fromName, setFromName] = useState('');
+    const [fromStreet, setFromStreet] = useState('');
     const [fromCity, setFromCity] = useState('');
-    const [toCountry, setToCountry] = useState('');
+    const [fromZip, setFromZip] = useState('');
+    const [fromCountry, setFromCountry] = useState('US');
+    const [fromPhone, setFromPhone] = useState('');
+    const [fromZipLabel, setFromZipLabel] = useState<string | null>('Zip Code');
+
+    // Recipient Data
+    const [toName, setToName] = useState('');
+    const [toStreet, setToStreet] = useState('');
     const [toCity, setToCity] = useState('');
+    const [toZip, setToZip] = useState('');
+    const [toCountry, setToCountry] = useState('US');
+    const [toPhone, setToPhone] = useState('');
+    const [toZipLabel, setToZipLabel] = useState<string | null>('Zip Code');
 
     // Package Data
     const [description, setDescription] = useState('');
+    const [quantity, setQuantity] = useState('1');
     const [weight, setWeight] = useState('');
     const [value, setValue] = useState('');
     const [length, setLength] = useState('');
@@ -39,16 +120,31 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
 
     const reset = () => {
         setStep(1);
-        setFromCountry('');
+        setFromName('');
+        setFromStreet('');
         setFromCity('');
-        setToCountry('');
+        setFromZip('');
+        setFromCountry('US');
+        setFromZipLabel('Zip Code');
+        setFromPhone('');
+
+        setToName('');
+        setToStreet('');
         setToCity('');
+        setToZip('');
+        setToCountry('US');
+        setToZipLabel('Zip Code');
+        setToPhone('');
         setDescription('');
+        setQuantity('1');
         setWeight('');
         setValue('');
         setLength('');
         setWidth('');
         setHeight('');
+        setHeight('');
+        setRates([]);
+        setSelectedRate(null);
         setLoading(false);
     };
 
@@ -57,38 +153,146 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
         onClose();
     };
 
-    const handleNext = () => {
+    const handleNext = async () => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        if (step < 3) setStep(step + 1);
+
+        if (step === 2) {
+            // Step 2 (Package) -> Fetch Rates
+            await fetchRates();
+        } else if (step === 4) {
+            // Step 4 (Address Details) -> Purchase
+            if (selectedRate) {
+                await handlePurchaseLabel(selectedRate);
+            }
+        } else {
+            // Step 1 -> 2, Step 3 -> 4
+            if (step < 5) setStep(step + 1);
+        }
     };
 
-    const handleSelectRate = (rate: any) => {
+    const fetchRates = async () => {
         setLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            const newShipment: Shipment = {
-                id: `s-${Date.now()}`,
-                trackingNumber: `TBX-${Math.floor(Math.random() * 100000000)}`,
-                carrier: rate.carrier,
-                status: 'pre_transit',
-                origin: `${fromCity}, ${fromCountry}`,
-                destination: `${toCity}, ${toCountry}`,
-                estimatedDelivery: rate.est,
-                itemsString: description || 'Packet',
-                events: [
-                    {
-                        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' }),
-                        status: 'pre_transit',
-                        description: `Shipment created with ${rate.carrier}`,
-                        location: `${fromCity}, ${fromCountry}`
-                    }
-                ]
-            };
+        // Move to Step 3 (Quotes) and show loading
+        setStep(3);
 
-            addShipment(newShipment);
+        try {
+            const { data, error } = await supabase.functions.invoke('get-rates', {
+                body: {
+                    address_from: {
+                        name: 'Sender', // Placeholder for quote
+                        street1: '', // Placeholder
+                        city: fromCity,
+                        zip: fromZip,
+                        country: fromCountry,
+                        phone: '',
+                        email: 'sender@example.com'
+                    },
+                    address_to: {
+                        name: 'Recipient', // Placeholder
+                        street1: '', // Placeholder
+                        city: toCity,
+                        zip: toZip,
+                        country: toCountry,
+                        phone: '',
+                        email: 'recipient@example.com'
+                    },
+                    parcels: [{
+                        length: parseFloat(length) || 10,
+                        width: parseFloat(width) || 10,
+                        height: parseFloat(height) || 10,
+                        distance_unit: 'cm',
+                        weight: (parseFloat(weight) || 0.5) * (parseInt(quantity) || 1), // Total weight
+                        mass_unit: 'kg'
+                    }],
+                    items: [{
+                        description: description || 'Merchandise',
+                        quantity: quantity,
+                        weight: weight,
+                        value: value
+                    }]
+                }
+            });
+
+            if (error) throw error;
+
+            // Filter and map rates (Shippo structure)
+            if (data && data.rates && data.rates.length > 0) {
+                setRates(data.rates.sort((a: any, b: any) => parseFloat(a.amount) - parseFloat(b.amount)));
+            } else {
+                console.log('Shippo Response:', data);
+
+                let errorMsg = 'No rates found for this configuration.';
+
+                if (data && data.messages) {
+                    // Shippo returns an array of messages if no rates are found
+                    // Example: [{ "text": "Carrier account ... doesn't support ...", ... }]
+                    const messages = Array.isArray(data.messages) ? data.messages : [data.messages];
+
+                    // Filter out generic "carrier doesn't support" noise to find real errors (like "Invalid Zip")
+                    const criticalErrors = messages.filter((m: any) =>
+                        m.text &&
+                        !m.text.includes('support one or more shipment options') &&
+                        !m.text.includes('out of service area') &&
+                        !m.text.includes('doesn\'t support shipments from')
+                    );
+
+                    if (criticalErrors.length > 0) {
+                        errorMsg = criticalErrors[0].text; // Show specific error
+                    } else {
+                        // If all errors were just "carrier doesn't support", give a helpful hint
+                        errorMsg = "No carriers are enabled for this route in Sandbox mode. Try a US-to-US route to test.";
+                    }
+                }
+
+                setRates([]);
+                Alert.alert('No Quotes Available', errorMsg);
+                setStep(2); // Go back to fix inputs (Step 2: Package)
+            }
+        } catch (error) {
+            Alert.alert('Error', 'Failed to fetch rates. Please check address.');
+            console.error(error);
+            setStep(2); // Go back
+        } finally {
             setLoading(false);
-            setStep(4); // Success step
-        }, 1500);
+        }
+    };
+
+    const handlePurchaseLabel = async (rate: Rate) => {
+        setLoading(true);
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) return;
+
+            const { data, error } = await supabase.functions.invoke('create-label', {
+                body: {
+                    rate_id: rate.object_id,
+                    user_id: session.user.id,
+                    shipment_details: {
+                        items: description,
+                        origin: `${fromStreet}, ${fromCity}, ${fromCountry}`, // Actual street
+                        destination: `${toStreet}, ${toCity}, ${toCountry}` // Actual street
+                    }
+                }
+            });
+
+            if (error) throw error;
+
+            // Sync Frontend Store (Optional, since we fetch on mount)
+            // addShipment(...) could still be used if we want immediate UI update without refetch
+            // But since store fetches from DB, we might just trigger a refetch
+            await useCartStore.getState().fetchShipments();
+
+            setStep(5); // Success
+
+        } catch (error: any) {
+            console.error('Purchase Error:', error);
+            // Try to extract the actual error message from the Supabase function response if possible
+            const message = error.context?.json?.error || error.message || 'Could not buy label. Please try again.';
+            Alert.alert('Purchase Failed', message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const renderStepIndicator = () => (
@@ -109,63 +313,43 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
     );
 
     const renderStep1 = () => (
-        <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
             <View style={styles.headerBlock}>
-                <Text style={styles.stepTitle}>Global Route</Text>
+                <Text style={styles.stepTitle}>Global Shipping</Text>
                 <Text style={styles.stepSub}>Where are we shipping today?</Text>
             </View>
 
-            <View style={styles.routeCard}>
-                <View style={styles.routeTimeline}>
-                    <View style={[styles.timelineDot, { backgroundColor: '#0223E6' }]} />
-                    <View style={styles.timelineLine} />
-                    <View style={[styles.timelineDot, { backgroundColor: '#166534' }]} />
+            {/* FROM */}
+            <View style={styles.inputCard}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <Text style={[styles.sectionTitle, { color: '#000' }]}>FROM</Text>
+                    <CountrySelector value={fromCountry} onSelect={(c) => { setFromCountry(c.code); setFromZipLabel(c.zipLabel); }} />
                 </View>
 
-                <View style={styles.routeInputs}>
-                    <View style={styles.locationBlock}>
-                        <Text style={styles.inputLabel}>PICKUP (ORIGIN)</Text>
-                        <View style={styles.inputRow}>
-                            <Input
-                                style={{ flex: 1 }}
-                                placeholder="City"
-                                value={fromCity}
-                                onChangeText={setFromCity}
-                            />
-                            <Input
-                                style={{ width: 80 }}
-                                placeholder="Code"
-                                value={fromCountry}
-                                onChangeText={setFromCountry}
-                                maxLength={3}
-                                autoCapitalize="characters"
-                            />
-                        </View>
-                    </View>
-
-                    <View style={styles.locationBlock}>
-                        <Text style={styles.inputLabel}>DROP OFF (DESTINATION)</Text>
-                        <View style={styles.inputRow}>
-                            <Input
-                                style={{ flex: 1 }}
-                                placeholder="City"
-                                value={toCity}
-                                onChangeText={setToCity}
-                            />
-                            <Input
-                                style={{ width: 80 }}
-                                placeholder="Code"
-                                value={toCountry}
-                                onChangeText={setToCountry}
-                                maxLength={3}
-                                autoCapitalize="characters"
-                            />
-                        </View>
-                    </View>
+                <View style={styles.inputRow}>
+                    <Input style={{ flex: 1 }} placeholder="City" value={fromCity} onChangeText={setFromCity} />
+                    {fromZipLabel && (
+                        <Input style={{ flex: 0.8 }} placeholder={fromZipLabel} value={fromZip} onChangeText={setFromZip} keyboardType="numeric" />
+                    )}
                 </View>
             </View>
 
-            <Button size="lg" onPress={handleNext} style={styles.mainBtn} disabled={!fromCity || !fromCountry || !toCity || !toCountry}>
+            {/* TO */}
+            <View style={[styles.inputCard, { marginTop: 16 }]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <Text style={[styles.sectionTitle, { color: '#000' }]}>TO</Text>
+                    <CountrySelector value={toCountry} onSelect={(c) => { setToCountry(c.code); setToZipLabel(c.zipLabel); }} />
+                </View>
+
+                <View style={styles.inputRow}>
+                    <Input style={{ flex: 1 }} placeholder="City" value={toCity} onChangeText={setToCity} />
+                    {toZipLabel && (
+                        <Input style={{ flex: 0.8 }} placeholder={toZipLabel} value={toZip} onChangeText={setToZip} keyboardType="numeric" />
+                    )}
+                </View>
+            </View>
+
+            <Button size="lg" onPress={handleNext} style={styles.mainBtn} disabled={!fromCity || !toCity}>
                 Next: Package Details
             </Button>
         </ScrollView>
@@ -184,6 +368,14 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
                     placeholder="e.g. Vintage Camera, Documents"
                     value={description}
                     onChangeText={setDescription}
+                />
+
+                <Input
+                    label="Quantity"
+                    placeholder="1"
+                    keyboardType="numeric"
+                    value={quantity}
+                    onChangeText={setQuantity}
                 />
 
                 <View style={styles.gridRow}>
@@ -208,7 +400,7 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
                 </View>
 
                 <Text style={styles.sectionLabel}>DIMENSIONS (CM)</Text>
-                <View style={styles.gridRow3}>
+                <View style={[styles.gridRow3, { marginTop: 4 }]}>
                     <Input placeholder="L" keyboardType="numeric" style={{ textAlign: 'center' }} value={length} onChangeText={setLength} />
                     <Input placeholder="W" keyboardType="numeric" style={{ textAlign: 'center' }} value={width} onChangeText={setWidth} />
                     <Input placeholder="H" keyboardType="numeric" style={{ textAlign: 'center' }} value={height} onChangeText={setHeight} />
@@ -224,49 +416,88 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
     const renderStep3 = () => (
         <View style={styles.stepContent}>
             <View style={styles.headerBlock}>
-                <Text style={styles.stepTitle}>Compare Quotes</Text>
-                <Text style={styles.stepSub}>Live rates for {fromCity} → {toCity}</Text>
+                <Text style={styles.stepTitle}>Select Rate</Text>
+                <Text style={styles.stepSub}>Best prices for {fromCity} → {toCity}</Text>
             </View>
 
             {loading ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#0223E6" />
-                    <Text style={styles.loadingText}>Fetching best prices...</Text>
+                    <Text style={styles.loadingText}>Testing carriers...</Text>
                 </View>
-            ) : (
+            ) : rates.length > 0 ? (
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.rateList}>
-                    {[
-                        { id: 1, carrier: 'DHL', name: 'Express Worldwide', price: '$54.00', time: '1-2 Days', est: 'Jan 11', color: '#D40511', logo: require('../assets/dhl.png'), tag: 'FASTEST' },
-                        { id: 2, carrier: 'FedEx', name: 'Intl Priority', price: '$48.50', time: '2-3 Days', est: 'Jan 12', color: '#4D148C', logo: require('../assets/fedex.png'), tag: '' },
-                        { id: 3, carrier: 'UPS', name: 'Saver', price: '$42.00', time: '3-4 Days', est: 'Jan 13', color: '#FFB500', logo: require('../assets/ups.png'), tag: '' },
-                        { id: 4, carrier: 'Evri', name: 'Global Economy', price: '$18.00', time: '5-8 Days', est: 'Jan 18', color: '#007AFF', logo: require('../assets/evri.png'), tag: 'CHEAPEST' },
-                    ].map((rate) => (
-                        <TouchableOpacity key={rate.id} activeOpacity={0.9} onPress={() => handleSelectRate(rate)}>
+                    {rates.map((rate, i) => (
+                        <TouchableOpacity key={rate.object_id} activeOpacity={0.9} onPress={() => { setSelectedRate(rate); handleNext(); }}>
                             <View style={styles.ticketCard}>
                                 <View style={styles.ticketLeft}>
                                     <View style={[styles.carrierLogo, { borderColor: '#F2F2F7', borderWidth: 1 }]}>
-                                        <Image source={typeof rate.logo === 'string' ? { uri: rate.logo } : rate.logo} style={{ width: 40, height: 40 }} resizeMode="contain" />
+                                        <Image source={{ uri: rate.provider_image_75 }} style={{ width: 40, height: 40 }} resizeMode="contain" />
                                     </View>
                                     <View>
-                                        <Text style={styles.ticketName}>{rate.carrier}</Text>
-                                        <Text style={styles.ticketService}>{rate.name}</Text>
+                                        <Text style={styles.ticketName}>{rate.provider}</Text>
+                                        <Text style={styles.ticketService}>{rate.servicelevel.name}</Text>
                                     </View>
                                 </View>
                                 <View style={styles.ticketRight}>
-                                    <Text style={styles.ticketPrice}>{rate.price}</Text>
-                                    <Text style={styles.ticketTime}>{rate.time}</Text>
+                                    <Text style={styles.ticketPrice}>{rate.currency} {rate.amount}</Text>
+                                    <Text style={styles.ticketTime}>{rate.duration_terms || '3-5 Days'}</Text>
                                 </View>
-                                {rate.tag ? (
-                                    <View style={[styles.ticketBadge, rate.tag === 'FASTEST' ? { backgroundColor: '#000' } : { backgroundColor: '#34C759' }]}>
-                                        <Text style={styles.ticketBadgeText}>{rate.tag}</Text>
-                                    </View>
-                                ) : null}
                             </View>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
+            ) : (
+                <View style={{ padding: 40, alignItems: 'center' }}>
+                    <Button onPress={() => setStep(2)} variant="secondary">Go Back</Button>
+                </View>
             )}
         </View>
+    );
+
+    const renderStep4 = () => (
+        <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+            <View style={styles.headerBlock}>
+                <Text style={styles.stepTitle}>Final Details</Text>
+                <Text style={styles.stepSub}>Complete address for your label.</Text>
+            </View>
+
+            {/* SENDER */}
+            <View style={styles.sectionHeader}>
+                <View style={[styles.sectionDot, { backgroundColor: '#0223E6' }]} />
+                <Text style={styles.sectionTitle}>SENDER ADDRESS</Text>
+            </View>
+            <View style={styles.inputCard}>
+                <Input placeholder="Full Name" value={fromName} onChangeText={setFromName} />
+                <Input placeholder="Phone Number" value={fromPhone} onChangeText={setFromPhone} keyboardType="phone-pad" />
+                <Input placeholder="Street Address (e.g. 123 Main St)" value={fromStreet} onChangeText={setFromStreet} />
+            </View>
+
+            {/* RECIPIENT */}
+            <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+                <View style={[styles.sectionDot, { backgroundColor: '#34C759' }]} />
+                <Text style={styles.sectionTitle}>RECIPIENT ADDRESS</Text>
+            </View>
+            <View style={styles.inputCard}>
+                <Input placeholder="Full Name" value={toName} onChangeText={setToName} />
+                <Input placeholder="Phone Number" value={toPhone} onChangeText={setToPhone} keyboardType="phone-pad" />
+                <Input placeholder="Street Address" value={toStreet} onChangeText={setToStreet} />
+            </View>
+
+            <View style={[styles.inputCard, { marginTop: 24 }]}>
+                <Text style={[styles.sectionTitle, { color: '#000', marginBottom: 12 }]}>CONTENT</Text>
+                <Input
+                    label="Description"
+                    placeholder="e.g. Red Shoes"
+                    value={description}
+                    onChangeText={setDescription}
+                />
+            </View>
+
+            <Button size="lg" onPress={handleNext} style={styles.mainBtn} disabled={!fromName || !fromStreet || !toName || !toStreet || !description}>
+                Buy Label {selectedRate ? `(${selectedRate.currency} ${selectedRate.amount})` : ''}
+            </Button>
+        </ScrollView>
     );
 
     const renderSuccess = () => (
@@ -311,7 +542,8 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
                     {step === 1 && renderStep1()}
                     {step === 2 && renderStep2()}
                     {step === 3 && renderStep3()}
-                    {step === 4 && renderSuccess()}
+                    {step === 4 && renderStep4()}
+                    {step === 5 && renderSuccess()}
                 </View>
             </SafeAreaView>
         </Modal>
@@ -338,14 +570,15 @@ const styles = StyleSheet.create({
     stepSub: { fontSize: 16, color: '#8E8E93' },
 
     // Route
-    routeCard: { backgroundColor: '#fff', borderRadius: 20, padding: 24, flexDirection: 'row', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
-    routeTimeline: { alignItems: 'center', paddingTop: 24, marginRight: 16 },
-    timelineDot: { width: 12, height: 12, borderRadius: 6 },
-    timelineLine: { width: 2, height: 80, backgroundColor: '#E5E5EA', marginVertical: 4 },
-    routeInputs: { flex: 1, gap: 24 },
-    locationBlock: {},
-    inputLabel: { fontSize: 11, fontWeight: '700', color: '#8E8E93', letterSpacing: 0.5, marginBottom: 8 },
-    inputRow: { flexDirection: 'row', gap: 12 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, marginTop: 0 },
+    sectionDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+    sectionTitle: { fontSize: 11, fontWeight: '700', color: '#8E8E93', letterSpacing: 0.5 },
+    inputCard: { backgroundColor: '#fff', borderRadius: 20, padding: 16, gap: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
+    connectorContainer: { alignItems: 'center', marginVertical: 4, height: 20, justifyContent: 'center' },
+    connectorLine: { width: 2, height: '100%', backgroundColor: '#E5E5EA', position: 'absolute' },
+    connectorIcon: { backgroundColor: '#F2F2F7', padding: 4, zIndex: 1 },
+
+    inputRow: { flexDirection: 'row', gap: 10 },
 
     // Details
     formSection: { gap: 20 },
@@ -380,7 +613,17 @@ const styles = StyleSheet.create({
     finalCity: { fontSize: 18, fontWeight: '600' },
     finalDivider: { width: '100%', height: 1, backgroundColor: '#E5E5EA', marginVertical: 24 },
     finalLabel: { fontSize: 11, fontWeight: '700', color: '#8E8E93', letterSpacing: 1 },
-    finalTrack: { fontSize: 22, fontWeight: '700', color: '#000', marginTop: 8, letterSpacing: 0.5 }
+    finalTrack: { fontSize: 22, fontWeight: '700', color: '#000', marginTop: 8, letterSpacing: 0.5 },
+
+    // Country Selector
+    countryBtn: { backgroundColor: '#E0E7FF', borderRadius: 12, paddingHorizontal: 12, height: 44, justifyContent: 'center', minWidth: 68, alignItems: 'center' },
+    countryBtnText: { fontWeight: '700', fontSize: 15, color: '#0223E6' },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+    modalContent: { backgroundColor: '#fff', width: '80%', borderRadius: 20, padding: 24, maxHeight: '60%' },
+    modalHeader: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
+    countryItem: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F2F2F7', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    countryCode: { fontSize: 16, fontWeight: '700', width: 40 },
+    countryName: { fontSize: 16, color: '#333', flex: 1 }
 });
 
 export default ShipFlow;

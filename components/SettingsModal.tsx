@@ -73,14 +73,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, onLogou
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
             <View style={styles.profileSection}>
                 <View style={styles.avatar}>
-                    {user.avatar ? (
+                    {user?.avatar ? (
                         <Image source={{ uri: user.avatar }} style={styles.avatarImg} />
                     ) : (
                         <User color="#fff" size={40} />
                     )}
                 </View>
-                <Text style={styles.name}>{user.name}</Text>
-                <Text style={styles.email}>{user.email}</Text>
+                <Text style={styles.name}>{user?.name}</Text>
+                <Text style={styles.email}>{user?.email}</Text>
                 <TouchableOpacity style={styles.editProfileBtn} onPress={() => handleNavigate('editProfile')}>
                     <Text style={styles.editProfileText}>Edit Profile</Text>
                 </TouchableOpacity>

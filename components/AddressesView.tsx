@@ -6,9 +6,13 @@ import { Input, Button } from './UI';
 import { useCartStore, Address } from '../store';
 
 const AddressesView = () => {
-    const { addresses, addAddress, removeAddress, updateAddress } = useCartStore();
+    const { addresses, addAddress, removeAddress, updateAddress, fetchAddresses } = useCartStore();
     const [modalVisible, setModalVisible] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+
+    React.useEffect(() => {
+        fetchAddresses();
+    }, []);
 
     // Form State
     const [label, setLabel] = useState('');

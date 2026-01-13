@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Button, Input } from './UI';
 import { CheckCircle } from 'lucide-react-native';
+import { useCartStore } from '../store';
 
 interface AuthScreenProps {
     onLogin: () => void;
@@ -14,10 +15,29 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
 
-    const handleSubmit = () => {
-        // Mock validation
-        if (email && password) {
-            onLogin();
+    const { login, signup } = useCartStore();
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!email || !password) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            if (isLogin) {
+                await login(email, password);
+            } else {
+                await signup(email, password, name);
+                alert('Account created! You are now logged in.');
+            }
+            onLogin(); // Callback to notify App (optional if using reactive state)
+        } catch (error: any) {
+            console.log(error);
+            alert(error.message || 'Authentication failed');
+        } finally {
+            setLoading(false);
         }
     };
 
