@@ -124,33 +124,43 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
     };
 
     const fetchPaymentSheetParams = async () => {
-        // Assume address/user exists or handled
         const payload = {
             amount: total,
-            currency: CURRENCY_CODE,
+            currency: CURRENCY_CODE.toLowerCase(),
             email: 'user@example.com',
             name: 'Tenbox User'
         };
-        console.log('Sending Payment Request:', JSON.stringify(payload, null, 2));
 
-        const { data, error } = await supabase.functions.invoke('payment-sheet', {
-            body: payload,
-        });
+        // Using direct fetch for React Native compatibility
+        const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+        const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-        if (error) {
-            console.error('Payment Error:', error);
-            Alert.alert('Payment Init Error', error.message || JSON.stringify(error));
+        try {
+            const response = await fetch(`${supabaseUrl}/functions/v1/payment-sheet`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${anonKey}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                Alert.alert('Payment Error', `Status: ${response.status}\n${errorText}`);
+                return null;
+            }
+
+            const data = await response.json();
+            return {
+                paymentIntent: data.paymentIntent,
+                ephemeralKey: data.ephemeralKey,
+                customer: data.customer,
+            };
+        } catch (e: any) {
+            Alert.alert('Network Error', e.message);
             return null;
         }
-        if (!data) {
-            Alert.alert('Error', 'No data received from backend');
-            return null;
-        }
-        return {
-            paymentIntent: data.paymentIntent,
-            ephemeralKey: data.ephemeralKey,
-            customer: data.customer,
-        };
     };
 
     const handlePay = async () => {
@@ -376,17 +386,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                                 </View>
                             </View>
 
-                            <View style={styles.divider} />
 
-                            {/* Payment */}
-                            <View>
-                                <Text style={styles.sectionHeader}>PAYMENT METHOD</Text>
-                                <View style={styles.paymentCard}>
-                                    <CreditCard size={24} color="#000" />
-                                    <Text style={styles.paymentText}>•••• 4242</Text>
-                                    <Check size={20} color="#34C759" style={{ marginLeft: 'auto' }} />
-                                </View>
-                            </View>
 
                             {/* Summary */}
                             <Card style={styles.summaryCard}>
