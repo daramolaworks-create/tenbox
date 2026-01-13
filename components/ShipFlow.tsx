@@ -30,7 +30,7 @@ interface Rate {
     provider_image_75: string; // Logo
 }
 
-const STEPS = ['Route', 'Details', 'Quotes', 'Address', 'Success'];
+const STEPS = ['Route', 'Package', 'Address', 'Quotes', 'Success'];
 
 const COUNTRIES = [
     { code: 'US', name: 'United States', zipLabel: 'Zip Code' },
@@ -156,44 +156,44 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
     const handleNext = async () => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
-        if (step === 2) {
-            // Step 2 (Package) -> Fetch Rates
+        if (step === 3) {
+            // Step 3 (Address) -> Fetch Rates
             await fetchRates();
         } else if (step === 4) {
-            // Step 4 (Address Details) -> Purchase
+            // Step 4 (Quotes) -> Purchase
             if (selectedRate) {
                 await handlePurchaseLabel(selectedRate);
             }
         } else {
-            // Step 1 -> 2, Step 3 -> 4
+            // Step 1 -> 2, Step 2 -> 3
             if (step < 5) setStep(step + 1);
         }
     };
 
     const fetchRates = async () => {
         setLoading(true);
-        // Move to Step 3 (Quotes) and show loading
-        setStep(3);
+        // Move to Step 4 (Quotes) and show loading
+        setStep(4);
 
         try {
             const { data, error } = await supabase.functions.invoke('get-rates', {
                 body: {
                     address_from: {
-                        name: 'Sender', // Placeholder for quote
-                        street1: '', // Placeholder
+                        name: fromName || 'Sender', // Placeholder for quote
+                        street1: fromStreet, // Placeholder
                         city: fromCity,
                         zip: fromZip,
                         country: fromCountry,
-                        phone: '',
+                        phone: fromPhone || '5555555555',
                         email: 'sender@example.com'
                     },
                     address_to: {
-                        name: 'Recipient', // Placeholder
-                        street1: '', // Placeholder
+                        name: toName || 'Recipient', // Placeholder
+                        street1: toStreet, // Placeholder
                         city: toCity,
                         zip: toZip,
                         country: toCountry,
-                        phone: '',
+                        phone: toPhone || '5555555555',
                         email: 'recipient@example.com'
                     },
                     parcels: [{
@@ -246,12 +246,12 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
 
                 setRates([]);
                 Alert.alert('No Quotes Available', errorMsg);
-                setStep(2); // Go back to fix inputs (Step 2: Package)
+                setStep(3); // Go back to fix inputs (Step 3: Address)
             }
-        } catch (error) {
-            Alert.alert('Error', 'Failed to fetch rates. Please check address.');
+        } catch (error: any) {
             console.error(error);
-            setStep(2); // Go back
+            Alert.alert('Error Fetching Rates', error.message || 'Please check your address and try again.');
+            setStep(3); // Go back to Address step on error
         } finally {
             setLoading(false);
         }
@@ -414,48 +414,6 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
     );
 
     const renderStep3 = () => (
-        <View style={styles.stepContent}>
-            <View style={styles.headerBlock}>
-                <Text style={styles.stepTitle}>Select Rate</Text>
-                <Text style={styles.stepSub}>Best prices for {fromCity} → {toCity}</Text>
-            </View>
-
-            {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#0223E6" />
-                    <Text style={styles.loadingText}>Testing carriers...</Text>
-                </View>
-            ) : rates.length > 0 ? (
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.rateList}>
-                    {rates.map((rate, i) => (
-                        <TouchableOpacity key={rate.object_id} activeOpacity={0.9} onPress={() => { setSelectedRate(rate); handleNext(); }}>
-                            <View style={styles.ticketCard}>
-                                <View style={styles.ticketLeft}>
-                                    <View style={[styles.carrierLogo, { borderColor: '#F2F2F7', borderWidth: 1 }]}>
-                                        <Image source={{ uri: rate.provider_image_75 }} style={{ width: 40, height: 40 }} resizeMode="contain" />
-                                    </View>
-                                    <View>
-                                        <Text style={styles.ticketName}>{rate.provider}</Text>
-                                        <Text style={styles.ticketService}>{rate.servicelevel.name}</Text>
-                                    </View>
-                                </View>
-                                <View style={styles.ticketRight}>
-                                    <Text style={styles.ticketPrice}>{rate.currency} {rate.amount}</Text>
-                                    <Text style={styles.ticketTime}>{rate.duration_terms || '3-5 Days'}</Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            ) : (
-                <View style={{ padding: 40, alignItems: 'center' }}>
-                    <Button onPress={() => setStep(2)} variant="secondary">Go Back</Button>
-                </View>
-            )}
-        </View>
-    );
-
-    const renderStep4 = () => (
         <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
             <View style={styles.headerBlock}>
                 <Text style={styles.stepTitle}>Final Details</Text>
@@ -495,9 +453,51 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
             </View>
 
             <Button size="lg" onPress={handleNext} style={styles.mainBtn} disabled={!fromName || !fromStreet || !toName || !toStreet || !description}>
-                Buy Label {selectedRate ? `(${selectedRate.currency} ${selectedRate.amount})` : ''}
+                Get Accurate Quotes
             </Button>
         </ScrollView>
+    );
+
+    const renderStep4 = () => (
+        <View style={styles.stepContent}>
+            <View style={styles.headerBlock}>
+                <Text style={styles.stepTitle}>Select Rate</Text>
+                <Text style={styles.stepSub}>Best prices for your shipment</Text>
+            </View>
+
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#0223E6" />
+                    <Text style={styles.loadingText}>Validating address & fetching rates...</Text>
+                </View>
+            ) : rates.length > 0 ? (
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.rateList}>
+                    {rates.map((rate, i) => (
+                        <TouchableOpacity key={rate.object_id} activeOpacity={0.9} onPress={() => { setSelectedRate(rate); handlePurchaseLabel(rate); }}>
+                            <View style={styles.ticketCard}>
+                                <View style={styles.ticketLeft}>
+                                    <View style={[styles.carrierLogo, { borderColor: '#F2F2F7', borderWidth: 1 }]}>
+                                        <Image source={{ uri: rate.provider_image_75 }} style={{ width: 40, height: 40 }} resizeMode="contain" />
+                                    </View>
+                                    <View>
+                                        <Text style={styles.ticketName}>{rate.provider}</Text>
+                                        <Text style={styles.ticketService}>{rate.servicelevel.name}</Text>
+                                    </View>
+                                </View>
+                                <View style={styles.ticketRight}>
+                                    <Text style={styles.ticketPrice}>{rate.currency} {rate.amount}</Text>
+                                    <Text style={styles.ticketTime}>{rate.duration_terms || '3-5 Days'}</Text>
+                                </View>
+                            </View>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            ) : (
+                <View style={{ padding: 40, alignItems: 'center' }}>
+                    <Button onPress={() => setStep(3)} variant="secondary">Go Back</Button>
+                </View>
+            )}
+        </View>
     );
 
     const renderSuccess = () => (
@@ -536,7 +536,7 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
                     <View style={{ width: 24 }} />
                 </View>
 
-                {step < 4 && renderStepIndicator()}
+                {step < 5 && renderStepIndicator()}
 
                 <View style={styles.contentArea}>
                     {step === 1 && renderStep1()}
