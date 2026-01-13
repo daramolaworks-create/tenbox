@@ -1,3 +1,4 @@
+// @ts-nocheck
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -6,7 +7,7 @@ const SHIPPO_API_KEY = Deno.env.get('SHIPPO_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-serve(async (req) => {
+serve(async (req: Request) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' } })
     }
@@ -33,7 +34,11 @@ serve(async (req) => {
         const transaction = await response.json()
 
         if (transaction.status !== 'SUCCESS') {
-            throw new Error(transaction.messages?.[0] || 'Failed to purchase label')
+            const shippoMsg = transaction.messages?.[0];
+            const errorText = typeof shippoMsg === 'string'
+                ? shippoMsg
+                : shippoMsg?.text || 'Failed to purchase label';
+            throw new Error(errorText)
         }
 
         // 2. Save to Supabase (using Service Role to bypass RLS if needed, or just insert)
@@ -59,9 +64,10 @@ serve(async (req) => {
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         })
 
-    } catch (error) {
+    } catch (error: any) {
+        // Return 200 with error field to avoid generic "non-2xx" client errors
         return new Response(JSON.stringify({ error: error.message }), {
-            status: 400,
+            status: 200,
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         })
     }

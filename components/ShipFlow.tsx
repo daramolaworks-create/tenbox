@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Image, LayoutAnimation, Platform, UIManager, Alert } from 'react-native';
 import { X, MapPin, Package, CheckCircle, ArrowRight, Box, Scale, DollarSign } from 'lucide-react-native';
 import { Button, Input, Card } from './UI';
-import { useCartStore } from '../store';
+import { useCartStore, Address } from '../store';
 import { Shipment } from '../types';
 import { supabase } from '../lib/supabase';
 
@@ -84,12 +84,62 @@ const CountrySelector = ({ value, onSelect }: { value: string, onSelect: (c: typ
     );
 };
 
+const AddressSelector = ({ onSelect, onClose }: { onSelect: (addr: Address) => void, onClose: () => void }) => {
+    const { addresses, fetchAddresses } = useCartStore();
+
+    React.useEffect(() => {
+        fetchAddresses();
+    }, []);
+
+    return (
+        <Modal visible animationType="fade" transparent>
+            <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <Text style={styles.modalHeader}>Saved Addresses</Text>
+                        <TouchableOpacity onPress={onClose}><X size={24} color="#000" /></TouchableOpacity>
+                    </View>
+
+                    <ScrollView style={{ maxHeight: 400 }}>
+                        {addresses.length === 0 ? (
+                            <Text style={{ color: '#8E8E93', textAlign: 'center', marginVertical: 20 }}>No saved addresses found.</Text>
+                        ) : (
+                            addresses.map((addr) => (
+                                <TouchableOpacity
+                                    key={addr.id}
+                                    style={styles.addressItem}
+                                    onPress={() => {
+                                        onSelect(addr);
+                                        onClose();
+                                    }}
+                                >
+                                    <View>
+                                        <Text style={styles.addressLabel}>{addr.label}</Text>
+                                        <Text style={styles.addressText}>{addr.street}, {addr.city}</Text>
+                                    </View>
+                                    <ArrowRight size={16} color="#C7C7CC" />
+                                </TouchableOpacity>
+                            ))
+                        )}
+                    </ScrollView>
+                    <Button onPress={onClose} variant="secondary" style={{ marginTop: 16 }}>Cancel</Button>
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
 const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => {
-    const { addShipment } = useCartStore();
+    const { addShipment, addAddress } = useCartStore();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [rates, setRates] = useState<Rate[]>([]);
     const [selectedRate, setSelectedRate] = useState<Rate | null>(null);
+
+    // Address Book State
+    const [showAddressModal, setShowAddressModal] = useState<'sender' | 'recipient' | null>(null);
+    const [saveSender, setSaveSender] = useState(false);
+    const [saveRecipient, setSaveRecipient] = useState(false);
 
     // Sender Data
     const [fromName, setFromName] = useState('');
@@ -127,6 +177,7 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
         setFromCountry('US');
         setFromZipLabel('Zip Code');
         setFromPhone('');
+        setSaveSender(false);
 
         setToName('');
         setToStreet('');
@@ -135,6 +186,8 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
         setToCountry('US');
         setToZipLabel('Zip Code');
         setToPhone('');
+        setSaveRecipient(false);
+
         setDescription('');
         setQuantity('1');
         setWeight('');
@@ -157,6 +210,30 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
         if (step === 3) {
+            // Check Auto-Save
+            if (saveSender) {
+                await addAddress({
+                    id: Math.random().toString(36).substr(2, 9),
+                    label: fromName || 'Sender',
+                    street: fromStreet,
+                    city: fromCity,
+                    zip: fromZip,
+                    country: fromCountry,
+                    default: false
+                });
+            }
+            if (saveRecipient) {
+                await addAddress({
+                    id: Math.random().toString(36).substr(2, 9),
+                    label: toName || 'Recipient',
+                    street: toStreet,
+                    city: toCity,
+                    zip: toZip,
+                    country: toCountry,
+                    default: false
+                });
+            }
+
             // Step 3 (Address) -> Fetch Rates
             await fetchRates();
         } else if (step === 4) {
@@ -277,6 +354,7 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
             });
 
             if (error) throw error;
+            if (data && data.error) throw new Error(data.error);
 
             // Sync Frontend Store (Optional, since we fetch on mount)
             // addShipment(...) could still be used if we want immediate UI update without refetch
@@ -421,25 +499,47 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
             </View>
 
             {/* SENDER */}
-            <View style={styles.sectionHeader}>
-                <View style={[styles.sectionDot, { backgroundColor: '#0223E6' }]} />
-                <Text style={styles.sectionTitle}>SENDER ADDRESS</Text>
+            <View style={[styles.sectionHeader, { justifyContent: 'space-between' }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={[styles.sectionDot, { backgroundColor: '#0223E6' }]} />
+                    <Text style={styles.sectionTitle}>SENDER ADDRESS</Text>
+                </View>
+                <TouchableOpacity onPress={() => setShowAddressModal('sender')}>
+                    <Text style={styles.actionLink}>Load Saved</Text>
+                </TouchableOpacity>
             </View>
             <View style={styles.inputCard}>
                 <Input placeholder="Full Name" value={fromName} onChangeText={setFromName} />
                 <Input placeholder="Phone Number" value={fromPhone} onChangeText={setFromPhone} keyboardType="phone-pad" />
                 <Input placeholder="Street Address (e.g. 123 Main St)" value={fromStreet} onChangeText={setFromStreet} />
+                <TouchableOpacity style={styles.checkboxRow} onPress={() => setSaveSender(!saveSender)} activeOpacity={0.8}>
+                    <View style={[styles.checkbox, saveSender && styles.checkboxActive]}>
+                        {saveSender && <CheckCircle size={14} color="#fff" />}
+                    </View>
+                    <Text style={styles.checkboxLabel}>Save to Address Book</Text>
+                </TouchableOpacity>
             </View>
 
             {/* RECIPIENT */}
-            <View style={[styles.sectionHeader, { marginTop: 24 }]}>
-                <View style={[styles.sectionDot, { backgroundColor: '#34C759' }]} />
-                <Text style={styles.sectionTitle}>RECIPIENT ADDRESS</Text>
+            <View style={[styles.sectionHeader, { marginTop: 24, justifyContent: 'space-between' }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={[styles.sectionDot, { backgroundColor: '#34C759' }]} />
+                    <Text style={styles.sectionTitle}>RECIPIENT ADDRESS</Text>
+                </View>
+                <TouchableOpacity onPress={() => setShowAddressModal('recipient')}>
+                    <Text style={styles.actionLink}>Load Saved</Text>
+                </TouchableOpacity>
             </View>
             <View style={styles.inputCard}>
                 <Input placeholder="Full Name" value={toName} onChangeText={setToName} />
                 <Input placeholder="Phone Number" value={toPhone} onChangeText={setToPhone} keyboardType="phone-pad" />
                 <Input placeholder="Street Address" value={toStreet} onChangeText={setToStreet} />
+                <TouchableOpacity style={styles.checkboxRow} onPress={() => setSaveRecipient(!saveRecipient)} activeOpacity={0.8}>
+                    <View style={[styles.checkbox, saveRecipient && styles.checkboxActive]}>
+                        {saveRecipient && <CheckCircle size={14} color="#fff" />}
+                    </View>
+                    <Text style={styles.checkboxLabel}>Save to Address Book</Text>
+                </TouchableOpacity>
             </View>
 
             <View style={[styles.inputCard, { marginTop: 24 }]}>
@@ -455,6 +555,28 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
             <Button size="lg" onPress={handleNext} style={styles.mainBtn} disabled={!fromName || !fromStreet || !toName || !toStreet || !description}>
                 Get Accurate Quotes
             </Button>
+
+            {/* Address Modal */}
+            {showAddressModal && (
+                <AddressSelector
+                    onClose={() => setShowAddressModal(null)}
+                    onSelect={(addr) => {
+                        if (showAddressModal === 'sender') {
+                            setFromName(addr.label);
+                            setFromStreet(addr.street);
+                            setFromCity(addr.city);
+                            setFromZip(addr.zip);
+                            setFromCountry(addr.country);
+                        } else {
+                            setToName(addr.label);
+                            setToStreet(addr.street);
+                            setToCity(addr.city);
+                            setToZip(addr.zip);
+                            setToCountry(addr.country);
+                        }
+                    }}
+                />
+            )}
         </ScrollView>
     );
 
@@ -623,7 +745,19 @@ const styles = StyleSheet.create({
     modalHeader: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
     countryItem: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F2F2F7', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     countryCode: { fontSize: 16, fontWeight: '700', width: 40 },
-    countryName: { fontSize: 16, color: '#333', flex: 1 }
+    countryName: { fontSize: 16, color: '#333', flex: 1 },
+
+    // Address Modal
+    addressItem: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F2F2F7', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    addressLabel: { fontSize: 16, fontWeight: '700', color: '#000', marginBottom: 2 },
+    addressText: { fontSize: 14, color: '#8E8E93' },
+    actionLink: { fontSize: 13, fontWeight: '600', color: '#0223E6' },
+
+    // Checkbox
+    checkboxRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, opacity: 0.8 },
+    checkbox: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#C7C7CC', alignItems: 'center', justifyContent: 'center', marginRight: 8, backgroundColor: '#fff' },
+    checkboxActive: { backgroundColor: '#0223E6', borderColor: '#0223E6' },
+    checkboxLabel: { fontSize: 13, fontWeight: '600', color: '#8E8E93' },
 });
 
 export default ShipFlow;
