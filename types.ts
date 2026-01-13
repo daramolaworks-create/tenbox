@@ -8,6 +8,7 @@ export interface CartItem {
   image: string;
   price: number;
   url: string;
+  currency?: string;
 }
 
 export type TabType = 'home' | 'shop' | 'cart' | 'track' | 'settings';

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Alert, LayoutAnimation, ActivityIndicator, Image, Platform } from 'react-native';
 import { Button, Input, Card } from './UI';
-import { useCartStore } from '../store';
-import { X, Check, MapPin, Truck, ChevronRight, CreditCard, Plus, ArrowLeft } from 'lucide-react-native';
+import { useCartStore, STORE_ADDRESSES, getStoreRegion } from '../store';
+import { supabase } from '../lib/supabase';
+import { X, Check, MapPin, Truck, ChevronRight, CreditCard, Plus, ArrowLeft, RefreshCw } from 'lucide-react-native';
 
 interface CheckoutFlowProps {
     visible: boolean;
@@ -10,19 +11,14 @@ interface CheckoutFlowProps {
     onComplete: () => void;
 }
 
-const DELIVERY_OPTIONS = [
-    { id: '1', carrier: 'DHL', name: 'Express Worldwide', price: 54.00, eta: '1-2 Days', logo: require('../assets/dhl.png'), tag: 'FASTEST' },
-    { id: '2', carrier: 'FedEx', name: 'Intl Priority', price: 48.50, eta: '2-3 Days', logo: require('../assets/fedex.png'), tag: '' },
-    { id: '3', carrier: 'UPS', name: 'Saver', price: 42.00, eta: '3-4 Days', logo: require('../assets/ups.png'), tag: '' },
-    { id: '4', carrier: 'Evri', name: 'Global Economy', price: 18.00, eta: '5-8 Days', logo: require('../assets/evri.png'), tag: 'CHEAPEST' },
-];
-
 const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplete }) => {
     const [step, setStep] = useState<'address' | 'delivery' | 'review'>('address');
     const { addresses, user, items, clearCart, createOrder } = useCartStore();
 
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-    const [selectedDeliveryId, setSelectedDeliveryId] = useState<string | null>(null);
+    const [rates, setRates] = useState<any[]>([]);
+    const [loadingRates, setLoadingRates] = useState(false);
+    const [selectedRate, setSelectedRate] = useState<any>(null); // Full rate object
     const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
@@ -34,6 +30,64 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
         }
     }, [addresses, visible]);
 
+    const fetchShopRates = async () => {
+        if (!selectedAddressId || items.length === 0) return;
+
+        setLoadingRates(true);
+        setRates([]);
+        setSelectedRate(null);
+
+        const addr = addresses.find(a => a.id === selectedAddressId);
+        const storeRegion = items[0].store; // e.g., 'USA', 'UK'
+        const origin = STORE_ADDRESSES[storeRegion] || STORE_ADDRESSES['USA'];
+
+        try {
+            const { data, error } = await supabase.functions.invoke('get-rates', {
+                body: {
+                    address_from: {
+                        name: origin.name,
+                        street1: origin.street,
+                        city: origin.city,
+                        zip: origin.zip,
+                        country: origin.country
+                    },
+                    address_to: {
+                        name: user?.name || 'Customer',
+                        street1: addr?.street,
+                        city: addr?.city,
+                        zip: addr?.zip,
+                        country: addr?.country
+                    },
+                    parcels: [{
+                        length: "10", width: "10", height: "10",
+                        distance_unit: "in",
+                        weight: (items.length * 0.5).toString(), // Mock weight: 0.5kg per item
+                        mass_unit: "kg"
+                    }],
+                    items: items.map(i => ({
+                        description: i.title,
+                        quantity: i.quantity,
+                        value: i.price,
+                        weight: "0.5"
+                    }))
+                }
+            });
+
+            if (error) throw error;
+            if (data?.error) throw new Error(data.error);
+
+            // Filter & Sort Rates
+            const ratesList = (data.rates || []).sort((a: any, b: any) => parseFloat(a.amount) - parseFloat(b.amount));
+            setRates(ratesList);
+
+        } catch (err: any) {
+            console.error('Rate fetch error:', err);
+            Alert.alert('Shipping Error', 'Could not fetch live rates. Please try again.');
+        } finally {
+            setLoadingRates(false);
+        }
+    };
+
     const handleNext = () => {
         if (step === 'address') {
             if (!selectedAddressId) {
@@ -41,8 +95,9 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                 return;
             }
             setStep('delivery');
+            fetchShopRates(); // Fetch when moving to delivery step
         } else if (step === 'delivery') {
-            if (!selectedDeliveryId) {
+            if (!selectedRate) {
                 Alert.alert('Required', 'Please select a delivery method.');
                 return;
             }
@@ -83,9 +138,13 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
     };
 
     // Derived Financials
+    // Derived Financials
+    const storeRegion = items[0]?.store ? getStoreRegion(items[0].store) : 'USA';
+    const storeConfig = STORE_ADDRESSES[storeRegion] || STORE_ADDRESSES['USA'];
+    const CURRENCY_SYMBOL = storeConfig.symbol;
+
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const selectedDelivery = DELIVERY_OPTIONS.find(d => d.id === selectedDeliveryId);
-    const deliveryPrice = selectedDelivery?.price || 0;
+    const deliveryPrice = selectedRate ? parseFloat(selectedRate.amount) : 0;
     const tax = subtotal * 0.08; // 8% mock tax
     const total = subtotal + deliveryPrice + tax;
 
@@ -106,7 +165,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                     <TouchableOpacity onPress={step === 'address' ? onClose : handleBack} style={styles.headerBtn}>
                         {step === 'address' ? <X size={24} color="#000" /> : <ArrowLeft size={24} color="#000" />}
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Checkout</Text>
+                    <Text style={styles.headerTitle}>Checkout ({storeRegion})</Text>
                     <View style={{ width: 40 }} />
                 </View>
 
@@ -158,30 +217,57 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                     {/* STEP 2: DELIVERY */}
                     {step === 'delivery' && (
                         <View style={{ gap: 16 }}>
-                            {DELIVERY_OPTIONS.map((rate) => (
-                                <TouchableOpacity key={rate.id} activeOpacity={0.9} onPress={() => setSelectedDeliveryId(rate.id)}>
-                                    <View style={[styles.ticketCard, selectedDeliveryId === rate.id && styles.selectedTicket]}>
-                                        <View style={styles.ticketLeft}>
-                                            <View style={[styles.carrierLogo, { borderColor: '#F2F2F7', borderWidth: 1 }]}>
-                                                <Image source={typeof rate.logo === 'string' ? { uri: rate.logo } : rate.logo} style={{ width: 40, height: 40 }} resizeMode="contain" />
-                                            </View>
-                                            <View>
-                                                <Text style={styles.ticketName}>{rate.carrier}</Text>
-                                                <Text style={styles.ticketService}>{rate.name}</Text>
-                                            </View>
-                                        </View>
-                                        <View style={styles.ticketRight}>
-                                            <Text style={styles.ticketPrice}>${rate.price.toFixed(2)}</Text>
-                                            <Text style={styles.ticketTime}>{rate.eta}</Text>
-                                        </View>
-                                        {rate.tag ? (
-                                            <View style={[styles.ticketBadge, rate.tag === 'FASTEST' ? { backgroundColor: '#000' } : { backgroundColor: '#34C759' }]}>
-                                                <Text style={styles.ticketBadgeText}>{rate.tag}</Text>
-                                            </View>
-                                        ) : null}
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Text style={styles.sectionHeader}>
+                                    SHIPPING FROM {storeRegion.toUpperCase()}
+                                </Text>
+                                {loadingRates && <ActivityIndicator size="small" color="#0223E6" />}
+                            </View>
+                            {/* Rates Selection */}
+                            <View style={{ gap: 12 }}>
+                                {loadingRates ? (
+                                    <View style={{ padding: 40, alignItems: 'center' }}>
+                                        <ActivityIndicator size="large" color="#0223E6" />
+                                        <Text style={{ marginTop: 16, color: '#8E8E93' }}>Finding best rates...</Text>
                                     </View>
-                                </TouchableOpacity>
-                            ))}
+                                ) : (
+                                    rates.map((rate: any) => {
+                                        const isCheapest = rate.amount === Math.min(...rates.map((r: any) => parseFloat(r.amount)));
+                                        const isFastest = rate.estimated_days === Math.min(...rates.map((r: any) => r.estimated_days));
+
+                                        return (
+                                            <TouchableOpacity
+                                                key={rate.object_id}
+                                                activeOpacity={0.7}
+                                                style={[styles.ticketCard, selectedRate?.object_id === rate.object_id && styles.selectedTicket]}
+                                                onPress={() => setSelectedRate(rate)}
+                                            >
+                                                <View style={styles.ticketLeft}>
+                                                    <View style={styles.carrierLogo}>
+                                                        <Image source={{ uri: rate.provider_image_75 }} style={{ width: 32, height: 32 }} resizeMode="contain" />
+                                                    </View>
+                                                    <View style={{ flex: 1 }}>
+                                                        <Text style={styles.ticketName}>{rate.provider}</Text>
+                                                        <Text style={styles.ticketService} numberOfLines={1} ellipsizeMode="tail">{rate.servicelevel.name}</Text>
+                                                    </View>
+                                                </View>
+
+                                                <View style={styles.ticketRight}>
+                                                    <Text style={styles.ticketPrice}>{CURRENCY_SYMBOL}{rate.amount}</Text>
+                                                    <Text style={styles.ticketTime}>{rate.estimated_days} Days</Text>
+                                                </View>
+
+                                                {/* Badges */}
+                                                {(isCheapest || isFastest) && (
+                                                    <View style={[styles.ticketBadge, { backgroundColor: isFastest ? '#34C759' : '#FF9500' }]}>
+                                                        <Text style={styles.ticketBadgeText}>{isFastest ? 'FASTEST' : 'CHEAPEST'}</Text>
+                                                    </View>
+                                                )}
+                                            </TouchableOpacity>
+                                        );
+                                    })
+                                )}
+                            </View>
                         </View>
                     )}
 
@@ -216,8 +302,10 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                                 <View style={[styles.reviewRow, { marginTop: 12 }]}>
                                     <Truck size={20} color="#8E8E93" />
                                     <View style={{ flex: 1 }}>
-                                        <Text style={styles.reviewMainText}>{selectedDelivery?.carrier}</Text>
-                                        <Text style={styles.reviewSubText}>{selectedDelivery?.name} • {selectedDelivery?.eta}</Text>
+                                        <Text style={styles.reviewMainText}>{selectedRate?.provider} ({selectedRate?.servicelevel.name})</Text>
+                                        <Text style={styles.reviewSubText}>
+                                            {selectedRate?.estimated_days || '2-5'} Days • {selectedRate?.currency} {selectedRate?.amount}
+                                        </Text>
                                     </View>
                                     <Button size="sm" variant="ghost" onPress={() => setStep('delivery')}>Change</Button>
                                 </View>
@@ -237,10 +325,10 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
 
                             {/* Summary */}
                             <Card style={styles.summaryCard}>
-                                <View style={styles.sumRow}><Text style={styles.sumLabel}>Subtotal</Text><Text style={styles.sumVal}>${subtotal.toFixed(2)}</Text></View>
-                                <View style={styles.sumRow}><Text style={styles.sumLabel}>Delivery</Text><Text style={styles.sumVal}>${deliveryPrice.toFixed(2)}</Text></View>
-                                <View style={styles.sumRow}><Text style={styles.sumLabel}>Tax (8%)</Text><Text style={styles.sumVal}>${tax.toFixed(2)}</Text></View>
-                                <View style={styles.sumTotalRow}><Text style={styles.sumTotalLabel}>Total</Text><Text style={styles.sumTotalVal}>${total.toFixed(2)}</Text></View>
+                                <View style={styles.sumRow}><Text style={styles.sumLabel}>Subtotal</Text><Text style={styles.sumVal}>{CURRENCY_SYMBOL}{subtotal.toFixed(2)}</Text></View>
+                                <View style={styles.sumRow}><Text style={styles.sumLabel}>Delivery</Text><Text style={styles.sumVal}>{CURRENCY_SYMBOL}{deliveryPrice.toFixed(2)}</Text></View>
+                                <View style={styles.sumRow}><Text style={styles.sumLabel}>Tax (8%)</Text><Text style={styles.sumVal}>{CURRENCY_SYMBOL}{tax.toFixed(2)}</Text></View>
+                                <View style={styles.sumTotalRow}><Text style={styles.sumTotalLabel}>Total</Text><Text style={styles.sumTotalVal}>{CURRENCY_SYMBOL}{total.toFixed(2)}</Text></View>
                             </Card>
                         </View>
                     )}
@@ -255,7 +343,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                         </Button>
                     ) : (
                         <Button size="lg" onPress={handlePay} style={{ width: '100%' }} disabled={isProcessing}>
-                            {isProcessing ? <ActivityIndicator color="#fff" /> : `Pay $${total.toFixed(2)}`}
+                            {isProcessing ? <ActivityIndicator color="#fff" /> : `Pay ${CURRENCY_SYMBOL}${total.toFixed(2)}`}
                         </Button>
                     )}
                 </View>
@@ -285,15 +373,15 @@ const styles = StyleSheet.create({
     defaultTag: { fontSize: 11, fontWeight: '700', color: '#0223E6', backgroundColor: '#E0E7FF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' },
 
     // Carrier Tickets (New)
-    ticketCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent' },
+    ticketCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent', minHeight: 80 },
     selectedTicket: { borderColor: '#0223E6', backgroundColor: '#F5F7FF' },
-    ticketLeft: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-    carrierLogo: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-    ticketName: { fontSize: 16, fontWeight: '700', color: '#000' },
-    ticketService: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
-    ticketRight: { alignItems: 'flex-end' },
-    ticketPrice: { fontSize: 18, fontWeight: '700', color: '#0223E6' },
-    ticketTime: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
+    ticketLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, paddingRight: 8 },
+    carrierLogo: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+    ticketName: { fontSize: 15, fontWeight: '700', color: '#000' },
+    ticketService: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
+    ticketRight: { alignItems: 'flex-end', minWidth: 80 },
+    ticketPrice: { fontSize: 16, fontWeight: '700', color: '#0223E6' },
+    ticketTime: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
     ticketBadge: { position: 'absolute', top: 0, right: 0, paddingHorizontal: 8, paddingVertical: 4, borderBottomLeftRadius: 10 },
     ticketBadgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
 

@@ -21,31 +21,88 @@ interface ImportPreviewModalProps {
   url: string;
   initialTitle?: string;
   initialImage?: string;
+  initialPrice?: string;
+  initialCurrency?: string;
   onClose: () => void;
   onConfirm: (item: CartItem) => void;
 }
 
-const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({ url, initialTitle, initialImage, onClose, onConfirm }) => {
+const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({ url, initialTitle, initialImage, initialPrice, initialCurrency, onClose, onConfirm }) => {
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
 
-  const parseUrl = (u: string) => {
-    const lowUrl = u.toLowerCase();
-    if (lowUrl.includes('amazon')) return { store: 'Amazon', title: initialTitle || 'Imported Amazon Item', image: initialImage || 'https://picsum.photos/seed/amazon/400/400' };
-    if (lowUrl.includes('apple')) return { store: 'Apple', title: initialTitle || 'Imported Apple Item', image: initialImage || 'https://picsum.photos/seed/apple/400/400' };
-    return { store: 'Global Store', title: initialTitle || 'Imported Item', image: initialImage || 'https://picsum.photos/seed/unknown/400/400' };
+  // Parse initial data once
+  const parseInitialData = () => {
+    const lowUrl = url.toLowerCase();
+
+    // 1. Currency Logic
+    let guessedCurrency = initialCurrency;
+    if (!guessedCurrency) {
+      if (lowUrl.includes('.co.uk') || lowUrl.includes('amazon.co.uk')) guessedCurrency = 'GBP';
+      else if (lowUrl.includes('.ae') || lowUrl.includes('amazon.ae')) guessedCurrency = 'AED';
+      else if (lowUrl.includes('.com') || lowUrl.includes('amazon.com')) guessedCurrency = 'USD';
+      else guessedCurrency = 'USD'; // Default
+    }
+
+    // 2. Parsed Price Logic
+    let priceNum = 0;
+    if (initialPrice) {
+      // Clean price string
+      let clean = initialPrice.replace(/[^0-9.,]/g, '');
+      clean = clean.replace(/,/g, '');
+      const parsed = parseFloat(clean);
+      if (!isNaN(parsed)) priceNum = parsed;
+    }
+
+    // 3. Store Name Logic
+    let store = 'Global Store';
+    if (lowUrl.includes('amazon')) {
+      if (lowUrl.includes('.co.uk')) store = 'Amazon UK';
+      else if (lowUrl.includes('.ae')) store = 'Amazon UAE';
+      else store = 'Amazon US';
+    } else if (lowUrl.includes('apple')) {
+      store = 'Apple';
+    } else if (lowUrl.includes('noon')) {
+      store = 'Noon';
+    } else if (lowUrl.includes('namshi')) {
+      store = 'Namshi';
+    } else if (lowUrl.includes('zara')) {
+      store = 'Zara';
+    }
+
+    return {
+      store,
+      title: initialTitle || 'Imported Item',
+      image: initialImage || 'https://via.placeholder.com/300',
+      price: priceNum,
+      currency: guessedCurrency
+    };
   };
 
-  const product = parseUrl(url);
+  const [productData] = useState(parseInitialData());
+  const [priceInput, setPriceInput] = useState(productData.price > 0 ? productData.price.toString() : '');
+  const [currency, setCurrency] = useState(productData.currency);
+
+  const currencySymbol = currency === 'GBP' ? '£' : currency === 'AED' ? 'AED ' : '$';
 
   const handleAddToCart = () => {
+    const finalPrice = parseFloat(priceInput);
+
+    if (isNaN(finalPrice) || finalPrice <= 0) {
+      alert("Please enter a valid price");
+      return;
+    }
+
     onConfirm({
       id: Math.random().toString(36).substring(2, 11),
-      ...product,
+      title: productData.title,
+      image: productData.image,
+      store: productData.store,
+      price: finalPrice,
       quantity,
       notes,
       url,
-      price: Math.floor(Math.random() * 200) + 15
+      currency: productData.currency // Ensure currency is passed
     });
   };
 
@@ -66,11 +123,23 @@ const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({ url, initialTit
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
               <View style={styles.productRow}>
-                <Image source={{ uri: product.image }} style={styles.image} />
+                <Image source={{ uri: productData.image }} style={styles.image} />
                 <View style={styles.info}>
-                  <View style={styles.badge}><Text style={styles.badgeText}>{product.store}</Text></View>
-                  <Text style={styles.productTitle}>{product.title}</Text>
-                  <Text style={styles.price}>$??.??</Text>
+                  <View style={styles.badge}><Text style={styles.badgeText}>{productData.store}</Text></View>
+                  <Text style={styles.productTitle}>{productData.title}</Text>
+
+                  <View style={styles.priceContainer}>
+                    <Text style={styles.currencyPrefix}>{currencySymbol}</Text>
+                    <TextInput
+                      style={styles.priceInput}
+                      value={priceInput}
+                      onChangeText={setPriceInput}
+                      keyboardType="numeric"
+                      placeholder="0.00"
+                      placeholderTextColor="#52525b"
+                    />
+                  </View>
+                  <Text style={styles.verificationText}>* Final price verified at purchase</Text>
                 </View>
               </View>
 
@@ -123,7 +192,12 @@ const styles = StyleSheet.create({
   badge: { backgroundColor: 'rgba(37, 99, 235, 0.15)', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, marginBottom: 6 },
   badgeText: { color: '#60a5fa', fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
   productTitle: { color: '#fff', fontSize: 20, fontWeight: '800', lineHeight: 24 },
-  price: { color: '#60a5fa', fontSize: 22, fontWeight: '900', marginTop: 6, letterSpacing: -0.5 },
+  // New Styles
+  priceContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  currencyPrefix: { color: '#60a5fa', fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
+  priceInput: { color: '#60a5fa', fontSize: 24, fontWeight: '900', letterSpacing: -0.5, minWidth: 100, padding: 0 },
+  verificationText: { color: '#71717a', fontSize: 10, fontWeight: '600', marginTop: 6, opacity: 0.8 },
+
   section: { marginBottom: 24 },
   label: { color: '#52525b', fontSize: 11, fontWeight: '900', letterSpacing: 1.5, marginBottom: 12 },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: '#18181b', padding: 8, borderRadius: 18, width: 160 },

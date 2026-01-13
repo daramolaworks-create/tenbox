@@ -9,7 +9,7 @@ interface InAppBrowserProps {
     url: string;
     storeName: string;
     onClose: () => void;
-    onAddToCart: (data: { url: string; title?: string; image?: string }) => void;
+    onAddToCart: (data: { url: string; title?: string; image?: string; price?: string; currency?: string; debug?: string }) => void;
 }
 
 const INJECTED_JAVASCRIPT = `
@@ -17,16 +17,116 @@ const INJECTED_JAVASCRIPT = `
     try {
       const getMeta = (prop) => document.querySelector('meta[property="' + prop + '"]')?.content || document.querySelector('meta[name="' + prop + '"]')?.content;
       const title = getMeta('og:title') || document.title;
-      const image = getMeta('og:image') || document.querySelector('img')?.src;
-      const url = window.location.href;
       
-      const payload = JSON.stringify({ type: 'PRODUCT_EXTRACT', payload: { title, image, url } });
+      let image = getMeta('og:image');
+      
+      // Amazon Image Selectors
+      if (!image) {
+        const imgSelectors = [
+            '#landingImage',
+            '#imgBlkFront',
+            '#ebooksImgBlkFront',
+            '#main-image',
+            '[data-a-image-name="landingImage"]'
+        ];
+        
+        for (let sel of imgSelectors) {
+            const el = document.querySelector(sel);
+            if (el && el.src) {
+                image = el.src;
+                break;
+            }
+        }
+      }
+
+      // Fallback: Find largest image by area
+      if (!image) {
+          const imgs = Array.from(document.querySelectorAll('img'));
+          let maxArea = 0;
+          for (let img of imgs) {
+              const area = img.width * img.height;
+              // Filter out tracking pixels and small icons
+              if (area > maxArea && area > 10000 && img.src && !img.src.includes('sprite')) {
+                  maxArea = area;
+                  image = img.src;
+              }
+          }
+      }
+
+      // Final fallback to first substantial image
+      if (!image) image = document.querySelector('img')?.src;
+      
+      let debugLog = [];
+      const log = (msg) => debugLog.push(msg);
+
+      // 1. Meta Tags First
+      price = getMeta('og:price:amount') || getMeta('product:price:amount');
+      currency = getMeta('og:price:currency') || getMeta('product:price:currency');
+      if (price) log('Found meta price');
+
+      // 2. Amazon DOM Sraping (Aggressive)
+      if (!price) {
+          const selectors = [
+              '#corePrice_feature_div .a-price .a-offscreen',
+              '#corePriceDisplay_mobile_feature_div .a-price .a-offscreen',
+              '#corePriceDisplay_mobile_feature_div .a-offscreen',
+              '#ubp_price',
+              '#priceblock_ourprice',
+              '#priceblock_dealprice',
+              '.a-price .a-offscreen', // Fallback to any price tag
+              '.a-price' // Fallback to visible price container
+          ];
+
+          for (let sel of selectors) {
+              const els = document.querySelectorAll(sel);
+              for (let el of els) {
+                  // Use textContent to get hidden text
+                  let text = el.textContent ? el.textContent.trim() : '';
+                  if (!text && el.innerText) text = el.innerText.trim();
+                  
+                  if (text && /\d/.test(text)) {
+                      log('Found dom price: ' + text + ' in ' + sel);
+                      price = text;
+                      // Try to detect currency from this specific text
+                      if (text.includes('£')) currency = 'GBP';
+                      else if (text.includes('AED')) currency = 'AED';
+                      else if (text.includes('$')) currency = 'USD';
+                      else if (text.includes('€')) currency = 'EUR';
+                      break;
+                  }
+              }
+              if (price) break;
+          }
+      }
+
+      // 3. Schema.org JSON-LD
+      if (!price) {
+          const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+          for (let script of scripts) {
+              try {
+                  const json = JSON.parse(script.innerText);
+                  if (json['@type'] === 'Product' || json['@context']?.includes('schema.org')) {
+                      const offer = Array.isArray(json.offers) ? json.offers[0] : json.offers;
+                      if (offer && offer.price) {
+                          price = offer.price;
+                          if (offer.priceCurrency) currency = offer.priceCurrency;
+                          log('Found schema price');
+                          break;
+                      }
+                  }
+              } catch(e) {}
+          }
+      }
+
+      const url = window.location.href;
+      // Send debug log in the payload
+      const payload = JSON.stringify({ 
+          type: 'PRODUCT_EXTRACT', 
+          payload: { title, image, url, price, currency, debug: debugLog.join(' | ') } 
+      });
       
       if (window.ReactNativeWebView) {
         window.ReactNativeWebView.postMessage(payload);
-      } else {
-        // Fallback for some Android versions or if injection delayed
-        console.log('ReactNativeWebView not ready');
       }
     } catch(e) {
       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ERROR', message: e.toString() }));

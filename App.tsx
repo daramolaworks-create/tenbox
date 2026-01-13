@@ -35,7 +35,7 @@ import {
   AlertCircle
 } from 'lucide-react-native';
 import { TabType, CartItem, Shipment } from './types';
-import { useCartStore } from './store';
+import { useCartStore, STORE_ADDRESSES, getStoreRegion } from './store';
 import { Button, Input, Card } from './components/UI';
 import ImportPreviewModal from './components/ImportPreviewModal';
 import SettingsModal from './components/SettingsModal';
@@ -79,7 +79,7 @@ const App: React.FC = () => {
   const [showShipFlow, setShowShipFlow] = useState(false);
   const [browserUrl, setBrowserUrl] = useState<string | null>(null);
   const [activeStoreName, setActiveStoreName] = useState('');
-  const [extractedData, setExtractedData] = useState<{ title?: string; image?: string }>({});
+  const [extractedData, setExtractedData] = useState<{ title?: string; image?: string; price?: string; currency?: string }>({});
   const { items, addItem, removeItem, updateQuantity, shipments, user, addresses, checkSession, logout, products, fetchProducts, fetchAddresses, fetchShipments, initializeSubscription } = useCartStore();
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [settingsView, setSettingsView] = useState<'list' | 'account' | 'addresses' | 'orders'>('list');
@@ -144,9 +144,10 @@ const App: React.FC = () => {
     }
   };
 
-  const handleBrowserAddToCart = (data: { url: string; title?: string; image?: string }) => {
+  const handleBrowserAddToCart = (data: { url: string; title?: string; image?: string; price?: string; currency?: string; debug?: string }) => {
+    console.log('[App] Received Browser Data:', JSON.stringify(data, null, 2));
     setImportUrl(data.url);
-    setExtractedData({ title: data.title, image: data.image });
+    setExtractedData({ title: data.title, image: data.image, price: data.price, currency: data.currency });
     setBrowserUrl(null); // Close browser
     setTimeout(() => setShowModal(true), 100); // Open modal with slight delay for smooth transition
   };
@@ -483,59 +484,68 @@ const App: React.FC = () => {
     </ScrollView>
   );
 
-  const renderCart = () => (
-    <View style={styles.screen}>
-      <Text style={styles.screenTitle}>Tenbox Cart</Text>
-      <Text style={styles.subText}>{items.length} {items.length === 1 ? 'item' : 'items'} staging for import</Text>
+  const renderCart = () => {
+    const storeRegion = items[0]?.store ? getStoreRegion(items[0].store) : 'USA';
+    const currencyConfig = STORE_ADDRESSES[storeRegion] || STORE_ADDRESSES['USA'];
+    const currencySymbol = currencyConfig.symbol;
 
-      {items.length === 0 ? (
-        <View style={styles.emptyCartContainer}>
-          <ShoppingCart size={64} color="#E5E5EA" />
-          <Text style={styles.emptyText}>Your cart is waiting for items.</Text>
-          <Button variant="outline" style={{ marginTop: 24 }} onPress={() => setActiveTab('shop')}>
-            Start Shopping
-          </Button>
-        </View>
-      ) : (
-        <View style={styles.cartList}>
-          <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: '65%' }}>
-            {items.map(item => (
-              <Card key={item.id} style={styles.cartItem}>
-                <Image source={{ uri: item.image }} style={styles.cartImg} />
-                <View style={styles.cartInfo}>
-                  <View style={styles.cartItemHeader}>
-                    <Text style={styles.cartStore}>{item.store}</Text>
-                    <TouchableOpacity onPress={() => removeItem(item.id)}>
-                      <Trash2 size={18} color="#FF3B30" />
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={styles.cartTitle} numberOfLines={1}>{item.title}</Text>
-                  <View style={styles.cartBottom}>
-                    <View style={styles.cartStepper}>
-                      <TouchableOpacity onPress={() => updateQuantity(item.id, item.quantity - 1)}><Plus size={14} color="#000" style={{ transform: [{ rotate: '45deg' }] }} /></TouchableOpacity>
-                      <Text style={styles.cartQty}>{item.quantity}</Text>
-                      <TouchableOpacity onPress={() => updateQuantity(item.id, item.quantity + 1)}><Plus size={14} color="#000" /></TouchableOpacity>
-                    </View>
-                    <Text style={styles.cartPrice}>${item.price * item.quantity}.00</Text>
-                  </View>
-                </View>
-              </Card>
-            ))}
-          </ScrollView>
+    return (
+      <View style={styles.screen}>
+        <Text style={styles.screenTitle}>Tenbox Cart</Text>
+        <Text style={styles.subText}>{items.length} {items.length === 1 ? 'item' : 'items'} staging for import</Text>
 
-          <Card style={styles.checkoutSummary}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>${items.reduce((a, b) => a + (b.price * b.quantity), 0)}.00</Text>
-            </View>
-            <Button style={styles.checkoutBtn} size="lg" onPress={() => setShowCheckout(true)}>
-              Checkout Now
+        {items.length === 0 ? (
+          <View style={styles.emptyCartContainer}>
+            <ShoppingCart size={64} color="#E5E5EA" />
+            <Text style={styles.emptyText}>Your cart is waiting for items.</Text>
+            <Button variant="outline" style={{ marginTop: 24 }} onPress={() => setActiveTab('shop')}>
+              Start Shopping
             </Button>
-          </Card>
-        </View>
-      )}
-    </View>
-  );
+          </View>
+        ) : (
+          <View style={styles.cartList}>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: '65%' }}>
+              {items.map(item => (
+                <Card key={item.id} style={styles.cartItem}>
+                  <Image source={{ uri: item.image }} style={styles.cartImg} />
+                  <View style={styles.cartInfo}>
+                    <View style={styles.cartItemHeader}>
+                      <Text style={styles.cartStore}>{item.store}</Text>
+                      <TouchableOpacity onPress={() => removeItem(item.id)}>
+                        <Trash2 size={18} color="#FF3B30" />
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles.cartTitle} numberOfLines={1}>{item.title}</Text>
+                    <View style={styles.cartBottom}>
+                      <View style={styles.cartStepper}>
+                        <TouchableOpacity onPress={() => updateQuantity(item.id, item.quantity - 1)}><Plus size={14} color="#000" style={{ transform: [{ rotate: '45deg' }] }} /></TouchableOpacity>
+                        <Text style={styles.cartQty}>{item.quantity}</Text>
+                        <TouchableOpacity onPress={() => updateQuantity(item.id, item.quantity + 1)}><Plus size={14} color="#000" /></TouchableOpacity>
+                      </View>
+                      <Text style={styles.cartPrice}>{currencySymbol}{item.price * item.quantity}.00</Text>
+                    </View>
+                  </View>
+                </Card>
+              ))}
+            </ScrollView>
+
+            <Card style={styles.checkoutSummary}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Subtotal</Text>
+                <Text style={styles.summaryValue}>{currencySymbol}{items.reduce((a, b) => a + (b.price * b.quantity), 0)}.00</Text>
+              </View>
+              <Button style={styles.checkoutBtn} size="lg" onPress={() => setShowCheckout(true)}>
+                Checkout Now
+              </Button>
+              <Text style={{ textAlign: 'center', fontSize: 11, color: '#8E8E93', marginTop: 12 }}>
+                Prices subject to verification during fulfillment
+              </Text>
+            </Card>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   if (isLoading || !fontsLoaded) {
     return <LoaderScreen />;
@@ -622,6 +632,8 @@ const App: React.FC = () => {
           url={importUrl}
           initialTitle={extractedData.title}
           initialImage={extractedData.image}
+          initialPrice={extractedData.price}
+          initialCurrency={extractedData.currency}
           onClose={() => setShowModal(false)}
           onConfirm={(item) => {
             addItem(item);
