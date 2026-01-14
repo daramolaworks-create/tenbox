@@ -129,6 +129,30 @@ const App: React.FC = () => {
             }
           }
         }
+        // Check for Google Auth Callback (Fallback)
+        // Usually WebBrowser handling in store.ts catches this, but for robustness:
+        if (url.includes('google-auth')) {
+          console.log('🔗 Global Listener caught Google Auth URL');
+          const fragment = url.split('#')[1] || url.split('?')[1];
+          if (fragment) {
+            const authParams: Record<string, string> = {};
+            fragment.split('&').forEach(pair => {
+              const [key, value] = pair.split('=');
+              if (key && value) authParams[key] = decodeURIComponent(value);
+            });
+
+            if (authParams.access_token && authParams.refresh_token) {
+              await supabase.auth.setSession({
+                access_token: authParams.access_token,
+                refresh_token: authParams.refresh_token
+              });
+              // Refresh store
+              await useCartStore.getState().checkSession();
+              Alert.alert('Success', 'Google Sign In Successful!');
+            }
+          }
+        }
+
       } catch (e) {
         console.error('Deep Link Error:', e);
       }

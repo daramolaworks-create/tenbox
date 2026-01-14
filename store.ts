@@ -270,6 +270,9 @@ export const useCartStore = create<AppState>()(
       loginWithGoogle: async () => {
         try {
           const redirectUrl = Linking.createURL('google-auth');
+          console.log('🔵 Initiating Google Login...');
+          console.log('🔗 Redirect URL:', redirectUrl);
+
           const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
@@ -281,17 +284,35 @@ export const useCartStore = create<AppState>()(
           if (error) throw error;
           if (!data?.url) throw new Error('No OAuth URL returned');
 
+          console.log('🌍 Opening Auth Session:', data.url);
           const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
 
+          console.log('🔄 Browser Result:', result.type);
+
           if (result.type === 'success' && result.url) {
+            console.log('✅ Auth success, URL:', result.url);
+
             // Extract tokens from the URL
-            const url = new URL(result.url);
-            const params = new URLSearchParams(url.hash.substring(1)); // Hashes are typical in implicity flow
+            const urlObj = new URL(result.url);
+            // OAuth tokens usually come in the hash fragment for implicit flow
+            // But sometimes might be in query depending on config, checking both.
+            const fragment = urlObj.hash ? urlObj.hash.substring(1) : urlObj.search ? urlObj.search.substring(1) : '';
+
+            const params = new URLSearchParams(fragment);
             const accessToken = params.get('access_token');
             const refreshToken = params.get('refresh_token');
+            const errorDesc = params.get('error_description');
 
-            if (!accessToken || !refreshToken) return; // Might handle as error
+            if (errorDesc) {
+              throw new Error(errorDesc);
+            }
 
+            if (!accessToken || !refreshToken) {
+              console.warn('⚠️ No tokens found in URL');
+              return;
+            }
+
+            console.log('🔑 Tokens found, setting session...');
             const { error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
@@ -299,11 +320,15 @@ export const useCartStore = create<AppState>()(
 
             if (sessionError) throw sessionError;
 
+            console.log('🎉 Session set successfully!');
             // Refresh store state
             await useCartStore.getState().checkSession();
+          } else {
+            console.log('🚫 Browser closed or failed:', result.type);
           }
-        } catch (error) {
-          console.error("Google Login Error:", error);
+        } catch (error: any) {
+          console.error("❌ Google Login Error:", error);
+          Alert.alert('Login Error', error.message);
           throw error;
         }
       },
