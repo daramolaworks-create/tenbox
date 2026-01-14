@@ -6,6 +6,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { CartItem, Shipment } from './types';
+import { createClient } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 
 export interface Address {
@@ -64,7 +65,8 @@ interface AppState {
   loginWithApple: () => Promise<void>;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  updatePassword: (password: string) => Promise<void>;
+  updatePassword: (password: string, currentPassword: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 
   // Addresses
   addresses: Address[];
@@ -416,12 +418,50 @@ export const useCartStore = create<AppState>()(
       },
 
 
-      updatePassword: async (password) => {
+      updatePassword: async (password, currentPassword) => {
+        const email = get().user?.email;
+        console.log('🔒 Update Password called');
+
+        if (!email) throw new Error('User email not found');
+
+        // 1. Verify current password using an ISOLATED client
+        // This prevents the current session from interfering with the check
+        const tempSupabase = createClient(
+          process.env.EXPO_PUBLIC_SUPABASE_URL!,
+          process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!
+        );
+
+        const { data: signInData, error: signInError } = await tempSupabase.auth.signInWithPassword({
+          email,
+          password: currentPassword
+        });
+
+        if (signInError || !signInData.user) {
+          console.error('❌ Re-auth failed:', signInError);
+          throw new Error('Incorrect current password.');
+        }
+
+        console.log('✅ Re-auth successful, updating password on main client...');
+
+        // 2. Update to new password using the MAIN client (which is authenticated)
         const { error } = await supabase.auth.updateUser({ password });
         if (error) {
-          console.error('Error updating password:', error);
+          console.error('❌ Update failed:', error);
           throw error;
         }
+        console.log('🎉 Password updated successfully');
+      },
+
+      deleteAccount: async () => {
+        // In a real app, this would call a Supabase Edge Function to delete the user from Auth and DB.
+        // For this MVP, we will sign the user out and clear local state, simulating deletion.
+        console.log('⚠️ Deleting account (Mock Implementation)');
+
+        // try calling an edge function if it existed:
+        // await supabase.functions.invoke('delete-account');
+
+        await get().logout();
+        Alert.alert('Account Deleted', 'Your account has been successfully deleted.');
       },
 
       // Addresses

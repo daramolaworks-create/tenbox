@@ -1,13 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { MapPin, Clock, LogOut, ChevronRight, User, Lock } from 'lucide-react-native';
+import { MapPin, Clock, LogOut, ChevronRight, User } from 'lucide-react-native';
 import { UserProfile } from '../store';
 import AddressesView from './AddressesView';
 import OrdersView from './OrdersView';
 import EditProfileView from './EditProfileView';
-import ChangePasswordView from './ChangePasswordView';
 
-export type SettingsSubView = 'list' | 'account' | 'addresses' | 'orders' | 'password';
+export type SettingsSubView = 'list' | 'account' | 'addresses' | 'orders';
 
 interface SettingsViewProps {
     user: UserProfile | null;
@@ -48,12 +47,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                         <OrdersView />
                     </View>
                 )}
-                {currentView === 'password' && (
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.screenTitle}>Change Password</Text>
-                        <ChangePasswordView />
-                    </View>
-                )}
             </View>
         );
     }
@@ -81,7 +74,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 {[
                     { icon: MapPin, label: 'Saved Addresses', action: () => onViewChange('addresses') },
                     { icon: Clock, label: 'Order History', action: () => onViewChange('orders') },
-                    { icon: Lock, label: 'Change Password', action: () => onViewChange('password') },
                     { icon: LogOut, label: 'Log Out', color: '#FF3B30', action: () => logout() }
                 ].map((item, i) => (
                     <TouchableOpacity key={i} style={styles.settingItem} onPress={item.action}>

@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -12,6 +11,7 @@ import {
   ViewStyle,
   TextStyle
 } from 'react-native';
+import { Eye, EyeOff } from 'lucide-react-native';
 
 interface ButtonProps extends TouchableOpacityProps {
   children: React.ReactNode;
@@ -62,17 +62,32 @@ export const Button: React.FC<ButtonProps> = ({
 
 interface InputProps extends TextInputProps {
   label?: string;
+  secureTextToggle?: boolean;
 }
 
-export const Input: React.FC<InputProps> = ({ style, label, ...props }) => {
+export const Input: React.FC<InputProps> = ({ style, label, secureTextToggle, ...props }) => {
+  const [isSecure, setIsSecure] = useState(props.secureTextEntry);
+
+  const toggleSecure = () => {
+    setIsSecure(!isSecure);
+  };
+
   return (
     <View style={[{ width: '100%' }, style]}>
       {label && <Text style={styles.inputLabel}>{label}</Text>}
-      <RNTextInput
-        placeholderTextColor="#8E8E93"
-        style={[styles.input, { width: '100%' }]}
-        {...props}
-      />
+      <View style={styles.inputContainer}>
+        <RNTextInput
+          placeholderTextColor="#8E8E93"
+          style={styles.input}
+          {...props}
+          secureTextEntry={props.secureTextEntry && secureTextToggle ? isSecure : props.secureTextEntry}
+        />
+        {secureTextToggle && props.secureTextEntry && (
+          <TouchableOpacity onPress={toggleSecure} style={styles.eyeIcon}>
+            {isSecure ? <Eye size={20} color="#8E8E93" /> : <EyeOff size={20} color="#8E8E93" />}
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 };
@@ -118,15 +133,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
   },
-  input: {
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E5EA',
-    color: '#000000',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
     borderRadius: 14,
+    paddingHorizontal: 16,
+  },
+  input: {
+    flex: 1,
+    color: '#000000',
+    paddingVertical: 14,
     fontSize: 16,
+    height: '100%'
+  },
+  eyeIcon: {
+    padding: 10,
+    marginRight: -10
   },
   card: {
     backgroundColor: '#FFFFFF',

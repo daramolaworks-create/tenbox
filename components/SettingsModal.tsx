@@ -7,8 +7,8 @@ import OrdersView from './OrdersView';
 import NotificationsView from './NotificationsView';
 import SecurityView from './SecurityView';
 import SupportView from './SupportView';
-
 import EditProfileView from './EditProfileView';
+import ChangePasswordView from './ChangePasswordView';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -20,7 +20,7 @@ interface SettingsModalProps {
     onLogout?: () => void;
 }
 
-type SettingsView = 'main' | 'addresses' | 'orders' | 'notifications' | 'security' | 'support' | 'editProfile';
+type SettingsView = 'main' | 'addresses' | 'orders' | 'notifications' | 'security' | 'support' | 'editProfile' | 'password';
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, onLogout }) => {
     const { user } = useCartStore();
@@ -33,7 +33,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, onLogou
 
     const handleBack = () => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setView('main');
+        if (view === 'password') {
+            setView('security');
+        } else {
+            setView('main');
+        }
     };
 
     // --- RENDERERS ---
@@ -46,7 +50,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, onLogou
             notifications: 'Notifications',
             security: 'Privacy & Security',
             support: 'Help & Support',
-            editProfile: 'Edit Profile'
+            editProfile: 'Edit Profile',
+            password: 'Change Password'
         };
 
         return (
@@ -54,7 +59,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, onLogou
                 {view !== 'main' ? (
                     <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
                         <ChevronLeft size={24} color="#0223E6" />
-                        <Text style={styles.backText}>Back</Text>
+                        <Text style={styles.backText}>
+                            {view === 'password' ? 'Privacy' : 'Back'}
+                        </Text>
                     </TouchableOpacity>
                 ) : (
                     <View style={{ width: 60 }} />
@@ -165,9 +172,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, onLogou
                     {view === 'addresses' && <AddressesView />}
                     {view === 'orders' && <OrdersView />}
                     {view === 'notifications' && <NotificationsView />}
-                    {view === 'security' && <SecurityView />}
+                    {/* Pass onNavigate to allow linking to Change Password */}
+                    {view === 'security' && <SecurityView onNavigate={handleNavigate} />}
                     {view === 'support' && <SupportView />}
                     {view === 'editProfile' && <EditProfileView />}
+                    {view === 'password' && <ChangePasswordView />}
                 </View>
             </SafeAreaView>
         </Modal>

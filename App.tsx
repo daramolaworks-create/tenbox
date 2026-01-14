@@ -125,7 +125,7 @@ const App: React.FC = () => {
             if (url.includes('reset-password')) {
               Alert.alert('Reset Successful', 'Please set a new password now.');
               setShowSettings(true);
-              setSettingsView('password');
+              // setSettingsView('password'); // Deprecated, handled by Modal if wired or manually navigated
             }
           }
         }
