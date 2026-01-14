@@ -11,16 +11,37 @@ interface AuthScreenProps {
 
 const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     const [isLogin, setIsLogin] = useState(true);
+    const [isForgot, setIsForgot] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
 
-    const { login, signup } = useCartStore();
+    const { login, signup, resetPassword } = useCartStore();
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
-        if (!email || !password) {
-            alert('Please fill in all fields');
+        if (!email) {
+            alert('Please enter your email.');
+            return;
+        }
+
+        if (isForgot) {
+            setLoading(true);
+            try {
+                await resetPassword(email);
+                alert('Password reset link sent! Check your email.');
+                setIsForgot(false);
+                setIsLogin(true);
+            } catch (error: any) {
+                alert(error.message || 'Failed to send reset link.');
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
+        if (!password) {
+            alert('Please enter your password.');
             return;
         }
 
@@ -52,50 +73,91 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                     </View>
 
                     <View style={styles.card}>
-                        <View style={styles.tabRow}>
-                            <TouchableOpacity style={[styles.tab, isLogin && styles.activeTab]} onPress={() => setIsLogin(true)}>
-                                <Text style={[styles.tabText, isLogin && styles.activeTabText]}>Log In</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={[styles.tab, !isLogin && styles.activeTab]} onPress={() => setIsLogin(false)}>
-                                <Text style={[styles.tabText, !isLogin && styles.activeTabText]}>Sign Up</Text>
-                            </TouchableOpacity>
-                        </View>
+                        {!isForgot ? (
+                            <View style={styles.tabRow}>
+                                <TouchableOpacity style={[styles.tab, isLogin && styles.activeTab]} onPress={() => setIsLogin(true)}>
+                                    <Text style={[styles.tabText, isLogin && styles.activeTabText]}>Log In</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={[styles.tab, !isLogin && styles.activeTab]} onPress={() => setIsLogin(false)}>
+                                    <Text style={[styles.tabText, !isLogin && styles.activeTabText]}>Sign Up</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <View style={{ marginBottom: 24 }}>
+                                <Text style={{ fontSize: 20, fontWeight: '700', textAlign: 'center' }}>Reset Password</Text>
+                                <Text style={{ textAlign: 'center', color: '#8E8E93', marginTop: 8 }}>Enter your email to receive a reset link.</Text>
+                            </View>
+                        )}
 
                         <View style={styles.form}>
-                            {!isLogin && (
+                            {!isLogin && !isForgot && (
                                 <Input placeholder="Full Name" value={name} onChangeText={setName} />
                             )}
                             <Input placeholder="Email Address" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
-                            <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
 
-                            {isLogin && (
-                                <TouchableOpacity style={styles.forgotBtn}>
+                            {!isForgot && (
+                                <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+                            )}
+
+                            {isLogin && !isForgot && (
+                                <TouchableOpacity style={styles.forgotBtn} onPress={() => setIsForgot(true)}>
                                     <Text style={styles.forgotText}>Forgot Password?</Text>
                                 </TouchableOpacity>
                             )}
 
-                            <Button size="lg" onPress={handleSubmit} style={styles.submitBtn}>
-                                {isLogin ? 'Log In' : 'Create Account'}
+                            <Button size="lg" onPress={handleSubmit} style={styles.submitBtn} disabled={loading}>
+                                {loading ? 'Please wait...' : (isForgot ? 'Send Reset Link' : (isLogin ? 'Log In' : 'Create Account'))}
                             </Button>
+
+                            {isForgot && (
+                                <TouchableOpacity style={{ alignSelf: 'center', marginTop: 16 }} onPress={() => setIsForgot(false)}>
+                                    <Text style={{ color: '#0223E6', fontWeight: '600' }}>Back to Login</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
 
-                        <View style={styles.divider}>
-                            <View style={styles.line} />
-                            <Text style={styles.orText}>Or continue with</Text>
-                            <View style={styles.line} />
-                        </View>
+                        {!isForgot && (
+                            <>
+                                <View style={styles.divider}>
+                                    <View style={styles.line} />
+                                    <Text style={styles.orText}>Or continue with</Text>
+                                    <View style={styles.line} />
+                                </View>
 
-                        <View style={styles.socialCol}>
-                            <TouchableOpacity style={styles.socialBtn} onPress={onLogin}>
-                                <Image source={require('../assets/logos/google.png')} style={{ width: 24, height: 24 }} />
-                                <Text style={styles.socialText}>Continue with Google</Text>
-                            </TouchableOpacity>
+                                <View style={styles.socialCol}>
+                                    <TouchableOpacity style={styles.socialBtn} onPress={async () => {
+                                        setLoading(true);
+                                        try {
+                                            await useCartStore.getState().loginWithGoogle();
+                                            onLogin();
+                                        } catch (e) {
+                                            console.log(e);
+                                            // alert('Google Login cancelled or failed');
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }}>
+                                        <Image source={require('../assets/logos/google.png')} style={{ width: 24, height: 24 }} />
+                                        <Text style={styles.socialText}>Continue with Google</Text>
+                                    </TouchableOpacity>
 
-                            <TouchableOpacity style={[styles.socialBtn, { backgroundColor: '#000' }]} onPress={onLogin}>
-                                <Image source={require('../assets/logos/apple.png')} style={{ width: 20, height: 24, tintColor: '#fff' }} resizeMode="contain" />
-                                <Text style={[styles.socialText, { color: '#fff' }]}>Continue with Apple</Text>
-                            </TouchableOpacity>
-                        </View>
+                                    <TouchableOpacity style={[styles.socialBtn, { backgroundColor: '#000' }]} onPress={async () => {
+                                        setLoading(true);
+                                        try {
+                                            await useCartStore.getState().loginWithApple();
+                                            onLogin();
+                                        } catch (e) {
+                                            console.log(e);
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }}>
+                                        <Image source={require('../assets/logos/apple.png')} style={{ width: 20, height: 24, tintColor: '#fff' }} resizeMode="contain" />
+                                        <Text style={[styles.socialText, { color: '#fff' }]}>Continue with Apple</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </>
+                        )}
                     </View>
 
                     <Text style={styles.footerText}>
@@ -103,8 +165,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                     </Text>
 
                 </View>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
+            </KeyboardAvoidingView >
+        </SafeAreaView >
     );
 };
 

@@ -12,7 +12,8 @@ import {
   StatusBar,
   Alert,
   Platform,
-  UIManager
+  UIManager,
+  Linking
 } from 'react-native';
 import {
   Home as HomeIcon,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react-native';
 import { TabType, Shipment } from './types';
 import { useCartStore } from './store';
+import { supabase } from './lib/supabase';
 import ImportPreviewModal from './components/ImportPreviewModal';
 import SettingsModal from './components/SettingsModal';
 import ShipFlow from './components/ShipFlow';
@@ -92,6 +94,49 @@ const App: React.FC = () => {
       setIsLoading(false);
     }, 2500);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Handle Deep Linking (Password Reset)
+  useEffect(() => {
+    const handleUrl = async (url: string) => {
+      try {
+        if (!url) return;
+        // Parse Hash parameters (access_token, refresh_token)
+        // Format: tenbox://reset-password#access_token=...&refresh_token=...
+        const fragment = url.split('#')[1] || url.split('?')[1];
+        if (!fragment) return;
+
+        const params: Record<string, string> = {};
+        fragment.split('&').forEach(pair => {
+          const [key, value] = pair.split('=');
+          if (key && value) params[key] = decodeURIComponent(value);
+        });
+
+        if (params.access_token && params.refresh_token) {
+          const { error } = await supabase.auth.setSession({
+            access_token: params.access_token,
+            refresh_token: params.refresh_token
+          });
+
+          if (!error) {
+            // Only trigger reset flow if the URL indicates a reset
+            // Expo Linking path might differ based on environment (e.g. exp:// vs tenbox://)
+            // We check if the original URL contained 'reset-password'
+            if (url.includes('reset-password')) {
+              Alert.alert('Reset Successful', 'Please set a new password now.');
+              setShowSettings(true);
+              setSettingsView('password');
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Deep Link Error:', e);
+      }
+    };
+
+    Linking.getInitialURL().then((url) => { if (url) handleUrl(url); });
+    const sub = Linking.addEventListener('url', (e) => handleUrl(e.url));
+    return () => sub.remove();
   }, []);
 
   const handleOpenBrowser = (url: string, name: string) => {

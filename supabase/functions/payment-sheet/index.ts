@@ -1,3 +1,4 @@
+// @ts-nocheck - This is a Deno file for Supabase Edge Functions
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Stripe from 'https://esm.sh/stripe@14.14.0'
 
@@ -11,17 +12,27 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+interface RequestBody {
+    amount: number;
+    currency: string;
+    email: string;
+    name?: string;
+}
+
 serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
 
     try {
-        const { amount, currency, email, name } = await req.json()
+        const body: RequestBody = await req.json()
+        const { amount, currency, email, name } = body
+
+        if (!amount || !currency || !email) {
+            throw new Error('Missing required fields')
+        }
 
         // 1. Create or retrieve customer
-        // For MVP, we'll search by email or create new. 
-        // In production, store stripe_customer_id in your 'users' table.
         let customerId;
         const existingCustomers = await stripe.customers.list({ email: email, limit: 1 });
 
@@ -42,9 +53,8 @@ serve(async (req) => {
         )
 
         // 3. Payment Intent
-        // amount should be in smallest currency unit (cents, pence, fils)
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(amount * 100), // convert to cents/pence
+            amount: Math.round(amount * 100), // convert to cents
             currency: currency,
             customer: customerId,
             automatic_payment_methods: {
@@ -66,7 +76,7 @@ serve(async (req) => {
         )
     } catch (error) {
         return new Response(
-            JSON.stringify({ error: error.message }),
+            JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 status: 400,

@@ -1,4 +1,7 @@
 import { create } from 'zustand';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
@@ -57,7 +60,11 @@ interface AppState {
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
 
   // Addresses
   addresses: Address[];
@@ -92,7 +99,7 @@ export const useCartStore = create<AppState>()(
   persist(
     (set, get) => ({
       // Cart Logic
-      items: [],
+      items: [] as CartItem[],
       addItem: (item) => {
         const currentItems = get().items;
 
@@ -145,7 +152,7 @@ export const useCartStore = create<AppState>()(
       }),
       clearCart: () => set({ items: [] }),
 
-      shipments: [],
+      shipments: [] as Shipment[],
       fetchShipments: async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
@@ -163,17 +170,17 @@ export const useCartStore = create<AppState>()(
 
         if (data) {
           set({
-            shipments: data.map(s => ({
+            shipments: data.map((s: any) => ({
               id: s.id,
               trackingNumber: s.tracking_number,
               carrier: s.carrier,
-              status: s.status,
+              status: s.status as any, // Cast to any or ShipmentStatus if imported
               origin: s.origin,
               destination: s.destination,
               estimatedDelivery: s.estimated_delivery,
               itemsString: s.items_summary,
-              image: s.label_url || 'https://via.placeholder.com/150', // Using label_url as image for now, or placeholder
-              events: [] // Events would need a separate table join or JSON column
+              image: s.label_url || 'https://via.placeholder.com/150',
+              events: []
             }))
           });
         }
@@ -206,7 +213,7 @@ export const useCartStore = create<AppState>()(
       },
 
       // User Profile & Auth
-      user: null,
+      user: null as UserProfile | null,
       isAuthenticated: false,
 
       checkSession: async () => {
@@ -255,6 +262,85 @@ export const useCartStore = create<AppState>()(
             },
             isAuthenticated: true
           });
+        }
+      },
+
+      loginWithGoogle: async () => {
+        try {
+          const redirectUrl = Linking.createURL('google-auth');
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: redirectUrl,
+              skipBrowserRedirect: true,
+            },
+          });
+
+          if (error) throw error;
+          if (!data?.url) throw new Error('No OAuth URL returned');
+
+          const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+
+          if (result.type === 'success' && result.url) {
+            // Extract tokens from the URL
+            const url = new URL(result.url);
+            const params = new URLSearchParams(url.hash.substring(1)); // Hashes are typical in implicity flow
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+
+            if (!accessToken || !refreshToken) return; // Might handle as error
+
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+            if (sessionError) throw sessionError;
+
+            // Refresh store state
+            await useCartStore.getState().checkSession();
+          }
+        } catch (error) {
+          console.error("Google Login Error:", error);
+          throw error;
+        }
+      },
+
+      loginWithApple: async () => {
+        try {
+          // Native iOS Sign In
+          const credential = await AppleAuthentication.signInAsync({
+            requestedScopes: [
+              AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+              AppleAuthentication.AppleAuthenticationScope.EMAIL,
+            ],
+          });
+
+          if (credential.identityToken) {
+            const { error, data } = await supabase.auth.signInWithIdToken({
+              provider: 'apple',
+              token: credential.identityToken,
+            });
+
+            if (error) throw error;
+
+            // Note: Apple only returns name on first sign in. We should update profile if we have it.
+            if (data.user && credential.fullName) {
+              const name = [credential.fullName.givenName, credential.fullName.familyName].filter(Boolean).join(' ');
+              if (name) {
+                await useCartStore.getState().updateProfile({ name });
+              }
+            }
+
+            await useCartStore.getState().checkSession();
+          }
+        } catch (e: any) {
+          if (e.code === 'ERR_REQUEST_CANCELED') {
+            // User canceled, do nothing
+            return;
+          }
+          console.error('Apple Login Error:', e);
+          throw e;
         }
       },
 
@@ -316,8 +402,30 @@ export const useCartStore = create<AppState>()(
         set((state) => ({ user: state.user ? { ...state.user, ...profile } : null }));
       },
 
+      resetPassword: async (email) => {
+        const redirectUrl = Linking.createURL('reset-password');
+        console.log('🔗 Generated Redirect URL:', redirectUrl);
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: redirectUrl
+        });
+        if (error) {
+          console.error('Error resetting password:', error);
+          throw error;
+        }
+      },
+
+
+      updatePassword: async (password) => {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) {
+          console.error('Error updating password:', error);
+          throw error;
+        }
+      },
+
       // Addresses
-      addresses: [],
+      addresses: [] as Address[],
       fetchAddresses: async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
@@ -335,7 +443,7 @@ export const useCartStore = create<AppState>()(
 
         if (data) {
           set({
-            addresses: data.map(a => ({
+            addresses: data.map((a: any) => ({
               id: a.id,
               label: a.label,
               street: a.street,
@@ -380,9 +488,6 @@ export const useCartStore = create<AppState>()(
         if (address.country) updates.country = address.country;
         if (address.default !== undefined) {
           updates.is_default = address.default;
-
-          // If setting to default, untoggle others (optional, or handle in UI/Function)
-          // For simplicity, we just update this one. 
         }
 
         const { error } = await supabase
@@ -421,7 +526,7 @@ export const useCartStore = create<AppState>()(
       })),
 
       // Orders (Supabase)
-      orderHistory: [],
+      orderHistory: [] as any[],
 
       fetchOrders: async () => {
         const { data: { session } } = await supabase.auth.getSession();
@@ -450,7 +555,7 @@ export const useCartStore = create<AppState>()(
           }
 
           set({
-            orderHistory: data.map(order => ({
+            orderHistory: data.map((order: any) => ({
               id: order.id,
               date: new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
               items: order.items_summary || 'Order Items',
@@ -495,7 +600,7 @@ export const useCartStore = create<AppState>()(
       },
 
       // Products (Supabase)
-      products: [],
+      products: [] as any[],
       fetchProducts: async () => {
         const { data, error } = await supabase
           .from('products')
