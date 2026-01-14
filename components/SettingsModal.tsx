@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, SafeAreaView, LayoutAnimation, Platform, UIManager, Image } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, SafeAreaView, LayoutAnimation, Platform, UIManager, Image, StatusBar } from 'react-native';
 import { X, User, MapPin, Clock, LogOut, ChevronRight, Bell, Shield, HelpCircle, ChevronLeft } from 'lucide-react-native';
 import { useCartStore } from '../store';
 import AddressesView from './AddressesView';
@@ -178,6 +178,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F2F2F7',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     header: {
         flexDirection: 'row',

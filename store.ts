@@ -57,7 +57,7 @@ interface AppState {
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
-  updateProfile: (profile: Partial<UserProfile>) => void;
+  updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
 
   // Addresses
   addresses: Address[];
@@ -118,11 +118,11 @@ export const useCartStore = create<AppState>()(
         }
 
         set((state) => {
-          const existing = state.items.find((i) => i.id === item.id);
+          const existing = state.items.find((i) => String(i.id) === String(item.id));
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
+                String(i.id) === String(item.id) ? { ...i, quantity: i.quantity + item.quantity } : i
               )
             };
           }
@@ -132,11 +132,17 @@ export const useCartStore = create<AppState>()(
       removeItem: (id) => set((state) => ({
         items: state.items.filter((i) => i.id !== id)
       })),
-      updateQuantity: (id, quantity) => set((state) => ({
-        items: state.items.map((i) =>
-          i.id === id ? { ...i, quantity: Math.max(1, quantity) } : i
-        )
-      })),
+      updateQuantity: (id, quantity) => set((state) => {
+        if (quantity <= 0) {
+          return { items: state.items.filter((i) => String(i.id) !== String(id)) };
+        }
+        const updatedItems = state.items.map((i) =>
+          String(i.id) === String(id) ? { ...i, quantity } : i
+        );
+        return {
+          items: updatedItems
+        };
+      }),
       clearCart: () => set({ items: [] }),
 
       shipments: [],
@@ -260,9 +266,44 @@ export const useCartStore = create<AppState>()(
       updateProfile: async (profile) => {
         const updates: any = {};
         if (profile.name) updates.data = { full_name: profile.name };
-        // separate email update logic if needed, but for now just metadata
-        // Avatar usually goes to storage, but we can store URL in metadata
-        if (profile.avatar) updates.data = { ...updates.data, avatar_url: profile.avatar };
+
+        // Handle Avatar Upload
+        if (profile.avatar && profile.avatar.startsWith('file://')) {
+          try {
+            const response = await fetch(profile.avatar);
+            const arrayBuffer = await response.arrayBuffer();
+            const fileExt = profile.avatar.split('.').pop() || 'jpg';
+            const fileName = `${Date.now()}.${fileExt}`;
+            const filePath = fileName;
+
+            // Use ArrayBuffer for React Native compatibility
+            const { error: uploadError } = await supabase.storage
+              .from('avatars')
+              .upload(filePath, arrayBuffer, {
+                contentType: `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`,
+                upsert: true,
+              });
+
+            if (uploadError) {
+              console.error('Upload error:', uploadError);
+              throw uploadError;
+            }
+
+            const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+            updates.data = { ...updates.data, avatar_url: data.publicUrl };
+
+            // Update local object to use the public URL
+            profile.avatar = data.publicUrl;
+
+          } catch (error) {
+            console.error('Error uploading avatar:', error);
+            Alert.alert('Error', 'Failed to upload profile picture. Please try again.');
+            return;
+          }
+        } else if (profile.avatar) {
+          // If it's already a remote URL (or empty/cleared), just save it
+          updates.data = { ...updates.data, avatar_url: profile.avatar };
+        }
 
         const { error } = await supabase.auth.updateUser(updates);
 
@@ -415,7 +456,7 @@ export const useCartStore = create<AppState>()(
               items: order.items_summary || 'Order Items',
               total: `$${order.total}`,
               status: order.status,
-              itemsList: [], // Detail view would need a separate table or JSON column
+              itemsList: [], // Detail view would need a separate table join or JSON column
               shippingAddress: addressStr || 'No address found'
             }))
           });

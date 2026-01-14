@@ -11,6 +11,7 @@ const EditProfileView = () => {
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
     const [avatar, setAvatar] = useState(user?.avatar || '');
+    const [isSaving, setIsSaving] = useState(false);
 
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -25,13 +26,22 @@ const EditProfileView = () => {
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!name || !email) {
             Alert.alert('Error', 'Name and Email are required.');
             return;
         }
-        updateProfile({ name, email, avatar });
-        Alert.alert('Success', 'Profile updated successfully.');
+
+        setIsSaving(true);
+        try {
+            await updateProfile({ name, email, avatar });
+            Alert.alert('Success', 'Profile updated successfully.');
+        } catch (e) {
+            console.error(e);
+            Alert.alert('Error', 'Failed to update profile.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -39,7 +49,7 @@ const EditProfileView = () => {
             <View style={{ padding: 20, alignItems: 'center' }}>
                 <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
                     {avatar ? (
-                        <Image source={{ uri: avatar }} style={styles.avatarImage} />
+                        <Image source={{ uri: avatar }} key={avatar} style={styles.avatarImage} />
                     ) : (
                         <View style={styles.avatarPlaceholder}>
                             <User size={40} color="#fff" />
@@ -75,8 +85,8 @@ const EditProfileView = () => {
                         />
                     </View>
 
-                    <Button size="lg" onPress={handleSave} style={{ marginTop: 24 }}>
-                        Save Changes
+                    <Button size="lg" onPress={handleSave} style={{ marginTop: 24 }} disabled={isSaving}>
+                        {isSaving ? 'Saving...' : 'Save Changes'}
                     </Button>
                 </View>
             </View>
