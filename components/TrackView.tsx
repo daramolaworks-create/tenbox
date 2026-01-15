@@ -203,12 +203,43 @@ const TrackView: React.FC<TrackViewProps> = ({ shipments }) => {
                     </>
                 )}
 
-                {/* Empty State */}
-                {!trackingResult && shipments.length === 0 && !loading && (
-                    <View style={styles.emptyState}>
-                        <Package size={48} color="#C7C7CC" />
-                        <Text style={styles.emptyTitle}>No shipments yet</Text>
-                        <Text style={styles.emptyText}>Enter a tracking number above to track your order</Text>
+                {/* Help Section - Always show when no tracking result */}
+                {!trackingResult && !loading && (
+                    <View style={styles.helpSection}>
+                        {/* Quick Tips Banner */}
+                        <View style={styles.tipsBanner}>
+                            <View style={styles.tipsIcon}>
+                                <Search size={20} color="#0223E6" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.tipsTitle}>Track Any Package</Text>
+                                <Text style={styles.tipsText}>Enter your tracking number from any carrier to get real-time updates</Text>
+                            </View>
+                        </View>
+
+                        {/* Supported Carriers */}
+                        <Text style={styles.carriersTitle}>Supported Carriers</Text>
+                        <View style={styles.carriersGrid}>
+                            <View style={styles.carrierBadge}>
+                                <Text style={styles.carrierText}>USPS</Text>
+                            </View>
+                            <View style={styles.carrierBadge}>
+                                <Text style={styles.carrierText}>UPS</Text>
+                            </View>
+                            <View style={styles.carrierBadge}>
+                                <Text style={styles.carrierText}>FedEx</Text>
+                            </View>
+                            <View style={styles.carrierBadge}>
+                                <Text style={styles.carrierText}>DHL</Text>
+                            </View>
+                        </View>
+
+                        {/* Example Format */}
+                        <View style={styles.exampleBox}>
+                            <Text style={styles.exampleLabel}>Example Tracking Numbers</Text>
+                            <Text style={styles.exampleText}>USPS: 9400111899223033005717</Text>
+                            <Text style={styles.exampleText}>UPS: 1Z999AA10123456784</Text>
+                        </View>
                     </View>
                 )}
             </ScrollView>
@@ -264,6 +295,48 @@ const styles = StyleSheet.create({
     emptyState: { alignItems: 'center', paddingVertical: 60 },
     emptyTitle: { fontSize: 18, fontWeight: '700', color: '#000', marginTop: 16 },
     emptyText: { fontSize: 14, color: '#8E8E93', marginTop: 4, textAlign: 'center' },
+
+    // Help Section Styles
+    helpSection: { marginTop: 8 },
+    tipsBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#E8ECFF',
+        borderRadius: 16,
+        padding: 16,
+        gap: 14,
+        marginBottom: 24
+    },
+    tipsIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    tipsTitle: { fontSize: 15, fontWeight: '700', color: '#0223E6', marginBottom: 2 },
+    tipsText: { fontSize: 13, color: '#5C6BC0', lineHeight: 18 },
+
+    carriersTitle: { fontSize: 14, fontWeight: '600', color: '#8E8E93', marginBottom: 12 },
+    carriersGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
+    carrierBadge: {
+        backgroundColor: '#F5F5F5',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 8
+    },
+    carrierText: { fontSize: 13, fontWeight: '700', color: '#333' },
+
+    exampleBox: {
+        backgroundColor: '#FAFAFA',
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#F0F0F0'
+    },
+    exampleLabel: { fontSize: 12, fontWeight: '600', color: '#8E8E93', marginBottom: 8 },
+    exampleText: { fontSize: 12, color: '#666', fontFamily: 'monospace', marginBottom: 4 },
 });
 
 export default TrackView;

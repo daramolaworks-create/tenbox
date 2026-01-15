@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Image, LayoutAnimation, Platform, UIManager, Alert } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Image, LayoutAnimation, Platform, UIManager, Alert, StatusBar } from 'react-native';
 import { X, MapPin, Package, CheckCircle, ArrowRight, Box, Scale, DollarSign } from 'lucide-react-native';
 import { Button, Input, Card } from './UI';
 import { useCartStore, Address } from '../store';
@@ -689,7 +689,11 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F2F2F7' },
+    container: {
+        flex: 1,
+        backgroundColor: '#F2F2F7',
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0
+    },
     navBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
     closeBtn: { padding: 4 },
     navTitle: { fontSize: 16, fontWeight: '600' },

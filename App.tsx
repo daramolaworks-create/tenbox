@@ -276,8 +276,6 @@ const App: React.FC = () => {
             )}
             {activeTab === 'shop' && (
               <ShopView
-                products={products}
-                addItem={addItem}
                 onOpenImporter={(url) => {
                   setImportUrl(url);
                   setExtractedData({});
