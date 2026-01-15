@@ -31,6 +31,24 @@ export interface NotificationPrefs {
   newFeatures: boolean;
 }
 
+export interface TrackingResult {
+  tracking_number: string;
+  carrier: string;
+  status: string;
+  status_details: string;
+  status_date: string;
+  location: string;
+  estimated_delivery?: string;
+  origin?: string;
+  destination?: string;
+  events: Array<{
+    date: string;
+    status: string;
+    description: string;
+    location: string;
+  }>;
+}
+
 interface AppState {
   // Cart
   items: CartItem[];
@@ -43,6 +61,7 @@ interface AppState {
   shipments: Shipment[];
   fetchShipments: () => Promise<void>;
   addShipment: (shipment: Shipment) => Promise<void>;
+  trackShipment: (trackingNumber: string, carrier?: string) => Promise<TrackingResult | null>;
 
   // Products
   products: any[];
@@ -212,6 +231,37 @@ export const useCartStore = create<AppState>()(
         }
 
         await useCartStore.getState().fetchShipments();
+      },
+
+      trackShipment: async (trackingNumber, carrier) => {
+        console.log('🔍 Tracking shipment:', trackingNumber, carrier);
+        try {
+          const { data, error } = await supabase.functions.invoke('get-tracking', {
+            body: {
+              tracking_number: trackingNumber,
+              carrier: carrier
+            }
+          });
+
+          if (error) {
+            console.error('❌ Tracking error:', error);
+            Alert.alert('Tracking Error', error.message || 'Failed to get tracking info');
+            return null;
+          }
+
+          if (data.error) {
+            console.error('❌ Tracking API error:', data.error);
+            Alert.alert('Not Found', data.error);
+            return null;
+          }
+
+          console.log('✅ Tracking result:', data);
+          return data as TrackingResult;
+        } catch (error: any) {
+          console.error('❌ Tracking exception:', error);
+          Alert.alert('Error', error.message || 'Failed to track shipment');
+          return null;
+        }
       },
 
       // User Profile & Auth
