@@ -1,14 +1,23 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
-import { Plus, MapPin, Trash2, Edit2, Check } from 'lucide-react-native';
+import { Plus, MapPin, Trash2, Edit2, Check, ChevronDown } from 'lucide-react-native';
 import { Input, Button } from './UI';
 import { useCartStore, Address } from '../store';
+
+// Supported countries for delivery
+const COUNTRIES = [
+    { code: 'NG', name: 'Nigeria' },
+    { code: 'US', name: 'United States' },
+    { code: 'GB', name: 'United Kingdom' },
+    { code: 'AE', name: 'United Arab Emirates' },
+];
 
 const AddressesView = () => {
     const { addresses, addAddress, removeAddress, updateAddress, fetchAddresses } = useCartStore();
     const [modalVisible, setModalVisible] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [countryPickerVisible, setCountryPickerVisible] = useState(false);
 
     React.useEffect(() => {
         fetchAddresses();
@@ -20,6 +29,8 @@ const AddressesView = () => {
     const [city, setCity] = useState('');
     const [zip, setZip] = useState('');
     const [country, setCountry] = useState('');
+
+    const [loading, setLoading] = useState(false);
 
     const openAddModal = () => {
         setEditingId(null);
@@ -41,14 +52,17 @@ const AddressesView = () => {
         setModalVisible(true);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!label || !street || !city) {
             Alert.alert('Error', 'Please fill in required fields');
             return;
         }
 
+        setLoading(true);
+        let success = false;
+
         if (editingId) {
-            updateAddress(editingId, { label, street, city, zip, country });
+            success = await updateAddress(editingId, { label, street, city, zip, country });
         } else {
             const newAddr: Address = {
                 id: Math.random().toString(36).substr(2, 9),
@@ -59,9 +73,13 @@ const AddressesView = () => {
                 country,
                 default: addresses.length === 0 // Make default if it's the first one
             };
-            addAddress(newAddr);
+            success = await addAddress(newAddr);
         }
-        setModalVisible(false);
+
+        setLoading(false);
+        if (success) {
+            setModalVisible(false);
+        }
     };
 
     const handleDelete = (id: string) => {
@@ -152,12 +170,66 @@ const AddressesView = () => {
                             <Input label="City" style={{ flex: 1 }} value={city} onChangeText={setCity} />
                             <Input label="ZIP Code" style={{ flex: 1 }} value={zip} onChangeText={setZip} keyboardType="numeric" />
                         </View>
-                        <Input label="Country" value={country} onChangeText={setCountry} />
+
+                        {/* Country Picker */}
+                        <View>
+                            <Text style={styles.inputLabel}>Country</Text>
+                            <TouchableOpacity
+                                style={styles.countryPicker}
+                                onPress={() => setCountryPickerVisible(true)}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[styles.countryPickerText, !country && { color: '#C7C7CC' }]}>
+                                    {country ? COUNTRIES.find(c => c.code === country)?.name || country : 'Select Country'}
+                                </Text>
+                                <ChevronDown size={20} color="#8E8E93" />
+                            </TouchableOpacity>
+                        </View>
                     </ScrollView>
 
                     <View style={{ gap: 12, marginTop: 20 }}>
-                        <Button size="lg" onPress={handleSave}>Save Address</Button>
-                        <Button variant="secondary" onPress={() => setModalVisible(false)}>Cancel</Button>
+                        <Button size="lg" onPress={handleSave} isLoading={loading}>Save Address</Button>
+                        <Button variant="secondary" onPress={() => setModalVisible(false)} disabled={loading}>Cancel</Button>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Country Picker Modal */}
+            <Modal
+                visible={countryPickerVisible}
+                animationType="fade"
+                transparent
+                onRequestClose={() => setCountryPickerVisible(false)}
+            >
+                <View style={styles.countryModalOverlay}>
+                    <View style={styles.countryModalContent}>
+                        <Text style={styles.countryModalHeader}>Select Country</Text>
+                        {COUNTRIES.map((c) => (
+                            <TouchableOpacity
+                                key={c.code}
+                                style={[
+                                    styles.countryItem,
+                                    country === c.code && styles.countryItemSelected
+                                ]}
+                                onPress={() => {
+                                    setCountry(c.code);
+                                    setCountryPickerVisible(false);
+                                }}
+                            >
+                                <Text style={[
+                                    styles.countryItemText,
+                                    country === c.code && styles.countryItemTextSelected
+                                ]}>{c.name}</Text>
+                                {country === c.code && <Check size={18} color="#0223E6" />}
+                            </TouchableOpacity>
+                        ))}
+                        <Button
+                            variant="secondary"
+                            onPress={() => setCountryPickerVisible(false)}
+                            style={{ marginTop: 16 }}
+                        >
+                            Cancel
+                        </Button>
                     </View>
                 </View>
             </Modal>
@@ -251,6 +323,63 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         marginBottom: 32,
         marginTop: 16,
+    },
+    inputLabel: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#8E8E93',
+        marginBottom: 8,
+    },
+    countryPicker: {
+        backgroundColor: '#F2F2F7',
+        borderRadius: 12,
+        padding: 16,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    countryPickerText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#000',
+    },
+    countryModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    countryModalContent: {
+        backgroundColor: '#fff',
+        width: '85%',
+        borderRadius: 20,
+        padding: 24,
+    },
+    countryModalHeader: {
+        fontSize: 20,
+        fontWeight: '700',
+        marginBottom: 16,
+    },
+    countryItem: {
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    countryItemSelected: {
+        backgroundColor: '#E0E7FF',
+    },
+    countryItemText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#333',
+    },
+    countryItemTextSelected: {
+        color: '#0223E6',
+        fontWeight: '600',
     },
 });
 

@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { CartItem, Shipment } from './types';
 import { createClient } from '@supabase/supabase-js';
-import { supabase } from './lib/supabase';
+import { supabase, getSessionReliably } from './lib/supabase';
 
 export interface Address {
   id: string;
@@ -71,8 +71,8 @@ interface AppState {
   // Addresses
   addresses: Address[];
   fetchAddresses: () => Promise<void>;
-  addAddress: (address: Address) => Promise<void>;
-  updateAddress: (id: string, address: Partial<Address>) => Promise<void>;
+  addAddress: (address: Address) => Promise<boolean>;
+  updateAddress: (id: string, address: Partial<Address>) => Promise<boolean>;
   removeAddress: (id: string) => Promise<void>;
 
   // Notifications
@@ -492,7 +492,7 @@ export const useCartStore = create<AppState>()(
       // Addresses
       addresses: [] as Address[],
       fetchAddresses: async () => {
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = await getSessionReliably();
         if (!session?.user) return;
 
         const { data, error } = await supabase
@@ -505,6 +505,8 @@ export const useCartStore = create<AppState>()(
           console.error('Error fetching addresses:', error);
           return;
         }
+
+        console.log('📍 Fetched addresses:', data?.length);
 
         if (data) {
           set({
@@ -522,8 +524,13 @@ export const useCartStore = create<AppState>()(
       },
 
       addAddress: async (address) => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) return;
+        console.log('➕ Adding address:', address);
+        const session = await getSessionReliably();
+        if (!session?.user) {
+          console.error('❌ No user session found during addAddress');
+          Alert.alert('Error', 'You must be logged in to add an address');
+          return false;
+        }
 
         const { error } = await supabase
           .from('addresses')
@@ -538,13 +545,17 @@ export const useCartStore = create<AppState>()(
           });
 
         if (error) {
-          Alert.alert('Error', 'Failed to add address');
-          return;
+          console.error('❌ Error adding address:', error);
+          Alert.alert('Error', 'Failed to add address: ' + error.message);
+          return false;
         }
+        console.log('✅ Address added successfully');
         await useCartStore.getState().fetchAddresses();
+        return true;
       },
 
       updateAddress: async (id, address) => {
+        console.log('✏️ Updating address:', id, address);
         const updates: any = {};
         if (address.label) updates.label = address.label;
         if (address.street) updates.street = address.street;
@@ -561,10 +572,13 @@ export const useCartStore = create<AppState>()(
           .eq('id', id);
 
         if (error) {
-          Alert.alert('Error', 'Failed to update address');
-          return;
+          console.error('❌ Error updating address:', error);
+          Alert.alert('Error', 'Failed to update address: ' + error.message);
+          return false;
         }
+        console.log('✅ Address updated successfully');
         await useCartStore.getState().fetchAddresses();
+        return true;
       },
 
       removeAddress: async (id) => {
