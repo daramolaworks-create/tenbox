@@ -56,6 +56,8 @@ interface AppState {
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
+  fetchCart: () => Promise<void>;
+  syncCart: () => Promise<void>;
 
   // Shipments
   shipments: Shipment[];
@@ -145,33 +147,158 @@ export const useCartStore = create<AppState>()(
           return;
         }
 
+        // Optimistic Update
+        let newItems = [];
         set((state) => {
           const existing = state.items.find((i) => String(i.id) === String(item.id));
           if (existing) {
-            return {
-              items: state.items.map((i) =>
-                String(i.id) === String(item.id) ? { ...i, quantity: i.quantity + item.quantity } : i
-              )
-            };
+            newItems = state.items.map((i) =>
+              String(i.id) === String(item.id) ? { ...i, quantity: i.quantity + item.quantity } : i
+            );
+          } else {
+            newItems = [...state.items, item];
           }
-          return { items: [...state.items, item] };
+          return { items: newItems };
         });
-      },
-      removeItem: (id) => set((state) => ({
-        items: state.items.filter((i) => i.id !== id)
-      })),
-      updateQuantity: (id, quantity) => set((state) => {
-        if (quantity <= 0) {
-          return { items: state.items.filter((i) => String(i.id) !== String(id)) };
+
+        // Sync with Supabase if logged in
+        const state = get();
+        if (state.isAuthenticated && state.user) {
+          const updatedItem = newItems.find((i) => String(i.id) === String(item.id));
+          if (updatedItem) {
+            // We can't use await here because addItem is synchronous.
+            // We'll use .then() chain.
+            getSessionReliably().then((session) => {
+              const userId = (supabase.auth.getSession() as any)?.session?.user?.id || session?.user?.id;
+              if (userId) {
+                supabase.from('cart_items').upsert({
+                  user_id: userId,
+                  product_id: updatedItem.id,
+                  title: updatedItem.title,
+                  store: updatedItem.store,
+                  quantity: updatedItem.quantity,
+                  notes: updatedItem.notes,
+                  image: updatedItem.image,
+                  price: updatedItem.price,
+                  url: updatedItem.url,
+                  currency: updatedItem.currency
+                }, { onConflict: 'user_id, product_id' }).then(({ error }) => {
+                  if (error) console.error('Error syncing cart item:', error);
+                });
+              }
+            });
+          }
         }
-        const updatedItems = state.items.map((i) =>
-          String(i.id) === String(id) ? { ...i, quantity } : i
-        );
-        return {
-          items: updatedItems
-        };
-      }),
-      clearCart: () => set({ items: [] }),
+      },
+      removeItem: (id) => {
+        set((state) => ({
+          items: state.items.filter((i) => i.id !== id)
+        }));
+
+        // Sync Delete
+        const state = get();
+        if (state.isAuthenticated) {
+          // We assume 'id' here maps to 'product_id' in DB
+          supabase.from('cart_items').delete().eq('product_id', id).then(({ error }) => {
+            if (error) console.error('Error deleting cart item:', error);
+          });
+        }
+      },
+      updateQuantity: (id, quantity) => {
+        set((state) => {
+          if (quantity <= 0) {
+            return { items: state.items.filter((i) => String(i.id) !== String(id)) };
+          }
+          const updatedItems = state.items.map((i) =>
+            String(i.id) === String(id) ? { ...i, quantity } : i
+          );
+          return {
+            items: updatedItems
+          };
+        });
+
+        // Sync Update
+        const state = get();
+        if (state.isAuthenticated) {
+          if (quantity <= 0) {
+            supabase.from('cart_items').delete().eq('product_id', id);
+          } else {
+            // We need to fetch the item details to upsert or just update quantity? 
+            // Upsert requires all non-null fields if row doesn't exist? 
+            // Actually, if we are updating, the row SHOULD exist.
+            // But safest is to use the item from state.
+            const item = state.items.find(i => String(i.id) === String(id));
+            if (item) {
+              // Just update quantity to be efficient, but upsert ensures we don't break
+              supabase.from('cart_items').update({ quantity }).eq('product_id', id).then(({ error }) => {
+                if (error) console.error('Error updating cart quantity:', error);
+              });
+            }
+          }
+        }
+      },
+      clearCart: () => {
+        set({ items: [] });
+        const state = get();
+        if (state.isAuthenticated) {
+          supabase.from('cart_items').delete().neq('id', '00000000-0000-0000-0000-000000000000').then(); // Delete all
+        }
+      },
+
+      fetchCart: async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const { data, error } = await supabase.from('cart_items').select('*');
+        if (error) {
+          console.error('Error fetching cart:', error);
+          return;
+        }
+
+        if (data) {
+          const mappedItems: CartItem[] = data.map((d: any) => ({
+            id: d.product_id || d.id, // Prefer product_id logic
+            title: d.title,
+            store: d.store || 'Unknown',
+            quantity: d.quantity,
+            notes: d.notes || '',
+            image: d.image || '',
+            price: Number(d.price) || 0,
+            url: d.url || '',
+            currency: d.currency || 'USD'
+          }));
+          set({ items: mappedItems });
+        }
+      },
+
+      syncCart: async () => {
+        // Push local items to server then fetch
+        const localItems = get().items;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        if (localItems.length > 0) {
+          // Upsert all
+          const payload = localItems.map(item => ({
+            user_id: session.user.id,
+            product_id: item.id,
+            title: item.title,
+            store: item.store,
+            quantity: item.quantity,
+            notes: item.notes,
+            image: item.image,
+            price: item.price,
+            url: item.url,
+            currency: item.currency
+          }));
+
+          const { error } = await supabase.from('cart_items').upsert(payload, { onConflict: 'user_id, product_id' });
+          if (error) console.error('Error merging cart:', error);
+        }
+
+        // Now fetch authoritative state
+        await get().fetchCart();
+      },
 
       shipments: [] as Shipment[],
       fetchShipments: async () => {
@@ -279,6 +406,8 @@ export const useCartStore = create<AppState>()(
             },
             isAuthenticated: true
           });
+          // Fetch cart on session check
+          get().fetchCart();
         }
       },
 
@@ -294,6 +423,8 @@ export const useCartStore = create<AppState>()(
             },
             isAuthenticated: true
           });
+          // Sync Cart
+          await get().syncCart();
         }
       },
 
@@ -314,6 +445,8 @@ export const useCartStore = create<AppState>()(
             },
             isAuthenticated: true
           });
+          // Sync Cart
+          await get().syncCart();
         }
       },
 
@@ -373,6 +506,7 @@ export const useCartStore = create<AppState>()(
             console.log('🎉 Session set successfully!');
             // Refresh store state
             await useCartStore.getState().checkSession();
+            await useCartStore.getState().syncCart();
           } else {
             console.log('🚫 Browser closed or failed:', result.type);
           }
@@ -410,6 +544,7 @@ export const useCartStore = create<AppState>()(
             }
 
             await useCartStore.getState().checkSession();
+            await useCartStore.getState().syncCart();
           }
         } catch (e: any) {
           if (e.code === 'ERR_REQUEST_CANCELED') {
