@@ -126,21 +126,44 @@ export const useCartStore = create<AppState>()(
       addItem: (item) => {
         const currentItems = get().items;
 
-        // Check for Store Region Mismatch
-        // We allow different stores from same region (e.g. Amazon UK + Tesco)
-        const currentRegion = currentItems.length > 0 ? getStoreRegion(currentItems[0].store) : null;
-        const newRegion = getStoreRegion(item.store);
+        // Check for Currency Mismatch
+        // We strictly enforce one currency per cart to handle checkout correctly.
+        const currentCurrency = currentItems.length > 0 ? currentItems[0].currency : null;
+        const newCurrency = item.currency;
 
-        if (currentRegion && currentRegion !== newRegion) {
+        if (currentCurrency && newCurrency && currentCurrency !== newCurrency) {
           Alert.alert(
-            'Switch Store Region?',
-            `Your cart contains items from ${currentRegion}. You can only order from one region at a time.\n\nClear cart to add items from ${newRegion}?`,
+            'Currency Mismatch',
+            `Your cart contains items in ${currentCurrency}. You can only order items with the same currency at a time.\n\nClear cart to add this item in ${newCurrency}?`,
             [
               { text: 'Cancel', style: 'cancel' },
               {
-                text: 'Clear & Switch',
+                text: 'Clear & Add',
                 style: 'destructive',
-                onPress: () => set({ items: [item] })
+                onPress: () => {
+                  // Clear first, then set the new item
+                  set({ items: [item] }); // This effectively replaces the cart
+                  // We should also clear the DB if authenticated, but set({items: [item]}) 
+                  // might need to trigger a full sync or clear call. 
+                  // The existing clearCart logic deletes from DB. 
+                  // Let's rely on the user manually syncing or just replace local state 
+                  // and let the next syncCart handle it? 
+                  // Actually, strictly speaking, we should probably clear DB too.
+                  const state = get();
+                  if (state.isAuthenticated) {
+                    // Delete all existing and then upsert this one? 
+                    // Or just rely on syncCart logic? 
+                    // Valid simple approach:
+                    state.clearCart(); // Clears DB and local
+                    // But clearCart sets items to [], so we must wait or just set it after.
+                    // Since clearCart is synchronous in local state update:
+                    set({ items: [item] });
+                    // And trigger a sync
+                    state.syncCart();
+                  } else {
+                    set({ items: [item] });
+                  }
+                }
               }
             ]
           );

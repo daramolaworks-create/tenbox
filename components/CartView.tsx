@@ -20,9 +20,17 @@ const CartView: React.FC<CartViewProps> = ({
     onCheckout,
     onStartShopping
 }) => {
-    const storeRegion = items[0]?.store ? getStoreRegion(items[0].store) : 'USA';
-    const currencyConfig = STORE_ADDRESSES[storeRegion] || STORE_ADDRESSES['USA'];
-    const currencySymbol = currencyConfig.symbol;
+    const itemCurrency = items[0]?.currency;
+    let currencySymbol = '$';
+    if (itemCurrency === 'GBP') currencySymbol = '£';
+    else if (itemCurrency === 'AED') currencySymbol = 'AED ';
+    else if (itemCurrency === 'EUR') currencySymbol = '€';
+    else {
+        // Fallback to region config
+        const storeRegion = items[0]?.store ? getStoreRegion(items[0].store) : 'USA';
+        const currencyConfig = STORE_ADDRESSES[storeRegion] || STORE_ADDRESSES['USA'];
+        currencySymbol = currencyConfig.symbol;
+    }
 
     return (
         <View style={styles.screen}>

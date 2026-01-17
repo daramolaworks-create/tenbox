@@ -70,124 +70,148 @@ const INJECTED_JAVASCRIPT = `
     const isAllowed = ALLOWED_DOMAINS.some(regex => regex.test(window.location.hostname));
     if (!isAllowed) return;
 
-    // Define immutable function
+    if (window.TENBOX_EXTRACT_v1) return; // Prevent re-definition
+
     Object.defineProperty(window, 'TENBOX_EXTRACT_v1', {
       value: function() {
         try {
-          const getMeta = (prop) => document.querySelector('meta[property="' + prop + '"]')?.content || document.querySelector('meta[name="' + prop + '"]')?.content;
-          const title = getMeta('og:title') || document.title;
-          
-          let image = getMeta('og:image');
-          
-          // Amazon Image Selectors
-          if (!image) {
-            const imgSelectors = [
-                '#landingImage',
-                '#imgBlkFront',
-                '#ebooksImgBlkFront',
-                '#main-image',
-                '[data-a-image-name="landingImage"]'
-            ];
-            
-            for (let sel of imgSelectors) {
-                const el = document.querySelector(sel);
-                if (el && el.src) {
-                    image = el.src;
-                    break;
-                }
-            }
-          }
+          const startTime = Date.now();
+          const candidates = [];
+          const log = (msg) => console.log('[TB_EXTRACT] ' + msg);
 
-          // Fallback: Find largest image by area
-          if (!image) {
-              const imgs = Array.from(document.querySelectorAll('img'));
-              let maxArea = 0;
-              for (let img of imgs) {
-                  const area = img.width * img.height;
-                  // Filter out tracking pixels and small icons
-                  if (area > maxArea && area > 10000 && img.src && !img.src.includes('sprite')) {
-                      maxArea = area;
-                      image = img.src;
-                  }
-              }
-          }
+          // --- Helper: Clean Price ---
+          const cleanPrice = (str) => {
+             if (!str) return null;
+             // Remove commas if they are thousands separators (simple heuristic)
+             // But keep dots/decimals. 
+             // Regex: matches currency symbol or not, then digits/dots/commas.
+             const match = str.match(/([\\d\\.,]+)/);
+             if (!match) return null;
+             let val = match[1];
+             // Standardize: remove non-numeric except dot
+             // NOTE: This basic cleaning handles $1,234.50 -> 1234.50
+             val = val.replace(/[^0-9\\.]/g, ''); 
+             return val;
+          };
 
-          // Final fallback to first substantial image
-          if (!image) image = document.querySelector('img')?.src;
-          
-          let debugLog = [];
-          const log = (msg) => debugLog.push(msg);
+          const addCandidate = (source, price, currency, confidence = 0.5) => {
+             if (!price) return;
+             const normalized = cleanPrice(price);
+             if (!normalized) return;
+             
+             candidates.push({
+               source,
+               rawPrice: price,
+               price: normalized,
+               currency: currency || null, // REMOVED DEFAULT 'USD'
+               confidence
+             });
+          };
 
-          // 1. Meta Tags First
-          let price = getMeta('og:price:amount') || getMeta('product:price:amount');
-          let currency = getMeta('og:price:currency') || getMeta('product:price:currency');
-          if (price) log('Found meta price');
-
-          // 2. Amazon DOM Sraping (Aggressive)
-          if (!price) {
-              const selectors = [
-                  '#corePrice_feature_div .a-price .a-offscreen',
-                  '#corePriceDisplay_mobile_feature_div .a-price .a-offscreen',
-                  '#corePriceDisplay_mobile_feature_div .a-offscreen',
-                  '#ubp_price',
-                  '#priceblock_ourprice',
-                  '#priceblock_dealprice',
-                  '.a-price .a-offscreen', // Fallback to any price tag
-                  '.a-price' // Fallback to visible price container
-              ];
-
-              for (let sel of selectors) {
-                  const els = document.querySelectorAll(sel);
-                  for (let el of els) {
-                      // Use textContent to get hidden text
-                      let text = el.textContent ? el.textContent.trim() : '';
-                      if (!text && el.innerText) text = el.innerText.trim();
-                      
-                      if (text && /\\d/.test(text)) {
-                          log('Found dom price: ' + text + ' in ' + sel);
-                          price = text;
-                          // Try to detect currency from this specific text
-                          if (text.includes('£')) currency = 'GBP';
-                          else if (text.includes('AED')) currency = 'AED';
-                          else if (text.includes('$')) currency = 'USD';
-                          else if (text.includes('€')) currency = 'EUR';
-                          break;
-                      }
-                  }
-                  if (price) break;
-              }
-          }
-
-          // 3. Schema.org JSON-LD
-          if (!price) {
-              const scripts = document.querySelectorAll('script[type="application/ld+json"]');
-              for (let script of scripts) {
-                  try {
-                      const json = JSON.parse(script.innerText);
-                      if (json['@type'] === 'Product' || json['@context']?.includes('schema.org')) {
-                          const offer = Array.isArray(json.offers) ? json.offers[0] : json.offers;
+          // --- Strategy 1: JSON-LD (Highest Confidence) ---
+          const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+          for (let script of scripts) {
+             try {
+               const json = JSON.parse(script.innerText);
+               const entities = Array.isArray(json) ? json : [json];
+               for (let entity of entities) {
+                  if (entity['@type'] === 'Product') {
+                      const offers = Array.isArray(entity.offers) ? entity.offers : [entity.offers];
+                      for (let offer of offers) {
                           if (offer && offer.price) {
-                              price = offer.price;
-                              if (offer.priceCurrency) currency = offer.priceCurrency;
-                              log('Found schema price');
-                              break;
+                              addCandidate('JSON-LD', offer.price, offer.priceCurrency, 0.95);
                           }
                       }
-                  } catch(e) {}
+                  }
+               }
+             } catch(e) {}
+          }
+
+          // --- Strategy 2: Meta Tags (High Confidence) ---
+          const getMeta = (prop) => document.querySelector('meta[property="' + prop + '"]')?.content || document.querySelector('meta[name="' + prop + '"]')?.content;
+          
+          let metaPrice = getMeta('og:price:amount') || getMeta('product:price:amount');
+          let metaCurrency = getMeta('og:price:currency') || getMeta('product:price:currency');
+          if (metaPrice) addCandidate('MetaTags', metaPrice, metaCurrency, 0.85);
+
+          // --- Strategy 3: Site-Specific Selectors (Medium-High Confidence) ---
+          const selectors = [
+              // Amazon
+              { sel: '#corePrice_feature_div .a-price .a-offscreen', conf: 0.8 },
+              { sel: '#corePriceDisplay_mobile_feature_div .a-price .a-offscreen', conf: 0.8 },
+              { sel: '#ubp_price', conf: 0.8 },
+              // Generic E-commerce
+              { sel: '[itemprop="price"]', conf: 0.7 },
+              { sel: '.price', conf: 0.5 },
+              { sel: '.product-price', conf: 0.6 },
+              { sel: '.offer-price', conf: 0.6 }
+          ];
+
+          for (let s of selectors) {
+              const els = document.querySelectorAll(s.sel);
+              for (let el of els) {
+                  // Prioritize visible elements
+                  if (el.offsetParent !== null || s.sel.includes('offscreen')) { 
+                      addCandidate('Selector: ' + s.sel, el.textContent, null, s.conf);
+                  }
               }
           }
 
-          const url = window.location.href;
-          // Send debug log in the payload
+          // --- Strategy 4: Heuristics (Largest Price Text) ---
+          if (candidates.length === 0) {
+             const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+             let node;
+             // Regex captures symbol (Group 1) and value
+             const priceRegex = /([$€£¥AED]+)\s*(\d+(?:[.,]\d{2})?)/;
+             
+             while(node = walker.nextNode()) {
+                 const text = node.textContent.trim();
+                 if (text.length < 20) {
+                     const match = text.match(priceRegex);
+                     if (match) {
+                         // Check visibility
+                         const parent = node.parentElement;
+                         if (parent) {
+                             const style = window.getComputedStyle(parent);
+                             if (style.display !== 'none' && style.visibility !== 'hidden' && parseInt(style.fontSize) > 14) {
+                                 let textCurrency = null;
+                                 const symbol = match[1];
+                                 if (symbol.includes('£')) textCurrency = 'GBP';
+                                 else if (symbol.includes('AED')) textCurrency = 'AED';
+                                 else if (symbol.includes('€')) textCurrency = 'EUR';
+                                 else if (symbol.includes('$')) textCurrency = 'USD'; // Only explicitly set USD if symbol is $
+                                 
+                                 addCandidate('HeuristicText', match[0], textCurrency, 0.3);
+                             }
+                         }
+                     }
+                 }
+             }
+          }
+
+          // --- Extract Metadata (Title/Image) ---
+          const title = getMeta('og:title') || document.title;
+          let image = getMeta('og:image');
+          if (!image) {
+              // Simple image fallback
+              const img = document.querySelector('#landingImage') || document.querySelector('img');
+              if (img) image = img.src;
+          }
+
+          // --- Selection Logic ---
+          // Sort by confidence DESC, then by price presence
+          candidates.sort((a,b) => b.confidence - a.confidence);
+          
+          const topChoice = candidates.length > 0 ? candidates[0] : null;
+
           const payload = JSON.stringify({ 
               type: 'PRODUCT_EXTRACT', 
               payload: { 
                 title, 
                 image, 
-                url, 
-                price, 
-                currency, 
-                debug: debugLog.join(' | '),
+                url: window.location.href, 
+                topChoice,
+                candidates,
                 token: '${INTEGRITY_TOKEN}' 
               } 
           });
@@ -195,6 +219,7 @@ const INJECTED_JAVASCRIPT = `
           if (window.ReactNativeWebView) {
             window.ReactNativeWebView.postMessage(payload);
           }
+
         } catch(e) {
           window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ERROR', message: e.toString() }));
         }
@@ -202,6 +227,10 @@ const INJECTED_JAVASCRIPT = `
       writable: false,
       configurable: false
     });
+
+    // --- Auto-Run & Mutator ---
+    // REMOVED: Do not auto-run. Wait for user FAB press.
+    
     true;
   })();
 `;
@@ -249,7 +278,20 @@ const InAppBrowser: React.FC<InAppBrowserProps> = ({ isVisible, url, storeName, 
 
                 // Security Check 2: Verify the reported URL is allowed
                 if (payloadUrl && isAllowedDomain(payloadUrl)) {
-                    onAddToCart(data.payload);
+                    // Extract robust data
+                    const topChoice = data.payload?.topChoice;
+                    const finalPayload = {
+                        url: payloadUrl,
+                        title: data.payload?.title,
+                        image: data.payload?.image,
+                        price: topChoice ? topChoice.price : data.payload?.price,
+                        currency: topChoice ? topChoice.currency : data.payload?.currency,
+                        // Pass along full extraction data for debugging/advanced usage
+                        candidates: data.payload?.candidates,
+                        debug: data.payload?.debug
+                    };
+
+                    onAddToCart(finalPayload);
                 } else {
                     console.warn('⚠️ Blocked message from unauthorized or unknown domain:', payloadUrl);
                 }

@@ -70,6 +70,7 @@ const App: React.FC = () => {
   const [showShipFlow, setShowShipFlow] = useState(false);
   const [browserUrl, setBrowserUrl] = useState<string | null>(null);
   const [activeStoreName, setActiveStoreName] = useState('');
+  const [activeStoreCurrency, setActiveStoreCurrency] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<{ title?: string; image?: string; price?: string; currency?: string }>({});
   const { items, addItem, removeItem, updateQuantity, shipments, user, addresses, orderHistory, fetchOrders, checkSession, logout, products, fetchProducts, fetchAddresses, fetchShipments, initializeSubscription } = useCartStore();
 
@@ -163,45 +164,39 @@ const App: React.FC = () => {
     return () => sub.remove();
   }, []);
 
-  const handleOpenBrowser = (url: string, name: string) => {
-    setActiveStoreName(name);
+  const handleOpenBrowser = (url: string, storeName: string, currency?: string) => {
     setBrowserUrl(url);
-    setExtractedData({}); // Reset extracted data
+    setActiveStoreName(storeName);
+    setActiveStoreCurrency(currency || null);
   };
 
-  const handleCloseBrowser = async () => {
-    // Only check clipboard if we didn't just extract data (modal not showing)
-    if (!showModal) {
-      setBrowserUrl(null);
-      setActiveStoreName('');
+  const handleCloseBrowser = () => {
+    // User requested to close the browser (e.g. clicked Done)
+    // Simply reset state to return to the app immediately
+    setBrowserUrl(null);
+    setActiveStoreName('');
+    setActiveStoreCurrency(null);
+  };
 
-      // Check clipboard logic...
-      setTimeout(async () => {
-        Alert.alert(
-          "Finished Browsing?",
-          "Would you like to import the link currently in your clipboard?",
-          [
-            { text: "No", style: "cancel" },
-            {
-              text: "Import Link",
-              onPress: async () => {
-                const content = await Clipboard.getStringAsync();
-                if (content && (content.startsWith('http') || content.startsWith('www'))) {
-                  setImportUrl(content);
-                  setExtractedData({});
-                  setShowModal(true);
-                } else {
-                  Alert.alert("No Link Found", "Your clipboard doesn't contain a valid link.");
-                }
-              }
-            }
-          ]
-        );
-      }, 500);
-    } else {
-      // Just close browser if modal is taking over
-      setBrowserUrl(null);
-      setActiveStoreName('');
+  // Helper to determine currency from URL structure (strong signal)
+  const detectCurrencyFromUrl = (url: string): string | null => {
+    if (!url) return null;
+    try {
+      const u = new URL(url);
+      const host = u.hostname.toLowerCase();
+      const path = u.pathname.toLowerCase();
+
+      // UK Signals
+      if (host.endsWith('.co.uk') || host.endsWith('.uk')) return 'GBP';
+      if (path.includes('/en_gb') || path.includes('/en-gb') || path.includes('/uk/')) return 'GBP';
+
+      // UAE Signals
+      if (host.endsWith('.ae')) return 'AED';
+      if (path.includes('/ae/') || path.includes('/en-ae/') || path.includes('/en_ae/')) return 'AED';
+
+      return null;
+    } catch {
+      return null;
     }
   };
 
@@ -221,9 +216,9 @@ const App: React.FC = () => {
       /apple\.com/,
       /noon\.com/,
       /namshi\.com/,
-      /argos\.co\.uk/,
+      /argos\.co.uk/,
       /tesco\.com/,
-      /currys\.co\.uk/,
+      /currys\.co.uk/,
       /asos\.com/,
       /shein\.com/,
       /nike\.com/,
@@ -258,12 +253,19 @@ const App: React.FC = () => {
       safePrice = safePrice.replace(/[^\d.,]/g, '');
     }
 
+    // 3. Determine Currency
+    // Priority: Extracted > URL Detection > Store Default > 'USD'
+    let finalCurrency = data.currency;
+    if (!finalCurrency || finalCurrency.length !== 3) {
+      finalCurrency = detectCurrencyFromUrl(data.url) || activeStoreCurrency || 'USD';
+    }
+
     setImportUrl(data.url);
     setExtractedData({
       title: data.title?.substring(0, 255), // Basic length limit
       image: data.image?.startsWith('http') ? data.image : undefined,
       price: safePrice,
-      currency: data.currency?.substring(0, 3).toUpperCase()
+      currency: finalCurrency?.substring(0, 3).toUpperCase()
     });
     setBrowserUrl(null); // Close browser
     setTimeout(() => setShowModal(true), 100); // Open modal with slight delay for smooth transition
@@ -394,7 +396,12 @@ const App: React.FC = () => {
               initialImage={extractedData.image}
               initialPrice={extractedData.price}
               initialCurrency={extractedData.currency}
-              onClose={() => setShowModal(false)}
+              initialStoreName={activeStoreName} // PASS STORE NAME
+              onClose={() => {
+                setShowModal(false);
+                setImportUrl('');
+                setExtractedData({});
+              }}
               onConfirm={(item) => {
                 addItem(item);
                 setShowModal(false);

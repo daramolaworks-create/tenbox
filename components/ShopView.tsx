@@ -9,15 +9,15 @@ const { width } = Dimensions.get('window');
 
 interface ShopViewProps {
     onOpenImporter: (url: string) => void;
-    onOpenBrowser: (url: string, name: string) => void;
+    onOpenBrowser: (url: string, name: string, currency?: string) => void;
 }
 
 const DEALS = [
-    { store: 'Amazon', title: 'Daily Deals', subtitle: 'Up to 70% off', url: 'https://www.amazon.com/deals', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400' },
-    { store: 'ASOS', title: 'Sale Season', subtitle: '20% off everything', url: 'https://www.asos.com/us/sale/', image: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=400' },
-    { store: 'Shein', title: 'Flash Sale', subtitle: 'From $2.99', url: 'https://www.shein.com/flash-sale.html', image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400' },
-    { store: 'Nike', title: 'End of Season', subtitle: '50% off footwear', url: 'https://www.nike.com/w/sale-3yaep', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400' },
-    { store: 'Apple', title: 'Refurbished', subtitle: 'Save up to 15%', url: 'https://www.apple.com/shop/refurbished', image: 'https://images.unsplash.com/photo-1491933382434-500287f9b54b?w=400' },
+    { store: 'Amazon', title: 'Daily Deals', subtitle: 'Up to 70% off', url: 'https://www.amazon.com/deals', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400', currency: 'USD' },
+    { store: 'ASOS', title: 'Sale Season', subtitle: '20% off everything', url: 'https://www.asos.com/us/sale/', image: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=400', currency: 'USD' },
+    { store: 'Shein', title: 'Flash Sale', subtitle: 'From $2.99', url: 'https://www.shein.com/flash-sale.html', image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400', currency: 'USD' },
+    { store: 'Nike', title: 'End of Season', subtitle: '50% off footwear', url: 'https://www.nike.com/w/sale-3yaep', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400', currency: 'USD' },
+    { store: 'Apple', title: 'Refurbished', subtitle: 'Save up to 15%', url: 'https://www.apple.com/shop/refurbished', image: 'https://images.unsplash.com/photo-1491933382434-500287f9b54b?w=400', currency: 'USD' },
 ];
 
 const REGIONS = ['All', 'USA', 'UK', 'UAE'] as const;
@@ -74,7 +74,7 @@ const ShopView: React.FC<ShopViewProps> = ({ onOpenImporter, onOpenBrowser }) =>
                     <TouchableOpacity
                         key={i}
                         activeOpacity={0.9}
-                        onPress={() => onOpenBrowser(deal.url, deal.store)}
+                        onPress={() => onOpenBrowser(deal.url, deal.store, deal.currency)}
                     >
                         <ImageBackground
                             source={{ uri: deal.image }}
@@ -135,7 +135,7 @@ const ShopView: React.FC<ShopViewProps> = ({ onOpenImporter, onOpenBrowser }) =>
                     <TouchableOpacity
                         key={s.name}
                         activeOpacity={0.7}
-                        onPress={() => onOpenBrowser(s.url, s.name)}
+                        onPress={() => onOpenBrowser(s.url, s.name, s.currency)}
                         style={styles.storeCardWrapper}
                     >
                         <Card style={styles.storeCard}>
