@@ -1,17 +1,49 @@
 // @ts-nocheck
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.90.1'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 serve(async (req) => {
-    if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' } })
-    }
+    // No OPTIONS handling for webhook endpoint
 
     try {
-        const payload = await req.json()
+        const rawBody = await req.text();
+        const secret = Deno.env.get('SHIPPO_WEBHOOK_SECRET');
+        const signature = req.headers.get('Shippo-Signature');
+
+        // Verify Signature if secret is configured
+        if (secret) {
+            if (!signature) {
+                console.error('❌ Missing Shippo-Signature header');
+                return new Response(JSON.stringify({ error: 'Missing signature' }), { status: 401 });
+            }
+
+            const encoder = new TextEncoder();
+            const key = await crypto.subtle.importKey(
+                'raw',
+                encoder.encode(secret),
+                { name: 'HMAC', hash: 'SHA-256' },
+                false,
+                ['sign']
+            );
+
+            const signatureBuf = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody));
+            const computedSignature = Array.from(new Uint8Array(signatureBuf))
+                .map((b) => b.toString(16).padStart(2, '0'))
+                .join('');
+
+            if (computedSignature !== signature) {
+                console.error('❌ Invalid Shippo Signature. Computed:', computedSignature, 'Received:', signature);
+                return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 401 });
+            }
+            console.log('✅ Webhook signature verified');
+        } else {
+            console.warn('⚠️ SHIPPO_WEBHOOK_SECRET not set. Skipping signature verification.');
+        }
+
+        const payload = JSON.parse(rawBody);
         const { test } = payload; // Shippo sends "test": true for test webhooks
 
         // Shippo Payload Structure:

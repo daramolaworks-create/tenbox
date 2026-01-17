@@ -206,9 +206,65 @@ const App: React.FC = () => {
   };
 
   const handleBrowserAddToCart = (data: { url: string; title?: string; image?: string; price?: string; currency?: string; debug?: string }) => {
-    console.log('[App] Received Browser Data:', JSON.stringify(data, null, 2));
+    // SECURITY: Do not log full payload to avoid PII/Token leaks
+    // console.log('[App] Received Browser Data:', JSON.stringify(data, null, 2));
+
+    // 1. Validate URL
+    if (!data.url || !data.url.startsWith('https://')) {
+      Alert.alert('Invalid Link', 'The product link must be a secure HTTPS URL.');
+      return;
+    }
+
+    // Reuse whitelist check from InAppBrowser if possible, or duplicate for safety layer
+    const ALLOWED_DOMAINS = [
+      /amazon\./,
+      /apple\.com/,
+      /noon\.com/,
+      /namshi\.com/,
+      /argos\.co\.uk/,
+      /tesco\.com/,
+      /currys\.co\.uk/,
+      /asos\.com/,
+      /shein\.com/,
+      /nike\.com/,
+      /ebay\.com/,
+      /walmart\.com/,
+      /target\.com/,
+      /bestbuy\.com/,
+      /macys\.com/,
+      /costco\.com/,
+      /homedepot\.com/,
+      /marksandspencer\.com/,
+      /johnlewis\.com/,
+      /carrefouruae\.com/,
+      /sharafdg\.com/,
+      /hm\.com/,
+      /zara\.com/
+    ];
+    try {
+      const hostname = new URL(data.url).hostname;
+      if (!ALLOWED_DOMAINS.some(regex => regex.test(hostname))) {
+        Alert.alert('Unsupported Store', 'We currently only support adding items from our approved partners.');
+        return;
+      }
+    } catch (e) {
+      return;
+    }
+
+    // 2. Sanitize Price
+    let safePrice = data.price;
+    if (safePrice) {
+      // Remove non-numeric chars except dot and comma
+      safePrice = safePrice.replace(/[^\d.,]/g, '');
+    }
+
     setImportUrl(data.url);
-    setExtractedData({ title: data.title, image: data.image, price: data.price, currency: data.currency });
+    setExtractedData({
+      title: data.title?.substring(0, 255), // Basic length limit
+      image: data.image?.startsWith('http') ? data.image : undefined,
+      price: safePrice,
+      currency: data.currency?.substring(0, 3).toUpperCase()
+    });
     setBrowserUrl(null); // Close browser
     setTimeout(() => setShowModal(true), 100); // Open modal with slight delay for smooth transition
   };

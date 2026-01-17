@@ -148,7 +148,7 @@ export const useCartStore = create<AppState>()(
         }
 
         // Optimistic Update
-        let newItems = [];
+        let newItems: CartItem[] = [];
         set((state) => {
           const existing = state.items.find((i) => String(i.id) === String(item.id));
           if (existing) {
