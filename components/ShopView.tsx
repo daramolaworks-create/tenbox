@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     filterChipActive: {
-        backgroundColor: '#0069FF',
+        backgroundColor: '#1C39BB',
     },
     filterText: {
         fontSize: 13,

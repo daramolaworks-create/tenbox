@@ -111,7 +111,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
                             {isForgot && (
                                 <TouchableOpacity style={{ alignSelf: 'center', marginTop: 16 }} onPress={() => setIsForgot(false)}>
-                                    <Text style={{ color: '#0069FF', fontWeight: '600' }}>Back to Login</Text>
+                                    <Text style={{ color: '#1C39BB', fontWeight: '600' }}>Back to Login</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -188,8 +188,8 @@ const styles = StyleSheet.create({
 
     form: { gap: 16 },
     forgotBtn: { alignSelf: 'flex-end' },
-    forgotText: { color: '#0069FF', fontSize: 13, fontWeight: '600' },
-    submitBtn: { marginTop: 8, shadowColor: '#0069FF', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+    forgotText: { color: '#1C39BB', fontSize: 13, fontWeight: '600' },
+    submitBtn: { marginTop: 8, shadowColor: '#1C39BB', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
 
     divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 24 },
     line: { flex: 1, height: 1, backgroundColor: '#E5E5EA' },

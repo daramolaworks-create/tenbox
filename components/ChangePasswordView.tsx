@@ -56,7 +56,7 @@ const ChangePasswordView: React.FC = () => {
                 <Card style={styles.formCard}>
                     <View style={styles.header}>
                         <View style={styles.iconCircle}>
-                            <ShieldCheck size={24} color="#0069FF" />
+                            <ShieldCheck size={24} color="#1C39BB" />
                         </View>
                         <View>
                             <Text style={styles.title}>Secure Your Account</Text>

@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#E5E5EA',
     },
     activeDot: {
-        backgroundColor: '#0069FF',
+        backgroundColor: '#1C39BB',
         width: 24, // Elongated active dot
     }
 });
