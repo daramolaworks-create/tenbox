@@ -239,7 +239,7 @@ const App: React.FC = () => {
               style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
             >
               <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
-                <MapPin size={20} color="#0223E6" fill="#0223E6" />
+                <MapPin size={20} color="#0069FF" fill="#0069FF" />
               </View>
               <View>
                 <Text style={{ fontSize: 11, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -249,7 +249,7 @@ const App: React.FC = () => {
                   <Text style={{ fontSize: 15, color: '#000', fontWeight: '700' }}>
                     {addresses.find(a => a.default)?.label || addresses[0]?.label || 'Set Location'}
                   </Text>
-                  <ChevronRight size={14} color="#0223E6" style={{ transform: [{ rotate: '90deg' }] }} />
+                  <ChevronRight size={14} color="#0069FF" style={{ transform: [{ rotate: '90deg' }] }} />
                 </View>
               </View>
             </TouchableOpacity>
@@ -258,7 +258,7 @@ const App: React.FC = () => {
               {user?.avatar ? (
                 <Image source={{ uri: user.avatar }} key={user.avatar} style={{ width: 40, height: 40, borderRadius: 20 }} />
               ) : (
-                <User color="#0223E6" size={20} />
+                <User color="#0069FF" size={20} />
               )}
             </TouchableOpacity>
           </View>
@@ -319,14 +319,14 @@ const App: React.FC = () => {
                 activeOpacity={0.6}
               >
                 <View>
-                  <tab.icon size={24} color={activeTab === tab.id ? '#0223E6' : '#8E8E93'} />
+                  <tab.icon size={24} color={activeTab === tab.id ? '#0069FF' : '#8E8E93'} />
                   {tab.badge ? (
                     <View style={styles.tabBadge}>
                       <Text style={styles.tabBadgeText}>{tab.badge}</Text>
                     </View>
                   ) : null}
                 </View>
-                <Text style={[styles.tabLabel, activeTab === tab.id && { color: '#0223E6' }]}>{tab.label}</Text>
+                <Text style={[styles.tabLabel, activeTab === tab.id && { color: '#0069FF' }]}>{tab.label}</Text>
               </TouchableOpacity>
             ))}
           </View>

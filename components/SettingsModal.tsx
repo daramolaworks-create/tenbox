@@ -58,7 +58,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, onLogou
             <View style={styles.header}>
                 {view !== 'main' ? (
                     <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
-                        <ChevronLeft size={24} color="#0223E6" />
+                        <ChevronLeft size={24} color="#0069FF" />
                         <Text style={styles.backText}>
                             {view === 'password' ? 'Privacy' : 'Back'}
                         </Text>
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     },
     backText: {
         fontSize: 17,
-        color: '#0223E6',
+        color: '#0069FF',
         marginLeft: -4,
     },
     closeBtn: {
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     closeText: {
-        color: '#0223E6',
+        color: '#0069FF',
         fontSize: 17,
         fontWeight: '600',
     },
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: '#0223E6',
+        backgroundColor: '#0069FF',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 16,

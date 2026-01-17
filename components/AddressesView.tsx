@@ -112,11 +112,11 @@ const AddressesView = () => {
                         <View style={styles.cardContent}>
                             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}>
                                 <View style={[styles.iconBox, addr.default ? styles.activeIconBox : null]}>
-                                    <MapPin size={24} color={addr.default ? '#0223E6' : '#8E8E93'} />
+                                    <MapPin size={24} color={addr.default ? '#0069FF' : '#8E8E93'} />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                        <Text style={[styles.label, addr.default && { color: '#0223E6' }]}>{addr.label}</Text>
+                                        <Text style={[styles.label, addr.default && { color: '#0069FF' }]}>{addr.label}</Text>
                                         <View style={{ flexDirection: 'row', gap: 12 }}>
                                             <TouchableOpacity onPress={() => openEditModal(addr)} hitSlop={10}>
                                                 <Edit2 size={16} color="#C7C7CC" />
@@ -220,7 +220,7 @@ const AddressesView = () => {
                                     styles.countryItemText,
                                     country === c.code && styles.countryItemTextSelected
                                 ]}>{c.name}</Text>
-                                {country === c.code && <Check size={18} color="#0223E6" />}
+                                {country === c.code && <Check size={18} color="#0069FF" />}
                             </TouchableOpacity>
                         ))}
                         <Button
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
         borderColor: 'transparent',
     },
     activeCard: {
-        borderColor: '#0223E6',
+        borderColor: '#0069FF',
         backgroundColor: '#F5F7FF',
     },
     cardContent: {
@@ -302,13 +302,13 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: '#0223E6',
+        backgroundColor: '#0069FF',
         alignItems: 'center',
         justifyContent: 'center',
     },
     addBtn: {
         marginTop: 24,
-        shadowColor: '#0223E6',
+        shadowColor: '#0069FF',
         shadowOpacity: 0.3,
         shadowRadius: 10,
         shadowOffset: { width: 0, height: 4 },
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     countryItemTextSelected: {
-        color: '#0223E6',
+        color: '#0069FF',
         fontWeight: '600',
     },
 });

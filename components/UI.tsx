@@ -38,7 +38,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   const textStyles = [
     styles.btnText,
-    variant === 'outline' ? { color: '#0223E6' } : variant === 'secondary' ? { color: '#000' } : variant === 'ghost' ? { color: '#0223E6' } : variant === 'danger' ? { color: '#dc2626' } : { color: '#fff' }
+    variant === 'outline' ? { color: '#0069FF' } : variant === 'secondary' ? { color: '#000' } : variant === 'ghost' ? { color: '#0069FF' } : variant === 'danger' ? { color: '#dc2626' } : { color: '#fff' }
   ] as TextStyle[];
 
   return (
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   btnPrimary: {
-    backgroundColor: '#0223E6', // System Blue
+    backgroundColor: '#0069FF', // System Blue
   },
   btnSecondary: {
     backgroundColor: '#E5E5EA', // System Fill
@@ -146,8 +146,8 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#000000',
     paddingVertical: 14,
-    fontSize: 16,
-    height: '100%'
+    fontSize: 16
+    // removed height: '100%' to prevent layout loop crash
   },
   eyeIcon: {
     padding: 10,

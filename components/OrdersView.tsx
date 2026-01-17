@@ -109,7 +109,7 @@ const OrdersView = () => {
                 <View style={[styles.card, { marginTop: 16, padding: 24 }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                         <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
-                            <MapPin size={18} color="#0223E6" />
+                            <MapPin size={18} color="#0069FF" />
                         </View>
                         <Text style={styles.cardHeaderTitle}>Shipping Address</Text>
                     </View>
@@ -121,7 +121,7 @@ const OrdersView = () => {
                     <View style={[styles.card, { marginTop: 16, padding: 24 }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                             <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
-                                <Box size={18} color="#0223E6" />
+                                <Box size={18} color="#0069FF" />
                             </View>
                             <Text style={styles.cardHeaderTitle}>Track Shipments</Text>
                         </View>
@@ -165,7 +165,7 @@ const OrdersView = () => {
                             <View style={styles.cardTop}>
                                 <View style={{ flexDirection: 'row', gap: 16 }}>
                                     <View style={styles.listIconBox}>
-                                        <Box size={24} color="#0223E6" />
+                                        <Box size={24} color="#0069FF" />
                                     </View>
                                     <View style={{ flex: 1, justifyContent: 'center' }}>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -213,7 +213,7 @@ const OrdersView = () => {
                                             <Image source={{ uri: firstImage }} style={styles.listThumb} />
                                         ) : (
                                             <View style={styles.listIconBox}>
-                                                <Package size={24} color="#0223E6" />
+                                                <Package size={24} color="#0069FF" />
                                             </View>
                                         )}
                                         {additionalItems > 0 && (
@@ -240,7 +240,7 @@ const OrdersView = () => {
                                 <Text style={styles.orderIdSm}>Order #{order.id.split('-')[1]}</Text>
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <Text style={styles.viewDetails}>View Details</Text>
-                                    <ChevronRight size={14} color="#0223E6" />
+                                    <ChevronRight size={14} color="#0069FF" />
                                 </View>
                             </View>
                         </TouchableOpacity>
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
     },
     viewDetails: {
         fontSize: 13,
-        color: '#0223E6',
+        color: '#0069FF',
         fontWeight: '600',
         marginRight: 2,
     },

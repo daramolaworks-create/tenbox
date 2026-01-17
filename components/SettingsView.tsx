@@ -119,8 +119,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         return (
             <View style={styles.screen}>
                 <TouchableOpacity onPress={() => onViewChange('list')} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
-                    <ChevronRight size={24} color="#0223E6" style={{ transform: [{ rotate: '180deg' }] }} />
-                    <Text style={{ fontSize: 17, color: '#0223E6', marginLeft: 4, fontWeight: '600' }}>Back to Settings</Text>
+                    <ChevronRight size={24} color="#0069FF" style={{ transform: [{ rotate: '180deg' }] }} />
+                    <Text style={{ fontSize: 17, color: '#0069FF', marginLeft: 4, fontWeight: '600' }}>Back to Settings</Text>
                 </TouchableOpacity>
 
                 {currentView === 'account' && (
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     screen: { flex: 1, padding: 24 },
     screenTitle: { color: '#000', fontSize: 32, fontWeight: '700', letterSpacing: -0.4 },
     profileHeader: { alignItems: 'center', marginVertical: 32 },
-    profileAvatarLarge: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#0223E6', alignItems: 'center', justifyContent: 'center', marginBottom: 16, shadowColor: '#0223E6', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
+    profileAvatarLarge: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#0069FF', alignItems: 'center', justifyContent: 'center', marginBottom: 16, shadowColor: '#0069FF', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
     editBadge: { position: 'absolute', bottom: -6, backgroundColor: '#000', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
     editBadgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
     profileName: { color: '#000', fontSize: 24, fontWeight: '700', letterSpacing: -0.5 },

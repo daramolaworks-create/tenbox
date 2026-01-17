@@ -184,7 +184,7 @@ const InAppBrowser: React.FC<InAppBrowserProps> = ({ isVisible, url, storeName, 
                     startInLoadingState={true}
                     renderLoading={() => (
                         <View style={styles.loaderContainer}>
-                            <ActivityIndicator size="large" color="#0223E6" />
+                            <ActivityIndicator size="large" color="#0069FF" />
                         </View>
                     )}
                     sharedCookiesEnabled={true}
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     closeText: {
-        color: '#0223E6',
+        color: '#0069FF',
         fontSize: 17,
         fontWeight: '600',
     },
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 40,
         right: 20,
-        backgroundColor: '#0223E6',
+        backgroundColor: '#0069FF',
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 14,

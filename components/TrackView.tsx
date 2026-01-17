@@ -19,7 +19,7 @@ const TrackView: React.FC<TrackViewProps> = ({ shipments }) => {
     const getStatusColor = (status: string) => {
         switch (status?.toLowerCase()) {
             case 'delivered': return '#34C759';
-            case 'out_for_delivery': return '#0223E6';
+            case 'out_for_delivery': return '#0069FF';
             case 'transit':
             case 'in_transit': return '#FF9500';
             case 'exception':
@@ -140,7 +140,7 @@ const TrackView: React.FC<TrackViewProps> = ({ shipments }) => {
 
                         {trackingResult.location && (
                             <View style={styles.locationRow}>
-                                <MapPin size={16} color="#0223E6" />
+                                <MapPin size={16} color="#0069FF" />
                                 <Text style={styles.locationText}>{trackingResult.location}</Text>
                             </View>
                         )}
@@ -209,7 +209,7 @@ const TrackView: React.FC<TrackViewProps> = ({ shipments }) => {
                         {/* Quick Tips Banner */}
                         <View style={styles.tipsBanner}>
                             <View style={styles.tipsIcon}>
-                                <Search size={20} color="#0223E6" />
+                                <Search size={20} color="#0069FF" />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.tipsTitle}>Track Any Package</Text>
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center'
     },
-    tipsTitle: { fontSize: 15, fontWeight: '700', color: '#0223E6', marginBottom: 2 },
+    tipsTitle: { fontSize: 15, fontWeight: '700', color: '#0069FF', marginBottom: 2 },
     tipsText: { fontSize: 13, color: '#5C6BC0', lineHeight: 18 },
 
     carriersTitle: { fontSize: 14, fontWeight: '600', color: '#8E8E93', marginBottom: 12 },

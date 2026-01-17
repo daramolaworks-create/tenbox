@@ -297,13 +297,13 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                                 <Text style={styles.sectionHeader}>
                                     SHIPPING FROM {storeRegion.toUpperCase()}
                                 </Text>
-                                {loadingRates && <ActivityIndicator size="small" color="#0223E6" />}
+                                {loadingRates && <ActivityIndicator size="small" color="#0069FF" />}
                             </View>
                             {/* Rates Selection */}
                             <View style={{ gap: 12 }}>
                                 {loadingRates ? (
                                     <View style={{ padding: 40, alignItems: 'center' }}>
-                                        <ActivityIndicator size="large" color="#0223E6" />
+                                        <ActivityIndicator size="large" color="#0069FF" />
                                         <Text style={{ marginTop: 16, color: '#8E8E93' }}>Finding best rates...</Text>
                                     </View>
                                 ) : (
@@ -425,28 +425,28 @@ const styles = StyleSheet.create({
     headerTitle: { fontSize: 17, fontWeight: '700' },
     progressContainer: { flexDirection: 'row', gap: 8, paddingHorizontal: 24, marginTop: 24 },
     progressStep: { flex: 1, height: 4, borderRadius: 2, backgroundColor: '#E5E5EA' },
-    activeStep: { backgroundColor: '#0223E6' },
+    activeStep: { backgroundColor: '#0069FF' },
     stepTitle: { fontSize: 28, fontWeight: '800', marginHorizontal: 24, marginTop: 16, marginBottom: 8, letterSpacing: -0.5 },
 
     // Cards & Options
     optionCard: { padding: 20, borderWidth: 2, borderColor: 'transparent' },
-    selectedOption: { borderColor: '#0223E6', backgroundColor: '#F5F7FF' },
+    selectedOption: { borderColor: '#0069FF', backgroundColor: '#F5F7FF' },
     radioCircle: { width: 22, height: 22, borderRadius: 12, borderWidth: 2, borderColor: '#C7C7CC', alignItems: 'center', justifyContent: 'center' },
-    radioActive: { borderColor: '#0223E6' },
-    radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#0223E6' },
+    radioActive: { borderColor: '#0069FF' },
+    radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#0069FF' },
     addrLabel: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
     addrText: { fontSize: 14, color: '#3A3A3C', lineHeight: 20 },
-    defaultTag: { fontSize: 11, fontWeight: '700', color: '#0223E6', backgroundColor: '#E0E7FF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' },
+    defaultTag: { fontSize: 11, fontWeight: '700', color: '#0069FF', backgroundColor: '#E0E7FF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' },
 
     // Carrier Tickets (New)
     ticketCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent', minHeight: 80 },
-    selectedTicket: { borderColor: '#0223E6', backgroundColor: '#F5F7FF' },
+    selectedTicket: { borderColor: '#0069FF', backgroundColor: '#F5F7FF' },
     ticketLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, paddingRight: 8 },
     carrierLogo: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
     ticketName: { fontSize: 15, fontWeight: '700', color: '#000' },
     ticketService: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
     ticketRight: { alignItems: 'flex-end', minWidth: 80 },
-    ticketPrice: { fontSize: 16, fontWeight: '700', color: '#0223E6' },
+    ticketPrice: { fontSize: 16, fontWeight: '700', color: '#0069FF' },
     ticketTime: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
     ticketBadge: { position: 'absolute', top: 0, right: 0, paddingHorizontal: 8, paddingVertical: 4, borderBottomLeftRadius: 10 },
     ticketBadgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     sumVal: { fontSize: 15, fontWeight: '500', color: '#000' },
     sumTotalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F2F2F7' },
     sumTotalLabel: { fontSize: 17, fontWeight: '700', color: '#000' },
-    sumTotalVal: { fontSize: 24, fontWeight: '800', color: '#0223E6' },
+    sumTotalVal: { fontSize: 24, fontWeight: '800', color: '#0069FF' },
 
     footer: { padding: 24, paddingBottom: 40, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F2F2F7' }
 });

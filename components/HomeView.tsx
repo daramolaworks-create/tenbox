@@ -42,7 +42,7 @@ const HomeView: React.FC<HomeViewProps> = ({
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'delivered': return '#34C759';
-            case 'out_for_delivery': return '#0223E6';
+            case 'out_for_delivery': return '#0069FF';
             case 'exception': return '#FF3B30';
             default: return '#FF9500';
         }
@@ -67,7 +67,7 @@ const HomeView: React.FC<HomeViewProps> = ({
         <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
             <View style={{ marginTop: 10, marginBottom: 24 }}>
                 <Text style={styles.heroText}>Good Morning,</Text>
-                <Text style={[styles.heroText, { color: '#0223E6' }]}>{user?.name}.</Text>
+                <Text style={[styles.heroText, { color: '#0069FF' }]}>{user?.name}.</Text>
             </View>
 
             <OfferSlider />
@@ -92,7 +92,7 @@ const HomeView: React.FC<HomeViewProps> = ({
             <View style={styles.quickGrid}>
                 <TouchableOpacity style={styles.quickCard} activeOpacity={0.8} onPress={onShipParcel}>
                     <View style={[styles.iconBox, { backgroundColor: '#E0E7FF' }]}>
-                        <Package color="#0223E6" size={24} />
+                        <Package color="#0069FF" size={24} />
                     </View>
                     <Text style={styles.quickTitle}>Ship Parcel</Text>
                     <Text style={styles.quickDesc}>Send anywhere</Text>
@@ -184,7 +184,7 @@ const HomeView: React.FC<HomeViewProps> = ({
                                 </View>
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <Text style={styles.viewDetails}>View</Text>
-                                    <ChevronRight size={14} color="#0223E6" />
+                                    <ChevronRight size={14} color="#0069FF" />
                                 </View>
                             </View>
                         </TouchableOpacity>
@@ -209,11 +209,11 @@ const styles = StyleSheet.create({
     heroText: { color: '#000', fontSize: 34, fontWeight: '700', letterSpacing: -0.4 },
     featuredCard: { backgroundColor: '#fff', borderRadius: 24, padding: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, marginBottom: 20 },
     featuredContent: { flex: 1 },
-    featuredLabel: { color: '#0223E6', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 8 },
+    featuredLabel: { color: '#0069FF', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 8 },
     featuredTitle: { color: '#000', fontSize: 22, fontWeight: '800', marginBottom: 6 },
     featuredDesc: { color: '#8E8E93', fontSize: 14, fontWeight: '500', marginBottom: 16 },
     featuredLogos: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-    featuredIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#0223E6', alignItems: 'center', justifyContent: 'center' },
+    featuredIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#0069FF', alignItems: 'center', justifyContent: 'center' },
     quickGrid: { flexDirection: 'row', gap: 16, marginBottom: 32 },
     quickCard: { flex: 1, backgroundColor: '#fff', padding: 20, borderRadius: 24, shadowColor: '#000', shadowOpacity: 0.03 },
     iconBox: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     quickDesc: { color: '#8E8E93', fontSize: 13 },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
     sectionTitle: { color: '#8E8E93', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
-    seeAll: { color: '#0223E6', fontSize: 13, fontWeight: '600' },
+    seeAll: { color: '#0069FF', fontSize: 13, fontWeight: '600' },
     emptyActivity: { padding: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderRadius: 20 },
     emptyText: { color: '#8E8E93', textAlign: 'center', marginTop: 12, fontSize: 15 },
     orderCard: {
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     },
     viewDetails: {
         fontSize: 13,
-        color: '#0223E6',
+        color: '#0069FF',
         fontWeight: '600',
         marginRight: 2,
     },
