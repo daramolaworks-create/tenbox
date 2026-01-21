@@ -830,17 +830,17 @@ export const useCartStore = create<AppState>()(
           return;
         }
 
-
         // MOCK DATA INJECTION if DB is empty (or enabled for design review)
-        if (!data || data.length === 0) {
-          data = [
+        let orderData = data;
+        if (!orderData || orderData.length === 0) {
+          orderData = [
             { id: '1001-mock', created_at: new Date(Date.now() - 86400000 * 2).toISOString(), items_summary: 'Adidas Ultraboost 5.0, Nike Air Max', total: 245.50, status: 'Delivered' },
             { id: '1002-mock', created_at: new Date(Date.now() - 86400000 * 5).toISOString(), items_summary: 'Sony WH-1000XM5 Headphones', total: 348.00, status: 'Cancelled' },
             { id: '1003-mock', created_at: new Date().toISOString(), items_summary: 'H&M Cotton T-Shirt (x3)', total: 45.99, status: 'Processing' },
           ];
         }
 
-        if (data) {
+        if (orderData) {
           // Get address snapshot strategy (Use current default as fallback for MVP)
           const currentAddresses = get().addresses;
           let addressStr = '';
@@ -851,7 +851,7 @@ export const useCartStore = create<AppState>()(
           }
 
           set({
-            orderHistory: data.map((order: any, index: number) => ({
+            orderHistory: orderData.map((order: any, index: number) => ({
               id: order.id,
               date: new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
               items: order.items_summary || 'Order Items',

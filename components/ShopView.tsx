@@ -164,12 +164,13 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 32,
-        fontWeight: '700',
+        fontFamily: 'Satoshi-Bold',
         color: '#000',
         marginTop: 8,
     },
     subtitle: {
         fontSize: 15,
+        fontFamily: 'Satoshi-Regular',
         color: '#8E8E93',
         marginTop: 4,
         marginBottom: 20,
@@ -184,7 +185,7 @@ const styles = StyleSheet.create({
     },
     importLabel: {
         fontSize: 13,
-        fontWeight: '600',
+        fontFamily: 'Satoshi-Medium',
         color: '#8E8E93',
         marginBottom: 10,
     },
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
     // Section
     sectionTitle: {
         fontSize: 18,
-        fontWeight: '700',
+        fontFamily: 'Satoshi-Medium',
         color: '#000',
         marginBottom: 14,
     },
@@ -225,19 +226,20 @@ const styles = StyleSheet.create({
     },
     dealStore: {
         fontSize: 10,
-        fontWeight: '700',
+        fontFamily: 'Satoshi-Medium',
         color: 'rgba(255,255,255,0.8)',
         textTransform: 'uppercase',
         letterSpacing: 0.8,
     },
     dealTitle: {
         fontSize: 16,
-        fontWeight: '800',
+        fontFamily: 'Satoshi-Bold',
         color: '#fff',
         marginTop: 2,
     },
     dealSubtitle: {
         fontSize: 11,
+        fontFamily: 'Satoshi-Regular',
         color: 'rgba(255,255,255,0.9)',
         marginTop: 1,
     },
@@ -267,11 +269,12 @@ const styles = StyleSheet.create({
     },
     filterText: {
         fontSize: 13,
-        fontWeight: '600',
+        fontFamily: 'Satoshi-Medium',
         color: '#666',
     },
     filterTextActive: {
         color: '#fff',
+        fontFamily: 'Satoshi-Medium',
     },
 
     // Store Grid
@@ -303,7 +306,7 @@ const styles = StyleSheet.create({
     },
     storeName: {
         fontSize: 13,
-        fontWeight: '600',
+        fontFamily: 'Satoshi-Medium',
         color: '#000',
         textAlign: 'center',
     },

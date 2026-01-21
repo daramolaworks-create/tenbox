@@ -191,46 +191,40 @@ const AddressesView = () => {
                         <Button size="lg" onPress={handleSave} isLoading={loading}>Save Address</Button>
                         <Button variant="secondary" onPress={() => setModalVisible(false)} disabled={loading}>Cancel</Button>
                     </View>
-                </View>
-            </Modal>
-
-            {/* Country Picker Modal */}
-            <Modal
-                visible={countryPickerVisible}
-                animationType="fade"
-                transparent
-                onRequestClose={() => setCountryPickerVisible(false)}
-            >
-                <View style={styles.countryModalOverlay}>
-                    <View style={styles.countryModalContent}>
-                        <Text style={styles.countryModalHeader}>Select Country</Text>
-                        {COUNTRIES.map((c) => (
-                            <TouchableOpacity
-                                key={c.code}
-                                style={[
-                                    styles.countryItem,
-                                    country === c.code && styles.countryItemSelected
-                                ]}
-                                onPress={() => {
-                                    setCountry(c.code);
-                                    setCountryPickerVisible(false);
-                                }}
-                            >
-                                <Text style={[
-                                    styles.countryItemText,
-                                    country === c.code && styles.countryItemTextSelected
-                                ]}>{c.name}</Text>
-                                {country === c.code && <Check size={18} color="#1C39BB" />}
-                            </TouchableOpacity>
-                        ))}
-                        <Button
-                            variant="secondary"
-                            onPress={() => setCountryPickerVisible(false)}
-                            style={{ marginTop: 16 }}
-                        >
-                            Cancel
-                        </Button>
-                    </View>
+                    {/* Inline Country Picker Overlay to avoid Modal stacking issues */}
+                    {countryPickerVisible && (
+                        <View style={[styles.countryModalOverlay, { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, margin: -24 }]}>
+                            <View style={styles.countryModalContent}>
+                                <Text style={styles.countryModalHeader}>Select Country</Text>
+                                {COUNTRIES.map((c) => (
+                                    <TouchableOpacity
+                                        key={c.code}
+                                        style={[
+                                            styles.countryItem,
+                                            country === c.code && styles.countryItemSelected
+                                        ]}
+                                        onPress={() => {
+                                            setCountry(c.code);
+                                            setCountryPickerVisible(false);
+                                        }}
+                                    >
+                                        <Text style={[
+                                            styles.countryItemText,
+                                            country === c.code && styles.countryItemTextSelected
+                                        ]}>{c.name}</Text>
+                                        {country === c.code && <Check size={18} color="#1C39BB" />}
+                                    </TouchableOpacity>
+                                ))}
+                                <Button
+                                    variant="secondary"
+                                    onPress={() => setCountryPickerVisible(false)}
+                                    style={{ marginTop: 16 }}
+                                >
+                                    Cancel
+                                </Button>
+                            </View>
+                        </View>
+                    )}
                 </View>
             </Modal>
         </View>

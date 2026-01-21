@@ -249,8 +249,8 @@ const TrackView: React.FC<TrackViewProps> = ({ shipments }) => {
 
 const styles = StyleSheet.create({
     screen: { flex: 1, padding: 24 },
-    screenTitle: { color: '#000', fontSize: 32, fontWeight: '700', letterSpacing: -0.4 },
-    subText: { color: '#8E8E93', fontSize: 15, marginTop: 4, fontWeight: '500' },
+    screenTitle: { color: '#000', fontSize: 32, fontFamily: 'Satoshi-Bold', letterSpacing: -0.4 },
+    subText: { color: '#8E8E93', fontSize: 15, marginTop: 4, fontFamily: 'Satoshi-Regular' },
 
     searchContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 24 },
     searchInput: { flex: 1 },
@@ -259,42 +259,42 @@ const styles = StyleSheet.create({
     resultCard: { padding: 20, marginBottom: 24 },
     statusHeader: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 },
     statusIconBox: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    statusText: { fontSize: 20, fontWeight: '700' },
-    statusDetails: { fontSize: 14, color: '#8E8E93', marginTop: 2 },
+    statusText: { fontSize: 20, fontFamily: 'Satoshi-Bold' },
+    statusDetails: { fontSize: 14, color: '#8E8E93', marginTop: 2, fontFamily: 'Satoshi-Regular' },
 
     infoRow: { flexDirection: 'row', gap: 16, marginBottom: 16 },
     infoItem: { flex: 1, backgroundColor: '#F2F2F7', borderRadius: 12, padding: 12 },
-    infoLabel: { fontSize: 11, color: '#8E8E93', fontWeight: '600', marginTop: 8, marginBottom: 2 },
-    infoValue: { fontSize: 14, color: '#000', fontWeight: '700' },
+    infoLabel: { fontSize: 11, color: '#8E8E93', fontFamily: 'Satoshi-Medium', marginTop: 8, marginBottom: 2 },
+    infoValue: { fontSize: 14, color: '#000', fontFamily: 'Satoshi-Medium' },
 
     locationRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-    locationText: { fontSize: 14, color: '#000', fontWeight: '500' },
+    locationText: { fontSize: 14, color: '#000', fontFamily: 'Satoshi-Regular' },
 
     etaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-    etaText: { fontSize: 14, color: '#34C759', fontWeight: '600' },
+    etaText: { fontSize: 14, color: '#34C759', fontFamily: 'Satoshi-Medium' },
 
     timeline: { marginTop: 20, paddingTop: 20, borderTopWidth: 1, borderTopColor: '#F2F2F7' },
-    timelineTitle: { fontSize: 14, fontWeight: '700', color: '#000', marginBottom: 16 },
+    timelineTitle: { fontSize: 14, fontFamily: 'Satoshi-Medium', color: '#000', marginBottom: 16 },
     timelineLine: { position: 'absolute', top: 60, left: 7, bottom: 20, width: 2, backgroundColor: '#F2F2F7' },
     timelineItem: { flexDirection: 'row', gap: 16, marginBottom: 20 },
     timelineDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#fff', borderWidth: 2, zIndex: 1, alignItems: 'center', justifyContent: 'center' },
-    eventStatus: { color: '#000', fontSize: 13, fontWeight: '600', marginBottom: 2 },
-    eventLocation: { color: '#8E8E93', fontSize: 11 },
+    eventStatus: { color: '#000', fontSize: 13, fontFamily: 'Satoshi-Medium', marginBottom: 2 },
+    eventLocation: { color: '#8E8E93', fontSize: 11, fontFamily: 'Satoshi-Regular' },
 
-    sectionTitle: { fontSize: 18, fontWeight: '700', color: '#000', marginTop: 8, marginBottom: 16 },
+    sectionTitle: { fontSize: 18, fontFamily: 'Satoshi-Medium', color: '#000', marginTop: 8, marginBottom: 16 },
 
     shipmentCard: { padding: 20, marginBottom: 16 },
     shipmentHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     statusDot: { width: 8, height: 8, borderRadius: 4 },
-    trackingNum: { color: '#000', fontSize: 14, fontWeight: '700', letterSpacing: 0.5 },
-    shipmentDate: { color: '#8E8E93', fontSize: 12, fontWeight: '600' },
+    trackingNum: { color: '#000', fontSize: 14, fontFamily: 'Satoshi-Medium', letterSpacing: 0.5 },
+    shipmentDate: { color: '#8E8E93', fontSize: 12, fontFamily: 'Satoshi-Medium' },
     shipmentBody: { borderTopWidth: 1, borderTopColor: '#F2F2F7', paddingTop: 12 },
-    shipmentItems: { color: '#000', fontSize: 15, fontWeight: '600', marginBottom: 4 },
-    shipmentRoute: { color: '#8E8E93', fontSize: 12, fontWeight: '500' },
+    shipmentItems: { color: '#000', fontSize: 15, fontFamily: 'Satoshi-Medium', marginBottom: 4 },
+    shipmentRoute: { color: '#8E8E93', fontSize: 12, fontFamily: 'Satoshi-Regular' },
 
     emptyState: { alignItems: 'center', paddingVertical: 60 },
-    emptyTitle: { fontSize: 18, fontWeight: '700', color: '#000', marginTop: 16 },
-    emptyText: { fontSize: 14, color: '#8E8E93', marginTop: 4, textAlign: 'center' },
+    emptyTitle: { fontSize: 18, fontFamily: 'Satoshi-Medium', color: '#000', marginTop: 16 },
+    emptyText: { fontSize: 14, color: '#8E8E93', marginTop: 4, textAlign: 'center', fontFamily: 'Satoshi-Regular' },
 
     // Help Section Styles
     helpSection: { marginTop: 8 },
@@ -315,10 +315,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center'
     },
-    tipsTitle: { fontSize: 15, fontWeight: '700', color: '#1C39BB', marginBottom: 2 },
-    tipsText: { fontSize: 13, color: '#5C6BC0', lineHeight: 18 },
+    tipsTitle: { fontSize: 15, fontFamily: 'Satoshi-Medium', color: '#1C39BB', marginBottom: 2 },
+    tipsText: { fontSize: 13, color: '#5C6BC0', lineHeight: 18, fontFamily: 'Satoshi-Regular' },
 
-    carriersTitle: { fontSize: 14, fontWeight: '600', color: '#8E8E93', marginBottom: 12 },
+    carriersTitle: { fontSize: 14, fontFamily: 'Satoshi-Medium', color: '#8E8E93', marginBottom: 12 },
     carriersGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
     carrierBadge: {
         backgroundColor: '#F5F5F5',
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 8
     },
-    carrierText: { fontSize: 13, fontWeight: '700', color: '#333' },
+    carrierText: { fontSize: 13, fontFamily: 'Satoshi-Medium', color: '#333' },
 
     exampleBox: {
         backgroundColor: '#FAFAFA',
@@ -335,8 +335,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#F0F0F0'
     },
-    exampleLabel: { fontSize: 12, fontWeight: '600', color: '#8E8E93', marginBottom: 8 },
-    exampleText: { fontSize: 12, color: '#666', fontFamily: 'monospace', marginBottom: 4 },
+    exampleLabel: { fontSize: 12, fontFamily: 'Satoshi-Medium', color: '#8E8E93', marginBottom: 8 },
+    exampleText: { fontSize: 12, color: '#666', fontFamily: 'Satoshi-Regular', marginBottom: 4 },
 });
 
 export default TrackView;

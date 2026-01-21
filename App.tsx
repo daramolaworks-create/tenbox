@@ -45,20 +45,16 @@ import CartView from './components/CartView';
 import TrackView from './components/TrackView';
 import SettingsView, { SettingsSubView } from './components/SettingsView';
 
-import {
-  useFonts,
-  Outfit_400Regular,
-  Outfit_500Medium,
-  Outfit_700Bold
-} from '@expo-google-fonts/outfit';
+import { useFonts } from 'expo-font';
 
 const { width } = Dimensions.get('window');
 
 const App: React.FC = () => {
   const [fontsLoaded] = useFonts({
-    Outfit_400Regular,
-    Outfit_500Medium,
-    Outfit_700Bold
+    'Satoshi-Light': require('./assets/fonts/Satoshi-Light.otf'),
+    'Satoshi-Regular': require('./assets/fonts/Satoshi-Regular.otf'),
+    'Satoshi-Medium': require('./assets/fonts/Satoshi-Medium.otf'),
+    'Satoshi-Bold': require('./assets/fonts/Satoshi-Bold.otf'),
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -300,11 +296,11 @@ const App: React.FC = () => {
                 <MapPin size={20} color="#1C39BB" fill="#1C39BB" />
               </View>
               <View>
-                <Text style={{ fontSize: 11, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <Text style={{ fontSize: 11, color: '#8E8E93', fontFamily: 'Satoshi-Medium', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   Delivering to
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Text style={{ fontSize: 15, color: '#000', fontWeight: '700' }}>
+                  <Text style={{ fontSize: 15, color: '#000', fontFamily: 'Satoshi-Medium' }}>
                     {addresses.find(a => a.default)?.label || addresses[0]?.label || 'Set Location'}
                   </Text>
                   <ChevronRight size={14} color="#1C39BB" style={{ transform: [{ rotate: '90deg' }] }} />
@@ -454,9 +450,9 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   tabBar: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 0, paddingBottom: 30, paddingTop: 12, paddingHorizontal: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: -2 }, elevation: 5 },
   tabItem: { flex: 1, alignItems: 'center', gap: 4 },
-  tabLabel: { color: '#8E8E93', fontSize: 10, fontWeight: '600' },
+  tabLabel: { color: '#8E8E93', fontSize: 10, fontFamily: 'Satoshi-Medium' },
   tabBadge: { position: 'absolute', top: -4, right: -6, backgroundColor: '#FF3B30', minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  tabBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  tabBadgeText: { color: '#fff', fontSize: 10, fontFamily: 'Satoshi-Bold' },
 });
 
 export default App;

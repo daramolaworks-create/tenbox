@@ -1,13 +1,31 @@
-// @ts-nocheck
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.90.1'
+// Deno Edge Function - types declared below for IDE compatibility
+import { createClient } from '@supabase/supabase-js'
+
+declare const Deno: {
+    env: {
+        get(key: string): string | undefined;
+    };
+    serve(handler: (req: Request) => Response | Promise<Response>): void;
+};
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-serve(async (req) => {
-    // No OPTIONS handling for webhook endpoint
+interface ShippoTrackingStatus {
+    status: 'PRE_TRANSIT' | 'TRANSIT' | 'DELIVERED' | 'RETURNED' | 'FAILURE' | 'UNKNOWN'
+}
 
+interface ShippoPayload {
+    data?: {
+        tracking_number?: string
+        tracking_status?: ShippoTrackingStatus
+    }
+    tracking_number?: string
+    tracking_status?: ShippoTrackingStatus
+    test?: boolean
+}
+
+Deno.serve(async (req) => {
     try {
         const rawBody = await req.text();
         const secret = Deno.env.get('SHIPPO_WEBHOOK_SECRET');
@@ -43,8 +61,8 @@ serve(async (req) => {
             console.warn('⚠️ SHIPPO_WEBHOOK_SECRET not set. Skipping signature verification.');
         }
 
-        const payload = JSON.parse(rawBody);
-        const { test } = payload; // Shippo sends "test": true for test webhooks
+        const payload = JSON.parse(rawBody) as ShippoPayload;
+        // const { test } = payload; // Shippo sends "test": true for test webhooks
 
         // Shippo Payload Structure:
         // { "data": { "tracking_number": "...", "tracking_status": { "status": "TRANSIT", ... } }, ... }
@@ -52,7 +70,7 @@ serve(async (req) => {
         const trackingData = payload.data || payload;
 
         const trackingNumber = trackingData.tracking_number;
-        const shippoStatus = trackingData.tracking_status?.status; // PRE_TRANSIT, TRANSIT, DELIVERED, RETURNED, FAILURE, UNKNOWN
+        const shippoStatus = trackingData.tracking_status?.status;
 
         if (!trackingNumber || !shippoStatus) {
             console.log('Valid Webhook but missing tracking info', payload);
@@ -74,17 +92,18 @@ serve(async (req) => {
         // Update Supabase
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-        const { error, count } = await supabase
+        const { data, error } = await supabase
             .from('shipments')
             .update({ status: newStatus })
             .eq('tracking_number', trackingNumber)
-            .select('*', { count: 'exact' }); // Get count to see if we found it
+            .select();
 
         if (error) {
             console.error('Database Update Error:', error);
             return new Response(JSON.stringify({ error: error.message }), { status: 500 })
         }
 
+        const count = data?.length ?? 0;
         console.log(`Updated shipment ${trackingNumber} to ${newStatus}. Rows affected: ${count}`);
 
         return new Response(JSON.stringify({ success: true, updated: count }), {
@@ -92,9 +111,9 @@ serve(async (req) => {
             status: 200
         })
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Webhook Error:', error)
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: error.message || 'Unknown error' }), {
             headers: { 'Content-Type': 'application/json' },
             status: 400
         })

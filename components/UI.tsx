@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   btnSizeLg: { paddingVertical: 18, paddingHorizontal: 24 },
   btnSizeIcon: { width: 54, height: 54 },
   btnText: {
-    fontWeight: '600',
+    fontFamily: 'Satoshi-Medium',
     fontSize: 15,
   },
   inputContainer: {
@@ -146,8 +146,8 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#000000',
     paddingVertical: 14,
-    fontSize: 16
-    // removed height: '100%' to prevent layout loop crash
+    fontSize: 16,
+    fontFamily: 'Satoshi-Regular',
   },
   eyeIcon: {
     padding: 10,
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Satoshi-Medium',
     color: '#000',
     marginBottom: 6,
     marginLeft: 4,
