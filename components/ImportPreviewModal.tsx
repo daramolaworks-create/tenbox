@@ -23,11 +23,12 @@ interface ImportPreviewModalProps {
   initialImage?: string;
   initialPrice?: string;
   initialCurrency?: string;
+  initialStoreName?: string;
   onClose: () => void;
   onConfirm: (item: CartItem) => void;
 }
 
-const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({ url, initialTitle, initialImage, initialPrice, initialCurrency, onClose, onConfirm }) => {
+const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({ url, initialTitle, initialImage, initialPrice, initialCurrency, initialStoreName, onClose, onConfirm }) => {
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
 
@@ -55,19 +56,23 @@ const ImportPreviewModal: React.FC<ImportPreviewModalProps> = ({ url, initialTit
     }
 
     // 3. Store Name Logic
-    let store = 'Global Store';
-    if (lowUrl.includes('amazon')) {
-      if (lowUrl.includes('.co.uk')) store = 'Amazon UK';
-      else if (lowUrl.includes('.ae')) store = 'Amazon UAE';
-      else store = 'Amazon US';
-    } else if (lowUrl.includes('apple')) {
-      store = 'Apple';
-    } else if (lowUrl.includes('noon')) {
-      store = 'Noon';
-    } else if (lowUrl.includes('namshi')) {
-      store = 'Namshi';
-    } else if (lowUrl.includes('zara')) {
-      store = 'Zara';
+    let store = initialStoreName || 'Global Store';
+
+    // Only use heuristics if no store name provided
+    if (!initialStoreName) {
+      if (lowUrl.includes('amazon')) {
+        if (lowUrl.includes('.co.uk')) store = 'Amazon UK';
+        else if (lowUrl.includes('.ae')) store = 'Amazon UAE';
+        else store = 'Amazon US';
+      } else if (lowUrl.includes('apple')) {
+        store = 'Apple';
+      } else if (lowUrl.includes('noon')) {
+        store = 'Noon';
+      } else if (lowUrl.includes('namshi')) {
+        store = 'Namshi';
+      } else if (lowUrl.includes('zara')) {
+        store = 'Zara';
+      }
     }
 
     return {

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Image, LayoutAnimation, Platform, UIManager, Alert } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Image, LayoutAnimation, Platform, UIManager, Alert, StatusBar } from 'react-native';
 import { X, MapPin, Package, CheckCircle, ArrowRight, Box, Scale, DollarSign } from 'lucide-react-native';
 import { Button, Input, Card } from './UI';
 import { useCartStore, Address } from '../store';
@@ -72,7 +72,7 @@ const CountrySelector = ({ value, onSelect }: { value: string, onSelect: (c: typ
                                 >
                                     <Text style={styles.countryCode}>{c.code}</Text>
                                     <Text style={styles.countryName}>{c.name}</Text>
-                                    {value === c.code && <CheckCircle size={16} color="#0223E6" />}
+                                    {value === c.code && <CheckCircle size={16} color="#1C39BB" />}
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
@@ -104,7 +104,7 @@ const AddressSelector = ({ onSelect, onClose }: { onSelect: (addr: Address) => v
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                         <Text style={styles.modalHeader}>Saved Addresses</Text>
                         <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
-                            <Button variant="ghost" size="sm" onPress={onClose}><Text style={{ color: '#0223E6', fontSize: 17, fontWeight: '600' }}>Cancel</Text></Button>
+                            <Button variant="ghost" size="sm" onPress={onClose}><Text style={{ color: '#1C39BB', fontSize: 17, fontWeight: '600' }}>Cancel</Text></Button>
                         </TouchableOpacity>
                     </View>
 
@@ -217,7 +217,8 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
     };
 
     const handleNext = async () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        // LayoutAnimation removed to prevent crashes on transition
+
 
         if (step === 3) {
             // Check Auto-Save
@@ -511,7 +512,7 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
             {/* SENDER */}
             <View style={[styles.sectionHeader, { justifyContent: 'space-between' }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={[styles.sectionDot, { backgroundColor: '#0223E6' }]} />
+                    <View style={[styles.sectionDot, { backgroundColor: '#1C39BB' }]} />
                     <Text style={styles.sectionTitle}>SENDER ADDRESS</Text>
                 </View>
                 <TouchableOpacity onPress={() => setShowAddressModal('sender')}>
@@ -599,7 +600,7 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
 
             {loading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#0223E6" />
+                    <ActivityIndicator size="large" color="#1C39BB" />
                     <Text style={styles.loadingText}>Validating address & fetching rates...</Text>
                 </View>
             ) : rates.length > 0 ? (
@@ -635,7 +636,7 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
     const renderSuccess = () => (
         <View style={styles.successContainer}>
             <View style={styles.confettiBox}>
-                <CheckCircle size={80} color="#0223E6" />
+                <CheckCircle size={80} color="#1C39BB" />
             </View>
             <Text style={styles.successTitle}>Shipment Confirmed!</Text>
             <Text style={styles.successSub}>Your label has been generated.</Text>
@@ -677,11 +678,11 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
                 {step < 5 && renderStepIndicator()}
 
                 <View style={styles.contentArea}>
-                    {step === 1 && renderStep1()}
-                    {step === 2 && renderStep2()}
-                    {step === 3 && renderStep3()}
-                    {step === 4 && renderStep4()}
-                    {step === 5 && renderSuccess()}
+                    <View style={{ display: step === 1 ? 'flex' : 'none', flex: 1 }}>{renderStep1()}</View>
+                    <View style={{ display: step === 2 ? 'flex' : 'none', flex: 1 }}>{renderStep2()}</View>
+                    <View style={{ display: step === 3 ? 'flex' : 'none', flex: 1 }}>{renderStep3()}</View>
+                    <View style={{ display: step === 4 ? 'flex' : 'none', flex: 1 }}>{renderStep4()}</View>
+                    <View style={{ display: step === 5 ? 'flex' : 'none', flex: 1 }}>{renderSuccess()}</View>
                 </View>
             </SafeAreaView>
         </Modal>
@@ -689,17 +690,21 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F2F2F7' },
+    container: {
+        flex: 1,
+        backgroundColor: '#F2F2F7',
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0
+    },
     navBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
     closeBtn: { padding: 4 },
     navTitle: { fontSize: 16, fontWeight: '600' },
     stepContainer: { flexDirection: 'row', paddingHorizontal: 40, marginBottom: 24 },
     stepDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#E5E5EA', alignItems: 'center', justifyContent: 'center' },
-    stepDotActive: { backgroundColor: '#0223E6' },
+    stepDotActive: { backgroundColor: '#1C39BB' },
     stepNum: { fontSize: 12, fontWeight: '600', color: '#8E8E93' },
     stepNumActive: { color: '#fff' },
     stepLine: { flex: 1, height: 2, backgroundColor: '#E5E5EA', marginHorizontal: 8 },
-    stepLineActive: { backgroundColor: '#0223E6' },
+    stepLineActive: { backgroundColor: '#1C39BB' },
 
     contentArea: { flex: 1 },
     stepContent: { flex: 1, paddingHorizontal: 24 },
@@ -736,7 +741,7 @@ const styles = StyleSheet.create({
     ticketName: { fontSize: 16, fontWeight: '700', color: '#000' },
     ticketService: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
     ticketRight: { alignItems: 'flex-end' },
-    ticketPrice: { fontSize: 18, fontWeight: '700', color: '#0223E6' },
+    ticketPrice: { fontSize: 18, fontWeight: '700', color: '#1C39BB' },
     ticketTime: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
     ticketBadge: { position: 'absolute', top: 0, right: 0, paddingHorizontal: 8, paddingVertical: 4, borderBottomLeftRadius: 10 },
     ticketBadgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
@@ -755,7 +760,7 @@ const styles = StyleSheet.create({
 
     // Country Selector
     countryBtn: { backgroundColor: '#E0E7FF', borderRadius: 12, paddingHorizontal: 12, height: 44, justifyContent: 'center', minWidth: 68, alignItems: 'center' },
-    countryBtnText: { fontWeight: '700', fontSize: 15, color: '#0223E6' },
+    countryBtnText: { fontWeight: '700', fontSize: 15, color: '#1C39BB' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
     modalContent: { backgroundColor: '#fff', width: '80%', borderRadius: 20, padding: 24, maxHeight: '60%' },
     modalHeader: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
@@ -767,12 +772,12 @@ const styles = StyleSheet.create({
     addressItem: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F2F2F7', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     addressLabel: { fontSize: 16, fontWeight: '700', color: '#000', marginBottom: 2 },
     addressText: { fontSize: 14, color: '#8E8E93' },
-    actionLink: { fontSize: 13, fontWeight: '600', color: '#0223E6' },
+    actionLink: { fontSize: 13, fontWeight: '600', color: '#1C39BB' },
 
     // Checkbox
     checkboxRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, opacity: 0.8 },
     checkbox: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#C7C7CC', alignItems: 'center', justifyContent: 'center', marginRight: 8, backgroundColor: '#fff' },
-    checkboxActive: { backgroundColor: '#0223E6', borderColor: '#0223E6' },
+    checkboxActive: { backgroundColor: '#1C39BB', borderColor: '#1C39BB' },
     checkboxLabel: { fontSize: 13, fontWeight: '600', color: '#8E8E93' },
 });
 

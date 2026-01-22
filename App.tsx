@@ -45,20 +45,16 @@ import CartView from './components/CartView';
 import TrackView from './components/TrackView';
 import SettingsView, { SettingsSubView } from './components/SettingsView';
 
-import {
-  useFonts,
-  Outfit_400Regular,
-  Outfit_500Medium,
-  Outfit_700Bold
-} from '@expo-google-fonts/outfit';
+import { useFonts } from 'expo-font';
 
 const { width } = Dimensions.get('window');
 
 const App: React.FC = () => {
   const [fontsLoaded] = useFonts({
-    Outfit_400Regular,
-    Outfit_500Medium,
-    Outfit_700Bold
+    'Satoshi-Light': require('./assets/fonts/Satoshi-Light.otf'),
+    'Satoshi-Regular': require('./assets/fonts/Satoshi-Regular.otf'),
+    'Satoshi-Medium': require('./assets/fonts/Satoshi-Medium.otf'),
+    'Satoshi-Bold': require('./assets/fonts/Satoshi-Bold.otf'),
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -70,6 +66,7 @@ const App: React.FC = () => {
   const [showShipFlow, setShowShipFlow] = useState(false);
   const [browserUrl, setBrowserUrl] = useState<string | null>(null);
   const [activeStoreName, setActiveStoreName] = useState('');
+  const [activeStoreCurrency, setActiveStoreCurrency] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<{ title?: string; image?: string; price?: string; currency?: string }>({});
   const { items, addItem, removeItem, updateQuantity, shipments, user, addresses, orderHistory, fetchOrders, checkSession, logout, products, fetchProducts, fetchAddresses, fetchShipments, initializeSubscription } = useCartStore();
 
@@ -163,52 +160,109 @@ const App: React.FC = () => {
     return () => sub.remove();
   }, []);
 
-  const handleOpenBrowser = (url: string, name: string) => {
-    setActiveStoreName(name);
+  const handleOpenBrowser = (url: string, storeName: string, currency?: string) => {
     setBrowserUrl(url);
-    setExtractedData({}); // Reset extracted data
+    setActiveStoreName(storeName);
+    setActiveStoreCurrency(currency || null);
   };
 
-  const handleCloseBrowser = async () => {
-    // Only check clipboard if we didn't just extract data (modal not showing)
-    if (!showModal) {
-      setBrowserUrl(null);
-      setActiveStoreName('');
+  const handleCloseBrowser = () => {
+    // User requested to close the browser (e.g. clicked Done)
+    // Simply reset state to return to the app immediately
+    setBrowserUrl(null);
+    setActiveStoreName('');
+    setActiveStoreCurrency(null);
+  };
 
-      // Check clipboard logic...
-      setTimeout(async () => {
-        Alert.alert(
-          "Finished Browsing?",
-          "Would you like to import the link currently in your clipboard?",
-          [
-            { text: "No", style: "cancel" },
-            {
-              text: "Import Link",
-              onPress: async () => {
-                const content = await Clipboard.getStringAsync();
-                if (content && (content.startsWith('http') || content.startsWith('www'))) {
-                  setImportUrl(content);
-                  setExtractedData({});
-                  setShowModal(true);
-                } else {
-                  Alert.alert("No Link Found", "Your clipboard doesn't contain a valid link.");
-                }
-              }
-            }
-          ]
-        );
-      }, 500);
-    } else {
-      // Just close browser if modal is taking over
-      setBrowserUrl(null);
-      setActiveStoreName('');
+  // Helper to determine currency from URL structure (strong signal)
+  const detectCurrencyFromUrl = (url: string): string | null => {
+    if (!url) return null;
+    try {
+      const u = new URL(url);
+      const host = u.hostname.toLowerCase();
+      const path = u.pathname.toLowerCase();
+
+      // UK Signals
+      if (host.endsWith('.co.uk') || host.endsWith('.uk')) return 'GBP';
+      if (path.includes('/en_gb') || path.includes('/en-gb') || path.includes('/uk/')) return 'GBP';
+
+      // UAE Signals
+      if (host.endsWith('.ae')) return 'AED';
+      if (path.includes('/ae/') || path.includes('/en-ae/') || path.includes('/en_ae/')) return 'AED';
+
+      return null;
+    } catch {
+      return null;
     }
   };
 
   const handleBrowserAddToCart = (data: { url: string; title?: string; image?: string; price?: string; currency?: string; debug?: string }) => {
-    console.log('[App] Received Browser Data:', JSON.stringify(data, null, 2));
+    // SECURITY: Do not log full payload to avoid PII/Token leaks
+    // console.log('[App] Received Browser Data:', JSON.stringify(data, null, 2));
+
+    // 1. Validate URL
+    if (!data.url || !data.url.startsWith('https://')) {
+      Alert.alert('Invalid Link', 'The product link must be a secure HTTPS URL.');
+      return;
+    }
+
+    // Reuse whitelist check from InAppBrowser if possible, or duplicate for safety layer
+    const ALLOWED_DOMAINS = [
+      /amazon\./,
+      /apple\.com/,
+      /noon\.com/,
+      /namshi\.com/,
+      /argos\.co.uk/,
+      /tesco\.com/,
+      /currys\.co.uk/,
+      /asos\.com/,
+      /shein\.com/,
+      /nike\.com/,
+      /ebay\.com/,
+      /walmart\.com/,
+      /target\.com/,
+      /bestbuy\.com/,
+      /macys\.com/,
+      /costco\.com/,
+      /homedepot\.com/,
+      /marksandspencer\.com/,
+      /johnlewis\.com/,
+      /carrefouruae\.com/,
+      /sharafdg\.com/,
+      /hm\.com/,
+      /zara\.com/
+    ];
+    try {
+      const hostname = new URL(data.url).hostname;
+      if (!ALLOWED_DOMAINS.some(regex => regex.test(hostname))) {
+        Alert.alert('Unsupported Store', 'We currently only support adding items from our approved partners.');
+        return;
+      }
+    } catch (e) {
+      return;
+    }
+
+    // 2. Sanitize Price
+    let safePrice = data.price;
+    if (safePrice) {
+      // Remove non-numeric chars except dot and comma
+      safePrice = safePrice.replace(/[^\d.,]/g, '');
+    }
+
+    // 3. Determine Currency
+    // Priority: Extracted > URL Detection > Store Default > 'USD'
+    let finalCurrency = data.currency;
+    if (!finalCurrency || finalCurrency.length !== 3) {
+      finalCurrency = detectCurrencyFromUrl(data.url) || activeStoreCurrency || 'USD';
+    }
+
     setImportUrl(data.url);
-    setExtractedData({ title: data.title, image: data.image, price: data.price, currency: data.currency });
+    setExtractedData({
+      title: data.title?.substring(0, 255), // Basic length limit
+      image: data.image?.startsWith('http') ? data.image : undefined,
+      price: safePrice,
+      currency: finalCurrency?.substring(0, 3).toUpperCase()
+    });
     setBrowserUrl(null); // Close browser
     setTimeout(() => setShowModal(true), 100); // Open modal with slight delay for smooth transition
   };
@@ -239,17 +293,17 @@ const App: React.FC = () => {
               style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
             >
               <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
-                <MapPin size={20} color="#0223E6" fill="#0223E6" />
+                <MapPin size={20} color="#1C39BB" fill="#1C39BB" />
               </View>
               <View>
-                <Text style={{ fontSize: 11, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <Text style={{ fontSize: 11, color: '#8E8E93', fontFamily: 'Satoshi-Medium', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   Delivering to
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Text style={{ fontSize: 15, color: '#000', fontWeight: '700' }}>
+                  <Text style={{ fontSize: 15, color: '#000', fontFamily: 'Satoshi-Medium' }}>
                     {addresses.find(a => a.default)?.label || addresses[0]?.label || 'Set Location'}
                   </Text>
-                  <ChevronRight size={14} color="#0223E6" style={{ transform: [{ rotate: '90deg' }] }} />
+                  <ChevronRight size={14} color="#1C39BB" style={{ transform: [{ rotate: '90deg' }] }} />
                 </View>
               </View>
             </TouchableOpacity>
@@ -258,7 +312,7 @@ const App: React.FC = () => {
               {user?.avatar ? (
                 <Image source={{ uri: user.avatar }} key={user.avatar} style={{ width: 40, height: 40, borderRadius: 20 }} />
               ) : (
-                <User color="#0223E6" size={20} />
+                <User color="#1C39BB" size={20} />
               )}
             </TouchableOpacity>
           </View>
@@ -276,8 +330,6 @@ const App: React.FC = () => {
             )}
             {activeTab === 'shop' && (
               <ShopView
-                products={products}
-                addItem={addItem}
                 onOpenImporter={(url) => {
                   setImportUrl(url);
                   setExtractedData({});
@@ -321,14 +373,14 @@ const App: React.FC = () => {
                 activeOpacity={0.6}
               >
                 <View>
-                  <tab.icon size={24} color={activeTab === tab.id ? '#0223E6' : '#8E8E93'} />
+                  <tab.icon size={24} color={activeTab === tab.id ? '#1C39BB' : '#8E8E93'} />
                   {tab.badge ? (
                     <View style={styles.tabBadge}>
                       <Text style={styles.tabBadgeText}>{tab.badge}</Text>
                     </View>
                   ) : null}
                 </View>
-                <Text style={[styles.tabLabel, activeTab === tab.id && { color: '#0223E6' }]}>{tab.label}</Text>
+                <Text style={[styles.tabLabel, activeTab === tab.id && { color: '#1C39BB' }]}>{tab.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -340,7 +392,12 @@ const App: React.FC = () => {
               initialImage={extractedData.image}
               initialPrice={extractedData.price}
               initialCurrency={extractedData.currency}
-              onClose={() => setShowModal(false)}
+              initialStoreName={activeStoreName} // PASS STORE NAME
+              onClose={() => {
+                setShowModal(false);
+                setImportUrl('');
+                setExtractedData({});
+              }}
               onConfirm={(item) => {
                 addItem(item);
                 setShowModal(false);
@@ -393,9 +450,9 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   tabBar: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 0, paddingBottom: 30, paddingTop: 12, paddingHorizontal: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: -2 }, elevation: 5 },
   tabItem: { flex: 1, alignItems: 'center', gap: 4 },
-  tabLabel: { color: '#8E8E93', fontSize: 10, fontWeight: '600' },
+  tabLabel: { color: '#8E8E93', fontSize: 10, fontFamily: 'Satoshi-Medium' },
   tabBadge: { position: 'absolute', top: -4, right: -6, backgroundColor: '#FF3B30', minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  tabBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  tabBadgeText: { color: '#fff', fontSize: 10, fontFamily: 'Satoshi-Bold' },
 });
 
 export default App;

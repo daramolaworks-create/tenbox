@@ -38,7 +38,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   const textStyles = [
     styles.btnText,
-    variant === 'outline' ? { color: '#0223E6' } : variant === 'secondary' ? { color: '#000' } : variant === 'ghost' ? { color: '#0223E6' } : variant === 'danger' ? { color: '#dc2626' } : { color: '#fff' }
+    variant === 'outline' ? { color: '#1C39BB' } : variant === 'secondary' ? { color: '#000' } : variant === 'ghost' ? { color: '#1C39BB' } : variant === 'danger' ? { color: '#dc2626' } : { color: '#fff' }
   ] as TextStyle[];
 
   return (
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   btnPrimary: {
-    backgroundColor: '#0223E6', // System Blue
+    backgroundColor: '#1C39BB', // System Blue
   },
   btnSecondary: {
     backgroundColor: '#E5E5EA', // System Fill
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   btnSizeLg: { paddingVertical: 18, paddingHorizontal: 24 },
   btnSizeIcon: { width: 54, height: 54 },
   btnText: {
-    fontWeight: '600',
+    fontFamily: 'Satoshi-Medium',
     fontSize: 15,
   },
   inputContainer: {
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     color: '#000000',
     paddingVertical: 14,
     fontSize: 16,
-    height: '100%'
+    fontFamily: 'Satoshi-Regular',
   },
   eyeIcon: {
     padding: 10,
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Satoshi-Medium',
     color: '#000',
     marginBottom: 6,
     marginLeft: 4,

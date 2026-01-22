@@ -42,7 +42,7 @@ const HomeView: React.FC<HomeViewProps> = ({
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'delivered': return '#34C759';
-            case 'out_for_delivery': return '#0223E6';
+            case 'out_for_delivery': return '#1C39BB';
             case 'exception': return '#FF3B30';
             default: return '#FF9500';
         }
@@ -67,7 +67,7 @@ const HomeView: React.FC<HomeViewProps> = ({
         <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
             <View style={{ marginTop: 10, marginBottom: 24 }}>
                 <Text style={styles.heroText}>Good Morning,</Text>
-                <Text style={[styles.heroText, { color: '#0223E6' }]}>{user?.name}.</Text>
+                <Text style={[styles.heroText, { color: '#1C39BB' }]}>{user?.name}.</Text>
             </View>
 
             <OfferSlider />
@@ -92,7 +92,7 @@ const HomeView: React.FC<HomeViewProps> = ({
             <View style={styles.quickGrid}>
                 <TouchableOpacity style={styles.quickCard} activeOpacity={0.8} onPress={onShipParcel}>
                     <View style={[styles.iconBox, { backgroundColor: '#E0E7FF' }]}>
-                        <Package color="#0223E6" size={24} />
+                        <Package color="#1C39BB" size={24} />
                     </View>
                     <Text style={styles.quickTitle}>Ship Parcel</Text>
                     <Text style={styles.quickDesc}>Send anywhere</Text>
@@ -184,7 +184,7 @@ const HomeView: React.FC<HomeViewProps> = ({
                                 </View>
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <Text style={styles.viewDetails}>View</Text>
-                                    <ChevronRight size={14} color="#0223E6" />
+                                    <ChevronRight size={14} color="#1C39BB" />
                                 </View>
                             </View>
                         </TouchableOpacity>
@@ -206,24 +206,24 @@ const HomeView: React.FC<HomeViewProps> = ({
 
 const styles = StyleSheet.create({
     screen: { flex: 1, padding: 24 },
-    heroText: { color: '#000', fontSize: 34, fontWeight: '700', letterSpacing: -0.4 },
+    heroText: { color: '#000', fontSize: 34, fontFamily: 'Satoshi-Bold', letterSpacing: -0.4 },
     featuredCard: { backgroundColor: '#fff', borderRadius: 24, padding: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, marginBottom: 20 },
     featuredContent: { flex: 1 },
-    featuredLabel: { color: '#0223E6', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 8 },
-    featuredTitle: { color: '#000', fontSize: 22, fontWeight: '800', marginBottom: 6 },
-    featuredDesc: { color: '#8E8E93', fontSize: 14, fontWeight: '500', marginBottom: 16 },
+    featuredLabel: { color: '#1C39BB', fontSize: 11, fontFamily: 'Satoshi-Medium', letterSpacing: 1, marginBottom: 8 },
+    featuredTitle: { color: '#000', fontSize: 22, fontFamily: 'Satoshi-Bold', marginBottom: 6 },
+    featuredDesc: { color: '#8E8E93', fontSize: 14, fontFamily: 'Satoshi-Regular', marginBottom: 16 },
     featuredLogos: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-    featuredIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#0223E6', alignItems: 'center', justifyContent: 'center' },
+    featuredIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#1C39BB', alignItems: 'center', justifyContent: 'center' },
     quickGrid: { flexDirection: 'row', gap: 16, marginBottom: 32 },
     quickCard: { flex: 1, backgroundColor: '#fff', padding: 20, borderRadius: 24, shadowColor: '#000', shadowOpacity: 0.03 },
     iconBox: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-    quickTitle: { color: '#000', fontSize: 16, fontWeight: '700', marginBottom: 4 },
-    quickDesc: { color: '#8E8E93', fontSize: 13 },
+    quickTitle: { color: '#000', fontSize: 16, fontFamily: 'Satoshi-Medium', marginBottom: 4 },
+    quickDesc: { color: '#8E8E93', fontSize: 13, fontFamily: 'Satoshi-Regular' },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-    sectionTitle: { color: '#8E8E93', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
-    seeAll: { color: '#0223E6', fontSize: 13, fontWeight: '600' },
+    sectionTitle: { color: '#8E8E93', fontSize: 12, fontFamily: 'Satoshi-Medium', letterSpacing: 1 },
+    seeAll: { color: '#1C39BB', fontSize: 13, fontFamily: 'Satoshi-Medium' },
     emptyActivity: { padding: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderRadius: 20 },
-    emptyText: { color: '#8E8E93', textAlign: 'center', marginTop: 12, fontSize: 15 },
+    emptyText: { color: '#8E8E93', textAlign: 'center', marginTop: 12, fontSize: 15, fontFamily: 'Satoshi-Regular' },
     orderCard: {
         backgroundColor: '#fff',
         borderRadius: 24,
@@ -256,14 +256,14 @@ const styles = StyleSheet.create({
     },
     activityTitle: {
         fontSize: 16,
-        fontWeight: '700',
+        fontFamily: 'Satoshi-Medium',
         color: '#1C1C1E',
         marginBottom: 2,
     },
     activityMeta: {
         fontSize: 13,
         color: '#8E8E93',
-        fontWeight: '500',
+        fontFamily: 'Satoshi-Regular',
     },
     miniStatus: {
         paddingHorizontal: 8,
@@ -272,19 +272,19 @@ const styles = StyleSheet.create({
     },
     miniStatusText: {
         fontSize: 11,
-        fontWeight: '700',
+        fontFamily: 'Satoshi-Medium',
         textTransform: 'uppercase',
     },
     orderIdSm: {
         fontSize: 12,
         color: '#8E8E93',
-        fontWeight: '600',
+        fontFamily: 'Satoshi-Medium',
         letterSpacing: 0.5,
     },
     viewDetails: {
         fontSize: 13,
-        color: '#0223E6',
-        fontWeight: '600',
+        color: '#1C39BB',
+        fontFamily: 'Satoshi-Medium',
         marginRight: 2,
     },
 });

@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: '#0223E6',
+        backgroundColor: '#1C39BB',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     },
     changePhotoText: {
         fontSize: 15,
-        color: '#0223E6',
+        color: '#1C39BB',
         fontWeight: '600',
         marginBottom: 20,
     },

@@ -1,154 +1,315 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ImageBackground, Alert, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Plus } from 'lucide-react-native';
 import { STORES } from '../data/stores';
 import { Button, Input, Card } from './UI';
-import { CartItem } from '../types';
 
 const { width } = Dimensions.get('window');
 
 interface ShopViewProps {
-    products: any[];
-    addItem: (item: CartItem) => void;
     onOpenImporter: (url: string) => void;
-    onOpenBrowser: (url: string, name: string) => void;
+    onOpenBrowser: (url: string, name: string, currency?: string) => void;
 }
 
-const ShopView: React.FC<ShopViewProps> = ({
-    products,
-    addItem,
-    onOpenImporter,
-    onOpenBrowser
-}) => {
+const DEALS = [
+    { store: 'Amazon', title: 'Daily Deals', subtitle: 'Up to 70% off', url: 'https://www.amazon.com/deals', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400', currency: 'USD' },
+    { store: 'ASOS', title: 'Sale Season', subtitle: '20% off everything', url: 'https://www.asos.com/us/sale/', image: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=400', currency: 'USD' },
+    { store: 'Shein', title: 'Flash Sale', subtitle: 'From $2.99', url: 'https://www.shein.com/flash-sale.html', image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400', currency: 'USD' },
+    { store: 'Nike', title: 'End of Season', subtitle: '50% off footwear', url: 'https://www.nike.com/w/sale-3yaep', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400', currency: 'USD' },
+    { store: 'Apple', title: 'Refurbished', subtitle: 'Save up to 15%', url: 'https://www.apple.com/shop/refurbished', image: 'https://images.unsplash.com/photo-1491933382434-500287f9b54b?w=400', currency: 'USD' },
+];
+
+const REGIONS = ['All', 'USA', 'UK', 'UAE'] as const;
+
+const ShopView: React.FC<ShopViewProps> = ({ onOpenImporter, onOpenBrowser }) => {
     const [importUrl, setImportUrl] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const [regionFilter, setRegionFilter] = useState<'All' | 'USA' | 'UK' | 'UAE'>('All');
+
+    const filteredStores = STORES
+        .filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        .filter(s => regionFilter === 'All' || s.region === regionFilter || s.region === 'Global');
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-            <Text style={styles.screenTitle}>Universal Importer</Text>
-            <Text style={styles.subText}>Paste any global product link below.</Text>
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+            {/* Header */}
+            <Text style={styles.title}>Shop</Text>
+            <Text style={styles.subtitle}>Import products from anywhere in the world</Text>
 
-            <View style={styles.importRow}>
-                <Input
-                    style={styles.flex1}
-                    placeholder="https://amazon.com/product..."
-                    value={importUrl}
-                    onChangeText={setImportUrl}
-                />
-                <Button size="icon" onPress={() => {
-                    if (importUrl) {
-                        onOpenImporter(importUrl);
-                        setImportUrl(''); // Clear after opening? Optional.
-                    } else {
-                        Alert.alert("Input Needed", "Please paste a URL first.");
-                    }
-                }}>
-                    <Plus color="#fff" size={28} />
-                </Button>
+            {/* Import Section */}
+            <View style={styles.importCard}>
+                <Text style={styles.importLabel}>Paste product link</Text>
+                <View style={styles.importRow}>
+                    <Input
+                        style={styles.importInput}
+                        placeholder="https://amazon.com/product..."
+                        value={importUrl}
+                        onChangeText={setImportUrl}
+                    />
+                    <Button
+                        size="icon"
+                        onPress={() => {
+                            if (importUrl) {
+                                onOpenImporter(importUrl);
+                                setImportUrl('');
+                            } else {
+                                Alert.alert("Input Needed", "Please paste a URL first.");
+                            }
+                        }}
+                    >
+                        <Plus color="#fff" size={24} />
+                    </Button>
+                </View>
             </View>
 
-            {/* Featured Products from Supabase */}
-            {
-                products.length > 0 && (
-                    <View style={{ marginBottom: 32 }}>
-                        <Text style={styles.sectionLabel}>FEATURED FINDINGS</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -24, paddingHorizontal: 24 }}>
-                            <View style={{ flexDirection: 'row', gap: 16 }}>
-                                {products.map((product) => (
-                                    <View
-                                        key={product.id}
-                                        style={{ width: 140 }}
-                                    >
-                                        <View style={{ position: 'relative' }}>
-                                            <Image
-                                                source={{ uri: product.image || 'https://via.placeholder.com/150' }}
-                                                style={{ width: 140, height: 140, borderRadius: 16, backgroundColor: '#fff' }}
-                                            />
-                                            <TouchableOpacity
-                                                activeOpacity={0.8}
-                                                onPress={() => {
-                                                    addItem({
-                                                        id: String(product.id),
-                                                        title: product.title,
-                                                        price: product.price,
-                                                        image: product.image || 'https://via.placeholder.com/150',
-                                                        quantity: 1,
-                                                        store: product.store || 'Tenbox Find',
-                                                        notes: '',
-                                                        url: product.url || ''
-                                                    });
-                                                    Alert.alert('Added to Cart', `${product.title} has been added to your cart.`);
-                                                }}
-                                                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                                                style={{
-                                                    position: 'absolute',
-                                                    bottom: 8,
-                                                    right: 8,
-                                                    zIndex: 99,
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                                                    width: 32,
-                                                    height: 32,
-                                                    borderRadius: 16,
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    shadowColor: '#000',
-                                                    shadowOpacity: 0.15,
-                                                    shadowRadius: 4,
-                                                    shadowOffset: { width: 0, height: 2 },
-                                                    elevation: 5
-                                                }}
-                                            >
-                                                <Plus size={20} color="#0223E6" strokeWidth={2.5} />
-                                            </TouchableOpacity>
-                                        </View>
-                                        <Text numberOfLines={2} style={{ fontSize: 13, fontWeight: '600', marginTop: 8, color: '#000' }}>{product.title}</Text>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#0223E6', marginTop: 4 }}>${product.price}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        </ScrollView>
-                    </View>
-                )
-            }
+            {/* Hot Deals */}
+            <Text style={styles.sectionTitle}>🔥 Hot Deals</Text>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.dealsContainer}
+            >
+                {DEALS.map((deal, i) => (
+                    <TouchableOpacity
+                        key={i}
+                        activeOpacity={0.9}
+                        onPress={() => onOpenBrowser(deal.url, deal.store, deal.currency)}
+                    >
+                        <ImageBackground
+                            source={{ uri: deal.image }}
+                            style={styles.dealCard}
+                            imageStyle={styles.dealImage}
+                        >
+                            <LinearGradient
+                                colors={['transparent', 'rgba(0,0,0,0.8)']}
+                                style={styles.dealGradient}
+                            >
+                                <Text style={styles.dealStore}>{deal.store}</Text>
+                                <Text style={styles.dealTitle}>{deal.title}</Text>
+                                <Text style={styles.dealSubtitle}>{deal.subtitle}</Text>
+                            </LinearGradient>
+                        </ImageBackground>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
 
-            <Text style={styles.sectionLabel}>PARTNER STORES</Text>
+            {/* Browse Stores */}
+            <Text style={styles.sectionTitle}>Partner Stores</Text>
 
-            <View style={styles.searchContainer}>
+            {/* Search */}
+            <View style={styles.searchRow}>
                 <Input
-                    placeholder="Search stores (e.g. Amazon, ASOS)..."
+                    placeholder="Search stores..."
                     value={searchQuery}
                     onChangeText={setSearchQuery}
-                    style={{ marginBottom: 16 }}
+                    style={styles.searchInput}
                 />
             </View>
 
+            {/* Region Filter */}
+            <View style={styles.filterRow}>
+                {REGIONS.map(region => (
+                    <TouchableOpacity
+                        key={region}
+                        activeOpacity={0.7}
+                        onPress={() => setRegionFilter(region)}
+                        style={[
+                            styles.filterChip,
+                            regionFilter === region && styles.filterChipActive
+                        ]}
+                    >
+                        <Text style={[
+                            styles.filterText,
+                            regionFilter === region && styles.filterTextActive
+                        ]}>
+                            {region === 'All' ? '🌍 All' : region === 'USA' ? '🇺🇸 USA' : region === 'UK' ? '🇬🇧 UK' : '🇦🇪 UAE'}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+
+            {/* Store Grid */}
             <View style={styles.storeGrid}>
-                {STORES.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map(s => (
-                    <TouchableOpacity key={s.name} activeOpacity={0.7} onPress={() => onOpenBrowser(s.url, s.name)}>
+                {filteredStores.map(s => (
+                    <TouchableOpacity
+                        key={s.name}
+                        activeOpacity={0.7}
+                        onPress={() => onOpenBrowser(s.url, s.name, s.currency)}
+                        style={styles.storeCardWrapper}
+                    >
                         <Card style={styles.storeCard}>
-                            <View style={styles.storeIconPlaceholder}>
-                                <Image source={typeof s.logo === 'string' ? { uri: s.logo } : s.logo} style={{ width: 40, height: 40 }} resizeMode="contain" />
+                            <View style={styles.storeLogoWrap}>
+                                <Image
+                                    source={typeof s.logo === 'string' ? { uri: s.logo } : s.logo}
+                                    style={styles.storeLogo}
+                                    resizeMode="contain"
+                                />
                             </View>
                             <Text style={styles.storeName} numberOfLines={1}>{s.name}</Text>
                         </Card>
                     </TouchableOpacity>
                 ))}
             </View>
+
+            <View style={{ height: 100 }} />
         </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
-    screenTitle: { color: '#000', fontSize: 32, fontWeight: '700', letterSpacing: -0.4 },
-    subText: { color: '#8E8E93', fontSize: 17, marginTop: 4, fontWeight: '500' },
-    importRow: { flexDirection: 'row', gap: 12, marginTop: 24 },
-    flex1: { flex: 1 },
-    sectionLabel: { color: '#8E8E93', fontSize: 13, fontWeight: '500', letterSpacing: 0.4, marginTop: 32, marginBottom: 16 },
-    searchContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-    storeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-    storeCard: { width: (width - 60) / 2, padding: 20, alignItems: 'center', shadowOpacity: 0.03 },
-    storeIconPlaceholder: { width: 50, height: 50, backgroundColor: '#F2F2F7', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-    storeName: { color: '#000', fontSize: 15, fontWeight: '600' },
+    container: {
+        flex: 1,
+        paddingHorizontal: 20,
+    },
+    title: {
+        fontSize: 32,
+        fontFamily: 'Satoshi-Bold',
+        color: '#000',
+        marginTop: 8,
+    },
+    subtitle: {
+        fontSize: 15,
+        fontFamily: 'Satoshi-Regular',
+        color: '#8E8E93',
+        marginTop: 4,
+        marginBottom: 20,
+    },
+
+    // Import Card
+    importCard: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 24,
+    },
+    importLabel: {
+        fontSize: 13,
+        fontFamily: 'Satoshi-Medium',
+        color: '#8E8E93',
+        marginBottom: 10,
+    },
+    importRow: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    importInput: {
+        flex: 1,
+    },
+
+    // Section
+    sectionTitle: {
+        fontSize: 18,
+        fontFamily: 'Satoshi-Medium',
+        color: '#000',
+        marginBottom: 14,
+    },
+
+    // Deals
+    dealsContainer: {
+        paddingBottom: 24,
+        gap: 12,
+    },
+    dealCard: {
+        width: 160,
+        height: 130,
+        borderRadius: 14,
+        overflow: 'hidden',
+    },
+    dealImage: {
+        borderRadius: 14,
+    },
+    dealGradient: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        padding: 12,
+    },
+    dealStore: {
+        fontSize: 10,
+        fontFamily: 'Satoshi-Medium',
+        color: 'rgba(255,255,255,0.8)',
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+    },
+    dealTitle: {
+        fontSize: 16,
+        fontFamily: 'Satoshi-Bold',
+        color: '#fff',
+        marginTop: 2,
+    },
+    dealSubtitle: {
+        fontSize: 11,
+        fontFamily: 'Satoshi-Regular',
+        color: 'rgba(255,255,255,0.9)',
+        marginTop: 1,
+    },
+
+    // Search
+    searchRow: {
+        marginBottom: 12,
+    },
+    searchInput: {
+        backgroundColor: '#fff',
+    },
+
+    // Filter
+    filterRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 16,
+    },
+    filterChip: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: '#fff',
+    },
+    filterChipActive: {
+        backgroundColor: '#1C39BB',
+    },
+    filterText: {
+        fontSize: 13,
+        fontFamily: 'Satoshi-Medium',
+        color: '#666',
+    },
+    filterTextActive: {
+        color: '#fff',
+        fontFamily: 'Satoshi-Medium',
+    },
+
+    // Store Grid
+    storeGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+    },
+    storeCardWrapper: {
+        width: (width - 50) / 2,
+    },
+    storeCard: {
+        padding: 16,
+        alignItems: 'center',
+        borderRadius: 14,
+    },
+    storeLogoWrap: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: '#F5F5F7',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 10,
+    },
+    storeLogo: {
+        width: 30,
+        height: 30,
+    },
+    storeName: {
+        fontSize: 13,
+        fontFamily: 'Satoshi-Medium',
+        color: '#000',
+        textAlign: 'center',
+    },
 });
 
 export default ShopView;
