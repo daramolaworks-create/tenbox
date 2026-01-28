@@ -30,7 +30,23 @@ supabase.auth.onAuthStateChange((event, session) => {
         sessionResolvers.forEach(resolve => resolve());
         sessionResolvers = [];
     }
+
+    // Notify any registered listeners about auth state changes
+    if (authStateCallback) {
+        authStateCallback(event, session);
+    }
 });
+
+// Callback for store to register
+let authStateCallback: ((event: string, session: Session | null) => void) | null = null;
+
+/**
+ * Register a callback that fires when auth state changes.
+ * Used by the store to reactively update isAuthenticated.
+ */
+export const onAuthStateChange = (callback: (event: string, session: Session | null) => void) => {
+    authStateCallback = callback;
+};
 
 /**
  * Get session reliably on Android.

@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { CartItem, Shipment } from './types';
 import { createClient } from '@supabase/supabase-js';
-import { supabase, getSessionReliably } from './lib/supabase';
+import { supabase, getSessionReliably, onAuthStateChange } from './lib/supabase';
 
 export interface Address {
   id: string;
@@ -438,8 +438,17 @@ export const useCartStore = create<AppState>()(
 
       login: async (email, password) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        if (data.user) {
+        if (error) {
+          // Provide clearer error messages
+          if (error.message.includes('Invalid login credentials')) {
+            throw new Error('Invalid email or password. Please check your credentials.');
+          }
+          if (error.message.includes('Email not confirmed')) {
+            throw new Error('Please confirm your email address before logging in. Check your inbox.');
+          }
+          throw error;
+        }
+        if (data.session && data.user) {
           set({
             user: {
               name: data.user.user_metadata.full_name || data.user.email?.split('@')[0] || 'User',
@@ -462,7 +471,11 @@ export const useCartStore = create<AppState>()(
           }
         });
         if (error) throw error;
-        if (data.user) {
+
+        // Check if session was created (email confirmation disabled)
+        // or if we need to wait for email confirmation
+        if (data.session && data.user) {
+          // Session exists - user is immediately authenticated
           set({
             user: {
               name: name,
@@ -470,8 +483,10 @@ export const useCartStore = create<AppState>()(
             },
             isAuthenticated: true
           });
-          // Sync Cart
           await get().syncCart();
+        } else if (data.user && !data.session) {
+          // User created but no session - email confirmation required
+          throw new Error('CONFIRMATION_REQUIRED');
         }
       },
 

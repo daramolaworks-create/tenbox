@@ -27,7 +27,7 @@ import {
 } from 'lucide-react-native';
 import { TabType, Shipment } from './types';
 import { useCartStore } from './store';
-import { supabase } from './lib/supabase';
+import { supabase, onAuthStateChange, getSessionReliably } from './lib/supabase';
 import ImportPreviewModal from './components/ImportPreviewModal';
 import SettingsModal from './components/SettingsModal';
 import ShipFlow from './components/ShipFlow';
@@ -76,21 +76,35 @@ const App: React.FC = () => {
   const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
-    checkSession();
+    // Initialize session check
+    const initAuth = async () => {
+      await checkSession();
+      setIsLoading(false);
+    };
+
+    // Register reactive auth listener
+    onAuthStateChange(async (event, session) => {
+      console.log('🔐 Auth State Changed:', event);
+      if (event === 'SIGNED_IN' && session) {
+        // Refresh store state when signed in
+        await checkSession();
+      } else if (event === 'SIGNED_OUT') {
+        // Already handled by logout() in store
+      }
+    });
+
+    initAuth();
     fetchProducts();
     fetchAddresses();
     fetchShipments();
     fetchOrders();
     initializeSubscription();
+
     if (Platform.OS === 'android') {
       if (UIManager.setLayoutAnimationEnabledExperimental) {
         UIManager.setLayoutAnimationEnabledExperimental(true);
       }
     }
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2500);
-    return () => clearTimeout(timer);
   }, []);
 
   // Handle Deep Linking (Password Reset)

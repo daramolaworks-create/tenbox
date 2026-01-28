@@ -56,6 +56,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
             onLogin(); // Callback to notify App (optional if using reactive state)
         } catch (error: any) {
             console.log(error);
+            // Handle email confirmation required
+            if (error.message === 'CONFIRMATION_REQUIRED') {
+                alert('Account created! Please check your email and click the confirmation link to activate your account.');
+                setIsLogin(true); // Switch to login view
+                return;
+            }
             alert(error.message || 'Authentication failed');
         } finally {
             setLoading(false);
