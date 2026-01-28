@@ -141,20 +141,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                                         <Text style={styles.socialText}>Continue with Google</Text>
                                     </TouchableOpacity>
 
-                                    <TouchableOpacity style={[styles.socialBtn, { backgroundColor: '#000' }]} onPress={async () => {
-                                        setLoading(true);
-                                        try {
-                                            await useCartStore.getState().loginWithApple();
-                                            onLogin();
-                                        } catch (e) {
-                                            console.log(e);
-                                        } finally {
-                                            setLoading(false);
-                                        }
-                                    }}>
-                                        <Image source={require('../assets/logos/apple.png')} style={{ width: 20, height: 24, tintColor: '#fff' }} resizeMode="contain" />
-                                        <Text style={[styles.socialText, { color: '#fff' }]}>Continue with Apple</Text>
-                                    </TouchableOpacity>
                                 </View>
                             </>
                         )}

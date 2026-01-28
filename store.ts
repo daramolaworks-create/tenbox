@@ -100,6 +100,8 @@ interface AppState {
   notifications: NotificationPrefs;
   toggleNotification: (key: keyof NotificationPrefs) => void;
 
+  // Reset
+  resetStore: () => void;
 }
 
 // Helper to normalize store regions
@@ -272,7 +274,7 @@ export const useCartStore = create<AppState>()(
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
 
-        const { data, error } = await supabase.from('cart_items').select('*');
+        const { data, error } = await supabase.from('cart_items').select('*').eq('user_id', session.user.id);
         if (error) {
           console.error('Error fetching cart:', error);
           return;
@@ -581,7 +583,26 @@ export const useCartStore = create<AppState>()(
 
       logout: async () => {
         await supabase.auth.signOut();
-        set({ user: null, isAuthenticated: false });
+        get().resetStore();
+      },
+
+      resetStore: () => {
+        set({
+          items: [],
+          shipments: [],
+          orderHistory: [],
+          user: null,
+          isAuthenticated: false,
+          addresses: [],
+          notifications: {
+            orderUpdates: true,
+            promotions: false,
+            newFeatures: true
+          },
+          // We can optionally clear products if we want a full refresh, 
+          // but usually products are global. Let's clear them to ensure freshness.
+          products: []
+        });
       },
 
       updateProfile: async (profile) => {
@@ -830,36 +851,16 @@ export const useCartStore = create<AppState>()(
           return;
         }
 
-        // MOCK DATA INJECTION if DB is empty (or enabled for design review)
-        let orderData = data;
-        if (!orderData || orderData.length === 0) {
-          orderData = [
-            { id: '1001-mock', created_at: new Date(Date.now() - 86400000 * 2).toISOString(), items_summary: 'Adidas Ultraboost 5.0, Nike Air Max', total: 245.50, status: 'Delivered' },
-            { id: '1002-mock', created_at: new Date(Date.now() - 86400000 * 5).toISOString(), items_summary: 'Sony WH-1000XM5 Headphones', total: 348.00, status: 'Cancelled' },
-            { id: '1003-mock', created_at: new Date().toISOString(), items_summary: 'H&M Cotton T-Shirt (x3)', total: 45.99, status: 'Processing' },
-          ];
-        }
-
-        if (orderData) {
-          // Get address snapshot strategy (Use current default as fallback for MVP)
-          const currentAddresses = get().addresses;
-          let addressStr = '';
-
-          if (currentAddresses.length > 0) {
-            const defaultAddr = currentAddresses.find(a => a.default) || currentAddresses[0];
-            addressStr = `${defaultAddr.street}, ${defaultAddr.city}, ${defaultAddr.zip}`;
-          }
-
+        if (data) {
           set({
-            orderHistory: orderData.map((order: any, index: number) => ({
+            orderHistory: data.map((order: any) => ({
               id: order.id,
               date: new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
               items: order.items_summary || 'Order Items',
               total: `$${order.total}`,
-              // MOCK DATA for Design Review: Varied statuses if not already set by mock
-              status: order.id.includes('mock') ? order.status : (index === 0 ? 'Delivered' : index === 1 ? 'Cancelled' : 'Processing'),
+              status: order.status,
               itemsList: [], // Detail view would need a separate table join or JSON column
-              shippingAddress: addressStr || 'No address found'
+              shippingAddress: order.shipping_address || 'Address not available'
             }))
           });
         }
