@@ -181,6 +181,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                 customerEphemeralKeySecret: params.ephemeralKey,
                 paymentIntentClientSecret: params.paymentIntent,
                 allowsDelayedPaymentMethods: true,
+                returnURL: 'tenbox://stripe-redirect',
                 defaultBillingDetails: {
                     name: 'Tenbox User',
                 }
