@@ -34,7 +34,7 @@
         "@stripe/stripe-react-native",
         {
           "merchantIdentifier": "merchant.com.tenbox.mobile",
-          "enableGooglePay": true
+          "enableGooglePay": false
         }
       ]
     ]

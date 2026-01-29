@@ -131,27 +131,34 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
             name: 'Tenbox User'
         };
 
-        // Using direct fetch for React Native compatibility
-        const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-        const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+        // Debug: Check if the key is loaded correctly
+        const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+        console.log('DEBUG: Supabase Key starts with:', key.substring(0, 5) + '...' + key.substring(key.length - 5));
+        console.log('DEBUG: Payload:', JSON.stringify(payload));
+
+
+
+
 
         try {
-            const response = await fetch(`${supabaseUrl}/functions/v1/payment-sheet`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${anonKey}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
+            const { data, error } = await supabase.functions.invoke('payment-sheet', {
+                body: payload
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                Alert.alert('Payment Error', `Status: ${response.status}\n${errorText}`);
+            if (error) {
+                console.error('Payment Sheet Error Object:', JSON.stringify(error, null, 2));
+                // Supabase Edge Functions often return the error message in error.context or error.message
+                // We want to show the specific error from the backend if possible
+                const backendError = error.context?.json?.error || error.message || JSON.stringify(error);
+                Alert.alert('Payment Error', `Server: ${backendError}`);
                 return null;
             }
 
-            const data = await response.json();
+            if (!data || !data.paymentIntent) {
+                Alert.alert('Payment Error', 'Invalid response from server');
+                return null;
+            }
+
             return {
                 paymentIntent: data.paymentIntent,
                 ephemeralKey: data.ephemeralKey,
