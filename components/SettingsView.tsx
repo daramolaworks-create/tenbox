@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { MapPin, Clock, LogOut, ChevronRight, User, Shield, Lock, Trash2 } from 'lucide-react-native';
+import { MapPin, Clock, LogOut, ChevronRight, User, Shield, Lock, Trash2, ArrowLeft } from 'lucide-react-native';
 import { UserProfile, useCartStore } from '../store';
 import AddressesView from './AddressesView';
 import OrdersView from './OrdersView';
@@ -118,9 +118,19 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     if (currentView !== 'list') {
         return (
             <View style={styles.screen}>
-                <TouchableOpacity onPress={() => onViewChange('list')} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
-                    <ChevronRight size={24} color="#1C39BB" style={{ transform: [{ rotate: '180deg' }] }} />
-                    <Text style={{ fontSize: 17, color: '#1C39BB', marginLeft: 4, fontWeight: '600' }}>Back to Settings</Text>
+                <TouchableOpacity
+                    onPress={() => onViewChange('list')}
+                    style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        backgroundColor: '#F2F2F7',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 24
+                    }}
+                >
+                    <ArrowLeft size={24} color="#000" />
                 </TouchableOpacity>
 
                 {currentView === 'account' && (
