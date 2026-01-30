@@ -9,10 +9,10 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, Minus, Plus, ShoppingCart } from 'lucide-react-native';
 import { Button, Card } from './UI';
 import { CartItem } from '../types';

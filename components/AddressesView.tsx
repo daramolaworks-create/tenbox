@@ -90,8 +90,6 @@ const AddressesView = () => {
     };
 
     const handleSetDefault = (id: string) => {
-        // Logic to ensure only one default could be implemented here or in store
-        // For now, simpler: we just flag it
         addresses.forEach(a => {
             if (a.id === id) updateAddress(a.id, { default: true });
             else if (a.default) updateAddress(a.id, { default: false });
@@ -101,54 +99,64 @@ const AddressesView = () => {
     return (
         <View style={{ flex: 1, backgroundColor: '#F2F2F7' }}>
             <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
-
-                {addresses.map((addr) => (
-                    <TouchableOpacity
-                        key={addr.id}
-                        style={[styles.addressCard, addr.default && styles.activeCard]}
-                        activeOpacity={0.9}
-                        onPress={() => handleSetDefault(addr.id)}
-                    >
-                        <View style={styles.cardContent}>
-                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}>
-                                <View style={[styles.iconBox, addr.default ? styles.activeIconBox : null]}>
-                                    <MapPin size={24} color={addr.default ? '#1C39BB' : '#8E8E93'} />
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                        <Text style={[styles.label, addr.default && { color: '#1C39BB' }]}>{addr.label}</Text>
-                                        <View style={{ flexDirection: 'row', gap: 12 }}>
-                                            <TouchableOpacity onPress={() => openEditModal(addr)} hitSlop={10}>
-                                                <Edit2 size={16} color="#C7C7CC" />
-                                            </TouchableOpacity>
-                                            <TouchableOpacity onPress={() => handleDelete(addr.id)} hitSlop={10}>
-                                                <Trash2 size={16} color="#FF3B30" />
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-                                    <Text style={styles.addressText}>{addr.street}</Text>
-                                    <Text style={styles.addressText}>{addr.city}, {addr.country} {addr.zip}</Text>
-                                </View>
-                            </View>
-
-                            <View style={styles.selectionIndicator}>
-                                {addr.default ? (
-                                    <View style={styles.radioSelected}>
-                                        <Check size={12} color="#fff" strokeWidth={4} />
-                                    </View>
-                                ) : (
-                                    <View style={styles.radioUnselected} />
-                                )}
-                            </View>
+                {addresses.length === 0 ? (
+                    <View style={styles.emptyState}>
+                        <View style={styles.emptyIcon}>
+                            <MapPin size={32} color="#1C39BB" />
                         </View>
-                    </TouchableOpacity>
-                ))}
+                        <Text style={styles.emptyText}>No addresses saved yet</Text>
+                    </View>
+                ) : (
+                    addresses.map((addr) => (
+                        <TouchableOpacity
+                            key={addr.id}
+                            style={[styles.addressCard, addr.default && styles.activeCard]}
+                            activeOpacity={0.9}
+                            onPress={() => handleSetDefault(addr.id)}
+                        >
+                            <View style={styles.cardHeader}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <View style={[styles.iconBox, addr.default ? { backgroundColor: '#1C39BB' } : { backgroundColor: '#F2F2F7' }]}>
+                                        <MapPin size={18} color={addr.default ? '#fff' : '#8E8E93'} />
+                                    </View>
+                                    <View>
+                                        <Text style={styles.label}>{addr.label}</Text>
+                                        {addr.default && (
+                                            <View style={styles.defaultBadge}>
+                                                <Text style={styles.defaultBadgeText}>DEFAULT</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                </View>
+                                <View style={{ flexDirection: 'row', gap: 4 }}>
+                                    <TouchableOpacity onPress={() => openEditModal(addr)} hitSlop={10} style={styles.actionBtn}>
+                                        <Edit2 size={16} color="#6B7280" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => handleDelete(addr.id)} hitSlop={10} style={styles.actionBtn}>
+                                        <Trash2 size={16} color="#EF4444" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            <View style={styles.cardBody}>
+                                <Text style={styles.addressText}>{addr.street}</Text>
+                                <Text style={styles.addressText}>{addr.city}, {addr.country} {addr.zip}</Text>
+                            </View>
+
+                            {addr.default && (
+                                <View style={styles.checkIcon}>
+                                    <Check size={14} color="#fff" strokeWidth={3} />
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    ))
+                )}
 
                 <Button
                     onPress={openAddModal}
                     style={styles.addBtn}
                     size="lg"
-                    icon={<Plus size={24} color="#fff" />}
+                    icon={<Plus size={20} color="#fff" />}
                 >
                     Add New Address
                 </Button>
@@ -163,15 +171,14 @@ const AddressesView = () => {
                 <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>{editingId ? 'Edit Address' : 'New Address'}</Text>
 
-                    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 16 }}>
-                        <Input label="Label (e.g. Home)" value={label} onChangeText={setLabel} />
-                        <Input label="Street Address" value={street} onChangeText={setStreet} />
+                    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 20 }}>
+                        <Input label="Label (e.g. Home)" value={label} onChangeText={setLabel} placeholder="Home, Work, etc." />
+                        <Input label="Street Address" value={street} onChangeText={setStreet} placeholder="123 Main St" />
                         <View style={{ flexDirection: 'row', gap: 12 }}>
-                            <Input label="City" style={{ flex: 1 }} value={city} onChangeText={setCity} />
-                            <Input label="ZIP Code" style={{ flex: 1 }} value={zip} onChangeText={setZip} keyboardType="numeric" />
+                            <Input label="City" style={{ flex: 1 }} value={city} onChangeText={setCity} placeholder="New York" />
+                            <Input label="ZIP Code" style={{ flex: 1 }} value={zip} onChangeText={setZip} keyboardType="numeric" placeholder="10001" />
                         </View>
 
-                        {/* Country Picker */}
                         <View>
                             <Text style={styles.inputLabel}>Country</Text>
                             <TouchableOpacity
@@ -179,19 +186,19 @@ const AddressesView = () => {
                                 onPress={() => setCountryPickerVisible(true)}
                                 activeOpacity={0.7}
                             >
-                                <Text style={[styles.countryPickerText, !country && { color: '#C7C7CC' }]}>
+                                <Text style={[styles.countryPickerText, !country && { color: '#9CA3AF' }]}>
                                     {country ? COUNTRIES.find(c => c.code === country)?.name || country : 'Select Country'}
                                 </Text>
-                                <ChevronDown size={20} color="#8E8E93" />
+                                <ChevronDown size={20} color="#6B7280" />
                             </TouchableOpacity>
                         </View>
                     </ScrollView>
 
                     <View style={{ gap: 12, marginTop: 20 }}>
                         <Button size="lg" onPress={handleSave} isLoading={loading}>Save Address</Button>
-                        <Button variant="secondary" onPress={() => setModalVisible(false)} disabled={loading}>Cancel</Button>
+                        <Button variant="ghost" onPress={() => setModalVisible(false)} disabled={loading}>Cancel</Button>
                     </View>
-                    {/* Inline Country Picker Overlay to avoid Modal stacking issues */}
+
                     {countryPickerVisible && (
                         <View style={[styles.countryModalOverlay, { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, margin: -24 }]}>
                             <View style={styles.countryModalContent}>
@@ -232,80 +239,90 @@ const AddressesView = () => {
 };
 
 const styles = StyleSheet.create({
-    headerTitle: {
-        fontSize: 28,
-        fontWeight: '700',
-        color: '#000',
-        marginBottom: 24,
-        letterSpacing: -0.5,
-    },
+    emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+    emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    emptyText: { fontSize: 16, fontFamily: 'Satoshi-Medium', color: '#6B7280' },
+
     addressCard: {
         backgroundColor: '#fff',
         borderRadius: 24,
-        padding: 20,
         marginBottom: 16,
-        shadowColor: '#000',
+        padding: 20,
+        borderWidth: 1.5,
+        borderColor: 'transparent',
+        shadowColor: 'rgba(0,0,0,0.05)',
         shadowOffset: { width: 0, height: 4 },
         shadowRadius: 12,
-        shadowOpacity: 0.04,
-        borderWidth: 1,
-        borderColor: 'transparent',
+        shadowOpacity: 1,
     },
     activeCard: {
         borderColor: '#1C39BB',
         backgroundColor: '#F5F7FF',
     },
-    cardContent: {
+    cardHeader: {
         flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 16
     },
     iconBox: {
-        width: 48,
-        height: 48,
-        borderRadius: 16,
-        backgroundColor: '#F2F2F7',
+        width: 40,
+        height: 40,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    activeIconBox: {
-        backgroundColor: '#E0E7FF',
     },
     label: {
-        fontSize: 17,
-        fontWeight: '700',
-        color: '#000',
+        fontSize: 16,
+        fontFamily: 'Satoshi-Bold',
+        color: '#111827',
+    },
+    defaultBadge: {
+        backgroundColor: '#1C39BB',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        alignSelf: 'flex-start',
+        marginTop: 4
+    },
+    defaultBadgeText: {
+        fontSize: 9,
+        fontFamily: 'Satoshi-Bold',
+        color: '#fff'
+    },
+    actionBtn: {
+        padding: 8,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 8,
+    },
+    cardBody: {
+        paddingLeft: 50,
     },
     addressText: {
-        fontSize: 14,
-        color: '#8E8E93',
-        fontWeight: '500',
-        lineHeight: 20,
+        fontSize: 15,
+        color: '#4B5563',
+        fontFamily: 'Satoshi-Medium',
+        lineHeight: 22,
     },
-    selectionIndicator: {
-        marginLeft: 12,
-    },
-    radioUnselected: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: '#C7C7CC',
-    },
-    radioSelected: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+    checkIcon: {
+        position: 'absolute',
+        top: -10,
+        right: -10,
         backgroundColor: '#1C39BB',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: '#fff'
     },
     addBtn: {
-        marginTop: 24,
+        marginTop: 12,
         shadowColor: '#1C39BB',
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 8 },
     },
     modalContainer: {
         flex: 1,
@@ -313,29 +330,35 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     modalTitle: {
-        fontSize: 28,
-        fontWeight: '700',
+        fontSize: 24,
+        fontFamily: 'Satoshi-Bold',
         marginBottom: 32,
         marginTop: 16,
+        letterSpacing: -0.5,
+        color: '#111827'
     },
     inputLabel: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#8E8E93',
+        fontSize: 14,
+        fontFamily: 'Satoshi-Bold',
+        color: '#374151',
         marginBottom: 8,
+        marginLeft: 4,
     },
     countryPicker: {
-        backgroundColor: '#F2F2F7',
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: '#F9FAFB',
+        borderWidth: 1.5,
+        borderColor: '#F3F4F6',
+        borderRadius: 20,
+        paddingHorizontal: 18,
+        height: 56,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
     countryPickerText: {
         fontSize: 16,
-        fontWeight: '500',
-        color: '#000',
+        fontFamily: 'Satoshi-Medium',
+        color: '#111827',
     },
     countryModalOverlay: {
         flex: 1,
@@ -346,12 +369,12 @@ const styles = StyleSheet.create({
     countryModalContent: {
         backgroundColor: '#fff',
         width: '85%',
-        borderRadius: 20,
+        borderRadius: 24,
         padding: 24,
     },
     countryModalHeader: {
         fontSize: 20,
-        fontWeight: '700',
+        fontFamily: 'Satoshi-Bold',
         marginBottom: 16,
     },
     countryItem: {
@@ -368,13 +391,14 @@ const styles = StyleSheet.create({
     },
     countryItemText: {
         fontSize: 16,
-        fontWeight: '500',
-        color: '#333',
+        fontFamily: 'Satoshi-Medium',
+        color: '#374151',
     },
     countryItemTextSelected: {
         color: '#1C39BB',
-        fontWeight: '600',
+        fontFamily: 'Satoshi-Bold',
     },
 });
+
 
 export default AddressesView;

@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Input } from './UI';
 import { CheckCircle } from 'lucide-react-native';
 import { useCartStore } from '../store';

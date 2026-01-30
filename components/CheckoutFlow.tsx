@@ -6,6 +6,15 @@ import { supabase } from '../lib/supabase';
 import { X, Check, MapPin, Truck, ChevronRight, CreditCard, Plus, ArrowLeft, RefreshCw } from 'lucide-react-native';
 import { useStripe } from '@stripe/stripe-react-native';
 
+
+const COUNTRIES = [
+    { code: 'NG', name: 'Nigeria' },
+    { code: 'US', name: 'United States' },
+    { code: 'GB', name: 'United Kingdom' },
+    { code: 'AE', name: 'United Arab Emirates' },
+];
+
+
 interface CheckoutFlowProps {
     visible: boolean;
     onClose: () => void;
@@ -13,9 +22,18 @@ interface CheckoutFlowProps {
 }
 
 const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplete }) => {
-    const [step, setStep] = useState<'address' | 'delivery' | 'review'>('address');
-    const { addresses, user, items, clearCart, createOrder } = useCartStore();
+    const [step, setStep] = useState<'address' | 'add-address' | 'delivery' | 'review'>('address');
+    const { addresses, user, items, clearCart, createOrder, addAddress } = useCartStore();
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
+
+    // New Address Form State
+    const [newLabel, setNewLabel] = useState('');
+    const [newStreet, setNewStreet] = useState('');
+    const [newCity, setNewCity] = useState('');
+    const [newZip, setNewZip] = useState('');
+    const [newCountry, setNewCountry] = useState('');
+    const [countryPickerVisible, setCountryPickerVisible] = useState(false);
+
 
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
     const [rates, setRates] = useState<any[]>([]);
@@ -109,6 +127,8 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
             }
             setStep('delivery');
             fetchShopRates(); // Fetch when moving to delivery step
+        } else if (step === 'add-address') {
+            // Validate and save is handled by handleSaveAddress
         } else if (step === 'delivery') {
             if (!selectedRate) {
                 Alert.alert('Required', 'Please select a delivery method.');
@@ -121,6 +141,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
     const handleBack = () => {
         if (step === 'review') setStep('delivery');
         else if (step === 'delivery') setStep('address');
+        else if (step === 'add-address') setStep('address');
     };
 
     const fetchPaymentSheetParams = async () => {
@@ -227,7 +248,36 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
             setIsProcessing(false);
         }
     };
+    const handleSaveAddress = async () => {
+        if (!newLabel || !newStreet || !newCity || !newZip || !newCountry) {
+            Alert.alert('Error', 'Please fill in all fields');
+            return;
+        }
 
+        const newAddr = {
+            id: Math.random().toString(36).substr(2, 9),
+            label: newLabel,
+            street: newStreet,
+            city: newCity,
+            zip: newZip,
+            country: newCountry, // Store code or name? stored as code in AddressesView usually, but explicit check needed.
+            default: addresses.length === 0
+        };
+
+        const success = await addAddress(newAddr);
+        if (success) {
+            setSelectedAddressId(newAddr.id);
+            setStep('address');
+            // Reset form
+            setNewLabel('');
+            setNewStreet('');
+            setNewCity('');
+            setNewZip('');
+            setNewCountry('');
+        } else {
+            Alert.alert('Error', 'Failed to save address');
+        }
+    };
 
 
 
@@ -249,7 +299,9 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                     <TouchableOpacity onPress={step === 'address' ? onClose : handleBack} style={styles.headerBtn}>
                         {step === 'address' ? <X size={24} color="#000" /> : <ArrowLeft size={24} color="#000" />}
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Checkout ({storeRegion})</Text>
+                    <Text style={styles.headerTitle}>
+                        {step === 'add-address' ? 'New Address' : `Checkout (${storeRegion})`}
+                    </Text>
                     <View style={{ width: 40 }} />
                 </View>
 
@@ -261,6 +313,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                 </View>
                 <Text style={styles.stepTitle}>
                     {step === 'address' && 'Select Address'}
+                    {step === 'add-address' && 'Enter Details'}
                     {step === 'delivery' && 'Delivery Method'}
                     {step === 'review' && 'Review & Pay'}
                 </Text>
@@ -291,10 +344,64 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                                 </TouchableOpacity>
                             ))}
 
-                            <Button variant="outline" style={{ marginTop: 8 }}>
+                            <Button variant="outline" style={{ marginTop: 8 }} onPress={() => setStep('add-address')}>
                                 <Plus size={18} color="#000" style={{ marginRight: 8 }} />
                                 Add New Address
                             </Button>
+                        </View>
+                    )}
+
+                    {/* STEP 1.5: ADD ADDRESS */}
+                    {step === 'add-address' && (
+                        <View style={{ gap: 20 }}>
+                            <Input label="Label (e.g. Home)" value={newLabel} onChangeText={setNewLabel} placeholder="Home, Work, etc." />
+                            <Input label="Street Address" value={newStreet} onChangeText={setNewStreet} placeholder="123 Main St" />
+                            <View style={{ flexDirection: 'row', gap: 12 }}>
+                                <Input label="City" style={{ flex: 1 }} value={newCity} onChangeText={setNewCity} placeholder="New York" />
+                                <Input label="ZIP Code" style={{ flex: 1 }} value={newZip} onChangeText={setNewZip} keyboardType="numeric" placeholder="10001" />
+                            </View>
+
+                            <View>
+                                <Text style={{ fontSize: 14, fontFamily: 'Satoshi-Bold', color: '#374151', marginBottom: 8, marginLeft: 4 }}>Country</Text>
+                                <TouchableOpacity
+                                    style={{
+                                        backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#F3F4F6', borderRadius: 20, paddingHorizontal: 18, height: 56, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'
+                                    }}
+                                    onPress={() => setCountryPickerVisible(true)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={{ fontSize: 16, fontFamily: 'Satoshi-Medium', color: newCountry ? '#111827' : '#9CA3AF' }}>
+                                        {newCountry ? COUNTRIES.find(c => c.code === newCountry)?.name || newCountry : 'Select Country'}
+                                    </Text>
+                                    <ChevronRight size={20} color="#6B7280" rotation={90} />
+                                </TouchableOpacity>
+                            </View>
+
+                            {countryPickerVisible && (
+                                <Modal visible={countryPickerVisible} transparent animationType="fade" onRequestClose={() => setCountryPickerVisible(false)}>
+                                    <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+                                        <View style={{ backgroundColor: '#fff', width: '100%', borderRadius: 24, padding: 24 }}>
+                                            <Text style={{ fontSize: 20, fontFamily: 'Satoshi-Bold', marginBottom: 16 }}>Select Country</Text>
+                                            {COUNTRIES.map((c) => (
+                                                <TouchableOpacity
+                                                    key={c.code}
+                                                    style={{ paddingVertical: 14, paddingHorizontal: 12, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, backgroundColor: newCountry === c.code ? '#E0E7FF' : 'transparent' }}
+                                                    onPress={() => {
+                                                        setNewCountry(c.code);
+                                                        setCountryPickerVisible(false);
+                                                    }}
+                                                >
+                                                    <Text style={{ fontSize: 16, fontFamily: newCountry === c.code ? 'Satoshi-Bold' : 'Satoshi-Medium', color: newCountry === c.code ? '#1C39BB' : '#374151' }}>{c.name}</Text>
+                                                    {newCountry === c.code && <Check size={18} color="#1C39BB" />}
+                                                </TouchableOpacity>
+                                            ))}
+                                            <Button variant="secondary" onPress={() => setCountryPickerVisible(false)} style={{ marginTop: 16 }}>Cancel</Button>
+                                        </View>
+                                    </View>
+                                </Modal>
+                            )}
+
+                            <Button size="lg" onPress={handleSaveAddress} style={{ marginTop: 24 }}>Save & Use Address</Button>
                         </View>
                     )}
 
@@ -410,17 +517,19 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                 </ScrollView>
 
                 {/* Footer Actions */}
-                <View style={styles.footer}>
-                    {step !== 'review' ? (
-                        <Button size="lg" onPress={handleNext} style={{ width: '100%' }}>
-                            Continue
-                        </Button>
-                    ) : (
-                        <Button size="lg" onPress={handlePay} style={{ width: '100%' }} disabled={isProcessing}>
-                            {isProcessing ? <ActivityIndicator color="#fff" /> : `Pay ${CURRENCY_SYMBOL}${total.toFixed(2)}`}
-                        </Button>
-                    )}
-                </View>
+                {step !== 'add-address' && (
+                    <View style={styles.footer}>
+                        {step !== 'review' ? (
+                            <Button size="lg" onPress={handleNext} style={{ width: '100%' }}>
+                                Continue
+                            </Button>
+                        ) : (
+                            <Button size="lg" onPress={handlePay} style={{ width: '100%' }} disabled={isProcessing}>
+                                {isProcessing ? <ActivityIndicator color="#fff" /> : `Pay ${CURRENCY_SYMBOL}${total.toFixed(2)}`}
+                            </Button>
+                        )}
+                    </View>
+                )}
             </View>
         </Modal>
     );
