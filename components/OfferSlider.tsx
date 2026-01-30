@@ -5,9 +5,9 @@ const { width } = Dimensions.get('window');
 const SLIDE_WIDTH = width - 48; // padding 24 * 2
 
 const OFFERS = [
-    { id: '1', image: require('../assets/offers/offer1.jpg') },
+    { id: '1', image: require('../assets/offers/offer1.png') },
     { id: '2', image: require('../assets/offers/offer2.jpg') },
-    { id: '3', image: require('../assets/offers/offer3.png') },
+    { id: '3', image: require('../assets/offers/offer3.jpg') },
 ];
 
 const OfferSlider: React.FC = () => {
