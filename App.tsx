@@ -296,7 +296,7 @@ const App: React.FC = () => {
         merchantIdentifier="merchant.com.tenbox.app" // Optional, for Apple Pay
       >
         <SafeAreaProvider>
-          <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+          <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
             <StatusBar barStyle="dark-content" />
             <View style={styles.header}>
               <TouchableOpacity
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 12, paddingBottom: 16 },
   profileBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E5E5EA', alignItems: 'center', justifyContent: 'center' },
   content: { flex: 1 },
-  tabBar: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 0, paddingBottom: 30, paddingTop: 12, paddingHorizontal: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: -2 }, elevation: 5 },
+  tabBar: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 0, paddingBottom: 12, paddingTop: 12, paddingHorizontal: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: -2 }, elevation: 5 },
   tabItem: { flex: 1, alignItems: 'center', gap: 4 },
   tabLabel: { color: '#8E8E93', fontSize: 10, fontFamily: 'Satoshi-Medium' },
   tabBadge: { position: 'absolute', top: -4, right: -6, backgroundColor: '#FF3B30', minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
