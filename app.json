@@ -42,6 +42,11 @@
           "enableGooglePay": false
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4cb71809-fee1-46ae-b27d-cccd1fa74cb8"
+      }
+    }
   }
 }
