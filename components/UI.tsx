@@ -100,54 +100,69 @@ export const Card: React.FC<{ children: React.ReactNode; style?: any }> = ({ chi
   );
 };
 
+
 const styles = StyleSheet.create({
   btnBase: {
-    borderRadius: 14,
+    borderRadius: 30, // Pill shape / Squircle
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#1C39BB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
   },
   btnPrimary: {
     backgroundColor: '#1C39BB', // System Blue
+    shadowOpacity: 0.3,
   },
   btnSecondary: {
-    backgroundColor: '#E5E5EA', // System Fill
+    backgroundColor: '#F2F2F7', // System Gray 6
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
   },
   btnOutline: {
-    borderWidth: 1,
-    borderColor: '#C6C6C8',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E5E5EA',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
   },
   btnDanger: {
-    backgroundColor: 'rgba(254, 202, 202, 0.5)',
+    backgroundColor: '#FEF2F2',
     borderWidth: 1,
-    borderColor: '#EF4444',
+    borderColor: '#FCA5A5',
+    shadowColor: '#EF4444',
   },
   btnGhost: {
     backgroundColor: 'transparent',
+    shadowOpacity: 0,
   },
-  btnSizeSm: { paddingVertical: 8, paddingHorizontal: 16 },
-  btnSizeMd: { paddingVertical: 14, paddingHorizontal: 20 },
-  btnSizeLg: { paddingVertical: 18, paddingHorizontal: 24 },
-  btnSizeIcon: { width: 54, height: 54 },
+  btnSizeSm: { paddingVertical: 10, paddingHorizontal: 16 },
+  btnSizeMd: { paddingVertical: 16, paddingHorizontal: 24 },
+  btnSizeLg: { paddingVertical: 20, paddingHorizontal: 32 },
+  btnSizeIcon: { width: 56, height: 56, padding: 0 },
   btnText: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 15,
+    fontFamily: 'Satoshi-Bold',
+    fontSize: 16,
+    letterSpacing: -0.3,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 14,
-    paddingHorizontal: 16,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1.5,
+    borderColor: '#F3F4F6',
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    height: 56,
   },
   input: {
     flex: 1,
-    color: '#000000',
-    paddingVertical: 14,
+    color: '#111827',
     fontSize: 16,
-    fontFamily: 'Satoshi-Regular',
+    fontFamily: 'Satoshi-Medium',
+    height: '100%',
   },
   eyeIcon: {
     padding: 10,
@@ -155,18 +170,20 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2, // Android
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
   },
   inputLabel: {
-    fontSize: 13,
-    fontFamily: 'Satoshi-Medium',
-    color: '#000',
-    marginBottom: 6,
+    fontSize: 14,
+    fontFamily: 'Satoshi-Bold',
+    color: '#374151',
+    marginBottom: 8,
     marginLeft: 4,
   },
 });
+

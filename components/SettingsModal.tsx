@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, SafeAreaView, LayoutAnimation, Platform, UIManager, Image, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, LayoutAnimation, Platform, UIManager, Image, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, User, MapPin, Clock, LogOut, ChevronRight, Bell, Shield, HelpCircle, ChevronLeft } from 'lucide-react-native';
 import { useCartStore } from '../store';
 import AddressesView from './AddressesView';
@@ -27,12 +28,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, onLogou
     const [view, setView] = useState<SettingsView>('main');
 
     const handleNavigate = (newView: SettingsView) => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        // LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setView(newView);
     };
 
     const handleBack = () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        // LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         if (view === 'password') {
             setView('security');
         } else {
@@ -187,7 +188,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F2F2F7',
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+        paddingTop: 0,
     },
     header: {
         flexDirection: 'row',

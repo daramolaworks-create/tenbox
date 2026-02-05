@@ -63,41 +63,48 @@ const SecurityView = () => {
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 24, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 24, padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+
                 <View style={styles.card}>
                     <View style={styles.cardHeader}>
-                        <Lock size={20} color="#000" />
+                        <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#F2F2F7', alignItems: 'center', justifyContent: 'center' }}>
+                            <Lock size={18} color="#111827" />
+                        </View>
                         <Text style={styles.cardTitle}>Change Password</Text>
                     </View>
-                    <View style={{ gap: 16 }}>
+                    <View style={{ gap: 20 }}>
                         <Input
-                            placeholder="Current Password"
+                            label="Current Password"
+                            placeholder="Enter current password"
                             secureTextEntry
                             value={currentPassword}
                             onChangeText={setCurrentPassword}
                         />
                         <Input
-                            placeholder="New Password"
+                            label="New Password"
+                            placeholder="Enter new password"
                             secureTextEntry
                             value={newPassword}
                             onChangeText={setNewPassword}
                         />
-                        <Button onPress={handleUpdatePassword} disabled={loading}>
+                        <Button onPress={handleUpdatePassword} disabled={loading} style={{ marginTop: 8 }}>
                             {loading ? 'Updating...' : 'Update Password'}
                         </Button>
                     </View>
                 </View>
 
-                <View style={[styles.card, { borderColor: '#FF3B30', borderWidth: 1, backgroundColor: '#FFF5F5' }]}>
+                <View style={styles.card}>
                     <View style={styles.cardHeader}>
-                        <Trash2 size={20} color="#FF3B30" />
-                        <Text style={[styles.cardTitle, { color: '#FF3B30' }]}>Danger Zone</Text>
+                        <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center' }}>
+                            <Trash2 size={18} color="#EF4444" />
+                        </View>
+                        <Text style={[styles.cardTitle, { color: '#EF4444' }]}>Delete Account</Text>
                     </View>
                     <Text style={styles.cardDesc}>
                         Permanently delete your account and all of your content. This action cannot be undone.
                     </Text>
                     <TouchableOpacity
-                        style={styles.deleteBtn}
+                        style={[styles.deleteBtn, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}
                         onPress={handleDeleteAccount}
                         activeOpacity={0.7}
                     >
@@ -116,104 +123,261 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     onViewChange
 }) => {
     if (currentView !== 'list') {
+        const getTitle = () => {
+            switch (currentView) {
+                case 'account': return 'Account Information';
+                case 'addresses': return 'Saved Addresses';
+                case 'orders': return 'Order History';
+                case 'security': return 'Security & Privacy';
+                default: return '';
+            }
+        };
+
         return (
             <View style={styles.screen}>
-                <TouchableOpacity
-                    onPress={() => onViewChange('list')}
-                    style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 20,
-                        backgroundColor: '#F2F2F7',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: 24
-                    }}
-                >
-                    <ArrowLeft size={24} color="#000" />
-                </TouchableOpacity>
+                <View style={styles.subPageHeader}>
+                    <TouchableOpacity
+                        onPress={() => onViewChange('list')}
+                        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                        style={styles.backButton}
+                    >
+                        <ArrowLeft size={24} color="#111827" />
+                    </TouchableOpacity>
+                    <Text style={styles.subPageTitle}>{getTitle()}</Text>
+                </View>
 
-                {currentView === 'account' && (
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.screenTitle}>Account Info</Text>
-                        <EditProfileView />
-                    </View>
-                )}
-                {currentView === 'addresses' && (
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.screenTitle}>Saved Addresses</Text>
-                        <AddressesView />
-                    </View>
-                )}
-                {currentView === 'orders' && (
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.screenTitle}>Order History</Text>
-                        <OrdersView />
-                    </View>
-                )}
-                {currentView === 'security' && (
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.screenTitle}>Security</Text>
-                        <SecurityView />
-                    </View>
-                )}
+                <View style={{ flex: 1 }}>
+                    {currentView === 'account' && <EditProfileView />}
+                    {currentView === 'addresses' && <AddressesView />}
+                    {currentView === 'orders' && <OrdersView />}
+                    {currentView === 'security' && <SecurityView />}
+                </View>
             </View>
         );
     }
 
     return (
-        <View style={styles.screen}>
+        <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
             <Text style={styles.screenTitle}>Settings</Text>
 
-            <TouchableOpacity style={styles.profileHeader} activeOpacity={0.8} onPress={() => onViewChange('account')}>
-                <View style={styles.profileAvatarLarge}>
-                    {user?.avatar ? (
-                        <Image source={{ uri: user.avatar }} style={{ width: 80, height: 80, borderRadius: 40 }} />
-                    ) : (
-                        <User color="#fff" size={32} />
-                    )}
+            {/* Profile Section */}
+            <TouchableOpacity
+                style={styles.profileCard}
+                activeOpacity={0.8}
+                onPress={() => onViewChange('account')}
+            >
+                <View style={styles.profileInner}>
+                    <View style={styles.profileAvatarLarge}>
+                        {user?.avatar ? (
+                            <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+                        ) : (
+                            <User color="#fff" size={32} />
+                        )}
+                    </View>
+                    <View style={styles.profileInfo}>
+                        <Text style={styles.profileName}>{user?.name || 'User'}</Text>
+                        <Text style={styles.profileEmail}>{user?.email || 'No email'}</Text>
+                    </View>
                     <View style={styles.editBadge}>
                         <Text style={styles.editBadgeText}>EDIT</Text>
                     </View>
                 </View>
-                <Text style={styles.profileName}>{user?.name}</Text>
-                <Text style={styles.profileEmail}>{user?.email}</Text>
             </TouchableOpacity>
 
-            <View style={styles.settingsList}>
+            <Text style={styles.sectionHeader}>Preferences</Text>
+
+            <View style={styles.settingsGroup}>
                 {[
-                    { icon: MapPin, label: 'Saved Addresses', action: () => onViewChange('addresses') },
-                    { icon: Clock, label: 'Order History', action: () => onViewChange('orders') },
-                    { icon: Shield, label: 'Security', action: () => onViewChange('security') },
-                    { icon: LogOut, label: 'Log Out', color: '#FF3B30', action: () => logout() }
-                ].map((item, i) => (
-                    <TouchableOpacity key={i} style={styles.settingItem} onPress={item.action}>
-                        <View style={styles.settingLeft}>
-                            {/* @ts-ignore */}
-                            <item.icon size={20} color={item.color || '#000'} />
-                            <Text style={[styles.settingLabel, item.color ? { color: item.color } : {}]}>{item.label}</Text>
-                        </View>
-                        <ChevronRight size={16} color="#C7C7CC" />
-                    </TouchableOpacity>
+                    { icon: MapPin, label: 'Saved Addresses', action: () => onViewChange('addresses'), color: '#fff', bg: '#007AFF' },
+                    { icon: Clock, label: 'Order History', action: () => onViewChange('orders'), color: '#fff', bg: '#FF9500' },
+                    { icon: Shield, label: 'Security & Privacy', action: () => onViewChange('security'), color: '#fff', bg: '#34C759' },
+                ].map((item, i, arr) => (
+                    <React.Fragment key={i}>
+                        <TouchableOpacity style={styles.settingItem} onPress={item.action}>
+                            <View style={styles.settingLeft}>
+                                <View style={[styles.iconBox, { backgroundColor: item.bg }]}>
+                                    {/* @ts-ignore */}
+                                    <item.icon size={18} color={item.color} />
+                                </View>
+                                <Text style={styles.settingLabel}>{item.label}</Text>
+                            </View>
+                            <ChevronRight size={18} color="#C7C7CC" />
+                        </TouchableOpacity>
+                        {i < arr.length - 1 && <View style={styles.divider} />}
+                    </React.Fragment>
                 ))}
             </View>
-        </View>
+
+            <Text style={styles.sectionHeader}>Account</Text>
+
+            <View style={styles.settingsGroup}>
+                <TouchableOpacity style={styles.settingItem} onPress={logout}>
+                    <View style={styles.settingLeft}>
+                        <View style={[styles.iconBox, { backgroundColor: '#FF3B30' }]}>
+                            <LogOut size={18} color="#fff" />
+                        </View>
+                        <Text style={[styles.settingLabel, { color: '#FF3B30' }]}>Log Out</Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
+
+            <Text style={styles.versionText}>Version 1.0.2 (Build 204)</Text>
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
-    screen: { flex: 1, padding: 24 },
-    screenTitle: { color: '#000', fontSize: 32, fontWeight: '700', letterSpacing: -0.4 },
-    profileHeader: { alignItems: 'center', marginVertical: 32 },
-    profileAvatarLarge: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#1C39BB', alignItems: 'center', justifyContent: 'center', marginBottom: 16, shadowColor: '#1C39BB', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
-    editBadge: { position: 'absolute', bottom: -6, backgroundColor: '#000', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
-    editBadgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
-    profileName: { color: '#000', fontSize: 24, fontWeight: '700', letterSpacing: -0.5 },
-    profileEmail: { color: '#8E8E93', fontSize: 15, marginTop: 4 },
-    settingsList: { gap: 12 },
-    settingItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: '#fff', borderRadius: 20 },
-    settingLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    settingLabel: { color: '#000', fontSize: 15, fontWeight: '600' },
+    screen: { flex: 1, backgroundColor: '#F2F2F7' },
+    screenTitle: {
+        color: '#111827',
+        fontSize: 34,
+        fontFamily: 'Satoshi-Bold',
+        letterSpacing: -0.5,
+        marginHorizontal: 20,
+        marginTop: 60,
+        marginBottom: 20
+    },
+    subPageHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingTop: 60,
+        paddingBottom: 16,
+        backgroundColor: '#F2F2F7',
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        gap: 12
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 20,
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+    },
+    subPageTitle: {
+        fontSize: 20,
+        fontFamily: 'Satoshi-Bold',
+        color: '#111827'
+    },
+
+    // Profile Card
+    profileCard: {
+        marginHorizontal: 20,
+        marginBottom: 32,
+        backgroundColor: '#fff',
+        borderRadius: 24,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+    },
+    profileInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    profileAvatarLarge: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        backgroundColor: '#1C39BB',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 }
+    },
+    avatarImage: { width: 72, height: 72, borderRadius: 36 },
+    profileInfo: { flex: 1 },
+    profileName: {
+        color: '#111827',
+        fontSize: 20,
+        fontFamily: 'Satoshi-Bold',
+        letterSpacing: -0.5,
+        marginBottom: 4
+    },
+    profileEmail: {
+        color: '#6B7280',
+        fontSize: 15,
+        fontFamily: 'Satoshi-Medium'
+    },
+    editBadge: {
+        backgroundColor: '#F3F4F6',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 100,
+        marginLeft: 8
+    },
+    editBadgeText: {
+        color: '#111827',
+        fontSize: 12,
+        fontFamily: 'Satoshi-Bold',
+        letterSpacing: 0.5
+    },
+
+    // Settings Groups
+    sectionHeader: {
+        fontSize: 14,
+        fontFamily: 'Satoshi-Bold',
+        color: '#6B7280',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginHorizontal: 32,
+        marginBottom: 10
+    },
+    settingsGroup: {
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        marginHorizontal: 20,
+        marginBottom: 32,
+        overflow: 'hidden'
+    },
+    settingItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 18,
+        backgroundColor: '#fff'
+    },
+    settingLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14
+    },
+    iconBox: {
+        width: 32,
+        height: 32,
+        borderRadius: 10, // Squircle
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    settingLabel: {
+        color: '#111827',
+        fontSize: 16,
+        fontFamily: 'Satoshi-Medium',
+        letterSpacing: -0.2
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#F3F4F6',
+        marginLeft: 64
+    },
+    versionText: {
+        textAlign: 'center',
+        color: '#9CA3AF',
+        fontSize: 13,
+        fontFamily: 'Satoshi-Medium',
+        marginTop: -16,
+        marginBottom: 40
+    },
 
     // Security Styles
     card: { backgroundColor: '#fff', borderRadius: 20, padding: 20 },

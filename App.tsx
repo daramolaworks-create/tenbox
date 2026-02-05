@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Image,
   Dimensions,
@@ -295,174 +295,176 @@ const App: React.FC = () => {
         publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_12345'}
         merchantIdentifier="merchant.com.tenbox.app" // Optional, for Apple Pay
       >
-        <SafeAreaView style={styles.container}>
-          <StatusBar barStyle="dark-content" />
-          <View style={styles.header}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => {
-                setSettingsView('addresses');
-                setActiveTab('settings');
-              }}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
-            >
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
-                <MapPin size={20} color="#1C39BB" fill="#1C39BB" />
-              </View>
-              <View>
-                <Text style={{ fontSize: 11, color: '#8E8E93', fontFamily: 'Satoshi-Medium', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  Delivering to
-                </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Text style={{ fontSize: 15, color: '#000', fontFamily: 'Satoshi-Medium' }}>
-                    {addresses.find(a => a.default)?.label || addresses[0]?.label || 'Set Location'}
-                  </Text>
-                  <ChevronRight size={14} color="#1C39BB" style={{ transform: [{ rotate: '90deg' }] }} />
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.profileBtn} onPress={() => setShowSettings(true)}>
-              {user?.avatar ? (
-                <Image source={{ uri: user.avatar }} key={user.avatar} style={{ width: 40, height: 40, borderRadius: 20 }} />
-              ) : (
-                <User color="#1C39BB" size={20} />
-              )}
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.content}>
-            {activeTab === 'home' && (
-              <HomeView
-                user={user}
-                shipments={shipments}
-                orderHistory={orderHistory}
-                onNavigate={setActiveTab}
-                onViewSettings={setSettingsView}
-                onShipParcel={() => setShowShipFlow(true)}
-              />
-            )}
-            {activeTab === 'shop' && (
-              <ShopView
-                onOpenImporter={(url) => {
-                  setImportUrl(url);
-                  setExtractedData({});
-                  setShowModal(true);
-                }}
-                onOpenBrowser={handleOpenBrowser}
-              />
-            )}
-            {activeTab === 'cart' && (
-              <CartView
-                items={items}
-                removeItem={removeItem}
-                updateQuantity={updateQuantity}
-                onCheckout={() => setShowCheckout(true)}
-                onStartShopping={() => setActiveTab('shop')}
-              />
-            )}
-            {activeTab === 'track' && <TrackView shipments={shipments} />}
-            {activeTab === 'settings' && (
-              <SettingsView
-                user={user}
-                logout={logout}
-                currentView={settingsView}
-                onViewChange={setSettingsView}
-              />
-            )}
-          </View>
-
-          <View style={styles.tabBar}>
-            {[
-              { id: 'home', icon: HomeIcon, label: 'Home' },
-              { id: 'shop', icon: ShoppingBag, label: 'Shop' },
-              { id: 'cart', icon: ShoppingCart, label: 'Cart', badge: items.length },
-              { id: 'track', icon: Search, label: 'Track' },
-              { id: 'settings', icon: Settings, label: 'Settings' }
-            ].map(tab => (
+        <SafeAreaProvider>
+          <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+            <StatusBar barStyle="dark-content" />
+            <View style={styles.header}>
               <TouchableOpacity
-                key={tab.id}
-                style={styles.tabItem}
-                onPress={() => setActiveTab(tab.id as TabType)}
-                activeOpacity={0.6}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setSettingsView('addresses');
+                  setActiveTab('settings');
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
               >
-                <View>
-                  <tab.icon size={24} color={activeTab === tab.id ? '#1C39BB' : '#8E8E93'} />
-                  {tab.badge ? (
-                    <View style={styles.tabBadge}>
-                      <Text style={styles.tabBadgeText}>{tab.badge}</Text>
-                    </View>
-                  ) : null}
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
+                  <MapPin size={20} color="#1C39BB" fill="#1C39BB" />
                 </View>
-                <Text style={[styles.tabLabel, activeTab === tab.id && { color: '#1C39BB' }]}>{tab.label}</Text>
+                <View>
+                  <Text style={{ fontSize: 11, color: '#8E8E93', fontFamily: 'Satoshi-Medium', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    Delivering to
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Text style={{ fontSize: 15, color: '#000', fontFamily: 'Satoshi-Medium' }}>
+                      {addresses.find(a => a.default)?.label || addresses[0]?.label || 'Set Location'}
+                    </Text>
+                    <ChevronRight size={14} color="#1C39BB" style={{ transform: [{ rotate: '90deg' }] }} />
+                  </View>
+                </View>
               </TouchableOpacity>
-            ))}
-          </View>
 
-          {showModal && (
-            <ImportPreviewModal
-              url={importUrl}
-              initialTitle={extractedData.title}
-              initialImage={extractedData.image}
-              initialPrice={extractedData.price}
-              initialCurrency={extractedData.currency}
-              initialStoreName={activeStoreName} // PASS STORE NAME
-              onClose={() => {
-                setShowModal(false);
-                setImportUrl('');
-                setExtractedData({});
-              }}
-              onConfirm={(item) => {
-                addItem(item);
-                setShowModal(false);
-                setImportUrl('');
-                setActiveTab('cart');
+              <TouchableOpacity style={styles.profileBtn} onPress={() => setShowSettings(true)}>
+                {user?.avatar ? (
+                  <Image source={{ uri: user.avatar }} key={user.avatar} style={{ width: 40, height: 40, borderRadius: 20 }} />
+                ) : (
+                  <User color="#1C39BB" size={20} />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.content}>
+              {activeTab === 'home' && (
+                <HomeView
+                  user={user}
+                  shipments={shipments}
+                  orderHistory={orderHistory}
+                  onNavigate={setActiveTab}
+                  onViewSettings={setSettingsView}
+                  onShipParcel={() => setShowShipFlow(true)}
+                />
+              )}
+              {activeTab === 'shop' && (
+                <ShopView
+                  onOpenImporter={(url) => {
+                    setImportUrl(url);
+                    setExtractedData({});
+                    setShowModal(true);
+                  }}
+                  onOpenBrowser={handleOpenBrowser}
+                />
+              )}
+              {activeTab === 'cart' && (
+                <CartView
+                  items={items}
+                  removeItem={removeItem}
+                  updateQuantity={updateQuantity}
+                  onCheckout={() => setShowCheckout(true)}
+                  onStartShopping={() => setActiveTab('shop')}
+                />
+              )}
+              {activeTab === 'track' && <TrackView shipments={shipments} />}
+              {activeTab === 'settings' && (
+                <SettingsView
+                  user={user}
+                  logout={logout}
+                  currentView={settingsView}
+                  onViewChange={setSettingsView}
+                />
+              )}
+            </View>
+
+            <View style={styles.tabBar}>
+              {[
+                { id: 'home', icon: HomeIcon, label: 'Home' },
+                { id: 'shop', icon: ShoppingBag, label: 'Shop' },
+                { id: 'cart', icon: ShoppingCart, label: 'Cart', badge: items.length },
+                { id: 'track', icon: Search, label: 'Track' },
+                { id: 'settings', icon: Settings, label: 'Settings' }
+              ].map(tab => (
+                <TouchableOpacity
+                  key={tab.id}
+                  style={styles.tabItem}
+                  onPress={() => setActiveTab(tab.id as TabType)}
+                  activeOpacity={0.6}
+                >
+                  <View>
+                    <tab.icon size={24} color={activeTab === tab.id ? '#1C39BB' : '#8E8E93'} />
+                    {tab.badge ? (
+                      <View style={styles.tabBadge}>
+                        <Text style={styles.tabBadgeText}>{tab.badge}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={[styles.tabLabel, activeTab === tab.id && { color: '#1C39BB' }]}>{tab.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {showModal && (
+              <ImportPreviewModal
+                url={importUrl}
+                initialTitle={extractedData.title}
+                initialImage={extractedData.image}
+                initialPrice={extractedData.price}
+                initialCurrency={extractedData.currency}
+                initialStoreName={activeStoreName} // PASS STORE NAME
+                onClose={() => {
+                  setShowModal(false);
+                  setImportUrl('');
+                  setExtractedData({});
+                }}
+                onConfirm={(item) => {
+                  addItem(item);
+                  setShowModal(false);
+                  setImportUrl('');
+                  setActiveTab('cart');
+                }}
+              />
+            )}
+            <InAppBrowser
+              isVisible={!!browserUrl}
+              url={browserUrl || ''}
+              storeName={activeStoreName}
+              onClose={handleCloseBrowser}
+              onAddToCart={handleBrowserAddToCart}
+            />
+            <SettingsModal
+              visible={showSettings}
+              onClose={() => setShowSettings(false)}
+              onLogout={() => {
+                setShowSettings(false);
+                logout();
               }}
             />
-          )}
-          <InAppBrowser
-            isVisible={!!browserUrl}
-            url={browserUrl || ''}
-            storeName={activeStoreName}
-            onClose={handleCloseBrowser}
-            onAddToCart={handleBrowserAddToCart}
-          />
-          <SettingsModal
-            visible={showSettings}
-            onClose={() => setShowSettings(false)}
-            onLogout={() => {
-              setShowSettings(false);
-              logout();
-            }}
-          />
-          <ShipFlow
-            visible={showShipFlow}
-            onClose={() => setShowShipFlow(false)}
-            onComplete={() => {
-              setShowShipFlow(false);
-              setActiveTab('track');
-            }}
-          />
-          <CheckoutFlow
-            visible={showCheckout}
-            onClose={() => setShowCheckout(false)}
-            onComplete={() => {
-              setShowCheckout(false);
-              setActiveTab('home'); // Go home after purchase
-            }}
-          />
-        </SafeAreaView>
+            <ShipFlow
+              visible={showShipFlow}
+              onClose={() => setShowShipFlow(false)}
+              onComplete={() => {
+                setShowShipFlow(false);
+                setActiveTab('track');
+              }}
+            />
+            <CheckoutFlow
+              visible={showCheckout}
+              onClose={() => setShowCheckout(false)}
+              onComplete={() => {
+                setShowCheckout(false);
+                setActiveTab('home'); // Go home after purchase
+              }}
+            />
+          </SafeAreaView>
+        </SafeAreaProvider>
       </StripeProvider>
     </GestureHandlerRootView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F7', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
+  container: { flex: 1, backgroundColor: '#F2F2F7' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 12, paddingBottom: 16 },
   profileBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E5E5EA', alignItems: 'center', justifyContent: 'center' },
   content: { flex: 1 },
-  tabBar: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 0, paddingBottom: 30, paddingTop: 12, paddingHorizontal: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: -2 }, elevation: 5 },
+  tabBar: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 0, paddingBottom: 12, paddingTop: 12, paddingHorizontal: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: -2 }, elevation: 5 },
   tabItem: { flex: 1, alignItems: 'center', gap: 4 },
   tabLabel: { color: '#8E8E93', fontSize: 10, fontFamily: 'Satoshi-Medium' },
   tabBadge: { position: 'absolute', top: -4, right: -6, backgroundColor: '#FF3B30', minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },

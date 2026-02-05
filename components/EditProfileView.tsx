@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Button, Input } from './UI';
 import { useCartStore } from '../store';
 import * as ImagePicker from 'expo-image-picker';
@@ -44,28 +44,29 @@ const EditProfileView = () => {
         }
     };
 
-    return (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-            <View style={{ padding: 20, alignItems: 'center' }}>
-                <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
-                    {avatar ? (
-                        <Image source={{ uri: avatar }} key={avatar} style={styles.avatarImage} />
-                    ) : (
-                        <View style={styles.avatarPlaceholder}>
-                            <User size={40} color="#fff" />
-                        </View>
-                    )}
-                    <View style={styles.cameraIcon}>
-                        <Camera size={16} color="#fff" />
-                    </View>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={pickImage}>
-                    <Text style={styles.changePhotoText}>Change Photo</Text>
-                </TouchableOpacity>
-            </View>
 
-            <View style={{ padding: 20, paddingTop: 0 }}>
-                <View style={styles.card}>
+    return (
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: '#F2F2F7' }}>
+            <ScrollView contentContainerStyle={{ padding: 24 }}>
+                <View style={{ alignItems: 'center', marginBottom: 32 }}>
+                    <TouchableOpacity onPress={pickImage} style={styles.avatarContainer} activeOpacity={0.8}>
+                        {avatar ? (
+                            <Image source={{ uri: avatar }} key={avatar} style={styles.avatarImage} />
+                        ) : (
+                            <View style={styles.avatarPlaceholder}>
+                                <User size={48} color="#fff" />
+                            </View>
+                        )}
+                        <View style={styles.cameraBtn}>
+                            <Camera size={20} color="#fff" />
+                        </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={pickImage}>
+                        <Text style={styles.changePhotoText}>Change Profile Photo</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.formCard}>
                     <View style={styles.inputGroup}>
                         <Input
                             label="Full Name"
@@ -84,61 +85,78 @@ const EditProfileView = () => {
                             autoCapitalize="none"
                         />
                     </View>
-
-                    <Button size="lg" onPress={handleSave} style={{ marginTop: 24 }} disabled={isSaving}>
-                        {isSaving ? 'Saving...' : 'Save Changes'}
-                    </Button>
                 </View>
-            </View>
+
+                <Button
+                    size="lg"
+                    onPress={handleSave}
+                    disabled={isSaving}
+                    style={{ marginTop: 24, shadowColor: '#1C39BB', shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 8 } }}
+                >
+                    {isSaving ? 'Saving Changes...' : 'Save Changes'}
+                </Button>
+            </ScrollView>
         </KeyboardAvoidingView>
     );
 };
 
 const styles = StyleSheet.create({
     avatarContainer: {
-        marginBottom: 12,
-        position: 'relative'
+        marginBottom: 16,
+        position: 'relative',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
     },
     avatarImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        borderWidth: 4,
+        borderColor: '#fff',
     },
     avatarPlaceholder: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
         backgroundColor: '#1C39BB',
         alignItems: 'center',
         justifyContent: 'center',
+        borderWidth: 4,
+        borderColor: '#fff',
     },
-    cameraIcon: {
+    cameraBtn: {
         position: 'absolute',
         bottom: 0,
         right: 0,
         backgroundColor: '#000',
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 2,
+        borderWidth: 3,
         borderColor: '#fff'
     },
     changePhotoText: {
         fontSize: 15,
         color: '#1C39BB',
-        fontWeight: '600',
-        marginBottom: 20,
+        fontFamily: 'Satoshi-Bold',
     },
-    card: {
+    formCard: {
         backgroundColor: '#fff',
-        borderRadius: 16,
+        borderRadius: 24,
         padding: 24,
+        shadowColor: 'rgba(0,0,0,0.05)',
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 12,
+        shadowOpacity: 1,
     },
     inputGroup: {
-        marginBottom: 16,
+        marginBottom: 20,
     }
 });
+
 
 export default EditProfileView;

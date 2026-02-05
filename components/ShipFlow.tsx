@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Image, LayoutAnimation, Platform, UIManager, Alert, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, ActivityIndicator, Image, LayoutAnimation, Platform, UIManager, Alert, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, MapPin, Package, CheckCircle, ArrowRight, Box, Scale, DollarSign } from 'lucide-react-native';
 import { Button, Input, Card } from './UI';
 import { useCartStore, Address } from '../store';
@@ -693,7 +694,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F2F2F7',
-        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0
+        paddingTop: 0
     },
     navBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
     closeBtn: { padding: 4 },

@@ -1,6 +1,7 @@
 
 import React, { useRef } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, StyleSheet, Modal, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Alert, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { Plus } from 'lucide-react-native';
 
@@ -315,7 +316,7 @@ const InAppBrowser: React.FC<InAppBrowserProps> = ({ isVisible, url, storeName, 
             transparent={Platform.OS !== 'ios'}
             onRequestClose={onClose}
         >
-            <SafeAreaView style={[styles.container, { paddingTop: Platform.OS === 'android' ? 24 : 0 }]}>
+            <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                         <Text style={styles.closeText}>Done</Text>

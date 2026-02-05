@@ -17,7 +17,12 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.tenbox-mobile"
+      "bundleIdentifier": "com.anonymous.tenbox-mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to update your profile picture.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photos to let you choose a profile picture.",
+        "NSMicrophoneUsageDescription": "This app uses the microphone for video recording."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -37,6 +42,11 @@
           "enableGooglePay": false
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4cb71809-fee1-46ae-b27d-cccd1fa74cb8"
+      }
+    }
   }
 }
