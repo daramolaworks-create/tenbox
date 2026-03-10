@@ -102,7 +102,7 @@ const App: React.FC = () => {
         // Refresh store state when signed in
         await checkSession();
         // Refresh all data on sign in
-        Promise.allSettled([
+        await Promise.allSettled([
           fetchProducts(),
           fetchAddresses(),
           fetchShipments(),

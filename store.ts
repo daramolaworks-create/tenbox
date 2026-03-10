@@ -941,32 +941,39 @@ export const useCartStore = create<AppState>()(
         const state = get();
         if (!state.user || state.user.accountType !== 'shopper') return false;
 
+        // Validate amount
         const currentBalance = state.user.walletBalance || 0;
         if (amount > currentBalance || amount <= 0) return false;
+
+        // Validate bankDetails (must be a Stripe connected account ID)
+        if (!bankDetails || !bankDetails.trim()) return false;
+        const trimmedDetails = bankDetails.trim();
+        if (!trimmedDetails.startsWith('acct_') || trimmedDetails.length < 10) {
+          console.error('Invalid bank details format. Expected Stripe connected account ID (acct_...)');
+          return false;
+        }
 
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return false;
 
-        // Optimistically deduct the balance
-        const newBalance = currentBalance - amount;
-        await state.updateProfile({ walletBalance: newBalance });
-
-        // Insert into withdrawals table
+        // Insert into withdrawals table FIRST (server-side validation)
         const { error } = await supabase
           .from('withdrawals')
           .insert({
             user_id: session.user.id,
             amount: amount,
-            bank_details: bankDetails,
+            bank_details_encrypted: trimmedDetails,
             status: 'pending'
           });
 
         if (error) {
-          console.error("Failed to insert withdrawal:", error);
-          // Revert balance if insertion fails
-          await state.updateProfile({ walletBalance: currentBalance });
+          console.error("Failed to insert withdrawal:", error.message);
           return false;
         }
+
+        // Only deduct balance AFTER server confirms the withdrawal was inserted
+        const newBalance = currentBalance - amount;
+        await state.updateProfile({ walletBalance: newBalance });
 
         return true;
       },

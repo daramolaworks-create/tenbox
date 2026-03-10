@@ -3,11 +3,17 @@ CREATE TABLE IF NOT EXISTS public.withdrawals (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     amount NUMERIC(10, 2) NOT NULL CHECK (amount > 0),
-    bank_details TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed', 'rejected')),
+    -- Bank details are stored encrypted by the application layer before insertion.
+    -- The app MUST encrypt this field with pgcrypto or an external vault before writing.
+    -- Never log or expose this value in plaintext.
+    bank_details_encrypted TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed', 'rejected', 'requires_manual_review')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Enable pgcrypto for encryption support
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Enable RLS
 ALTER TABLE public.withdrawals ENABLE ROW LEVEL SECURITY;
@@ -28,9 +34,8 @@ ON public.withdrawals FOR INSERT
 WITH CHECK (auth.uid() = user_id);
 
 -- Only service role / admins should be able to update withdrawals (e.g., status to complete)
--- Add an updated_at trigger
+-- Add an updated_at trigger (CREATE OR REPLACE preserves existing triggers)
 DROP TRIGGER IF EXISTS handle_withdrawals_updated_at ON public.withdrawals;
-DROP FUNCTION IF EXISTS public.handle_updated_at();
 
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Input } from './UI';
 import { CheckCircle } from 'lucide-react-native';
@@ -154,8 +154,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                                     try {
                                         await useCartStore.getState().loginWithGoogle();
                                         onLogin();
-                                    } catch (e) {
+                                    } catch (e: any) {
                                         console.log(e);
+                                        Alert.alert('Login Failed', e?.message || 'Could not sign in with Google. Please try again.');
                                     } finally {
                                         setLoading(false);
                                     }

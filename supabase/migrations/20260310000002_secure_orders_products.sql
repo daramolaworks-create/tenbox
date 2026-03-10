@@ -25,7 +25,8 @@ WITH CHECK (auth.uid() = user_id);
 -- (This is useful if you let them cancel an order before shipment)
 CREATE POLICY "Users can update own orders"
 ON public.orders FOR UPDATE
-USING (auth.uid() = user_id AND status = 'Processing');
+USING (auth.uid() = user_id AND status = 'Processing')
+WITH CHECK (auth.uid() = user_id AND status = 'Processing');
 
 
 -- 2. Secure the 'products' table

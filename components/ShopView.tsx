@@ -132,28 +132,42 @@ const ShopView: React.FC<ShopViewProps> = ({ onOpenImporter, onOpenBrowser }) =>
             {/* Store Grid */}
             <View style={styles.storeGrid}>
                 {filteredStores.map(s => (
-                    <TouchableOpacity
-                        key={s.name}
-                        activeOpacity={0.7}
-                        onPress={() => onOpenBrowser(s.url, s.name, s.currency)}
-                        style={styles.storeCardWrapper}
-                    >
-                        <Card style={styles.storeCard}>
-                            <View style={styles.storeLogoWrap}>
-                                <Image
-                                    source={typeof s.logo === 'string' ? { uri: s.logo } : s.logo}
-                                    style={styles.storeLogo}
-                                    resizeMode="contain"
-                                />
-                            </View>
-                            <Text style={styles.storeName} numberOfLines={1}>{s.name}</Text>
-                        </Card>
-                    </TouchableOpacity>
+                    <StoreCard key={s.name} store={s} onOpenBrowser={onOpenBrowser} />
                 ))}
             </View>
 
             <View style={{ height: 100 }} />
         </ScrollView>
+    );
+};
+
+/** Extracted component so useState (for logo error fallback) follows Rules of Hooks */
+const StoreCard: React.FC<{ store: typeof STORES[number]; onOpenBrowser: ShopViewProps['onOpenBrowser'] }> = ({ store: s, onOpenBrowser }) => {
+    const [logoError, setLogoError] = useState(false);
+    return (
+        <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => onOpenBrowser(s.url, s.name, s.currency)}
+            style={styles.storeCardWrapper}
+        >
+            <Card style={styles.storeCard}>
+                <View style={styles.storeLogoWrap}>
+                    {logoError ? (
+                        <Text style={{ fontSize: 18, fontFamily: 'Satoshi-Bold', color: '#1C39BB' }}>
+                            {s.name.charAt(0)}
+                        </Text>
+                    ) : (
+                        <Image
+                            source={typeof s.logo === 'string' ? { uri: s.logo } : s.logo}
+                            style={styles.storeLogo}
+                            resizeMode="contain"
+                            onError={() => setLogoError(true)}
+                        />
+                    )}
+                </View>
+                <Text style={styles.storeName} numberOfLines={1}>{s.name}</Text>
+            </Card>
+        </TouchableOpacity>
     );
 };
 

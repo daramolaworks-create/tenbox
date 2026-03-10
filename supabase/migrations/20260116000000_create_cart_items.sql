@@ -33,7 +33,8 @@ create policy "Users can insert their own cart items"
 drop policy if exists "Users can update their own cart items" on cart_items;
 create policy "Users can update their own cart items"
   on cart_items for update
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 drop policy if exists "Users can delete their own cart items" on cart_items;
 create policy "Users can delete their own cart items"
