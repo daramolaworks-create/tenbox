@@ -235,7 +235,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                     ? `${items[0].title} & ${items.length - 1} more`
                     : items[0]?.title || 'Order Items';
 
-                await createOrder(total, itemsSummary);
+                await createOrder(total, itemsSummary, subtotal);
                 clearCart();
 
                 Alert.alert('Success', 'Your order is confirmed!');

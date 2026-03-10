@@ -5,9 +5,10 @@ import { UserProfile, useCartStore } from '../store';
 import AddressesView from './AddressesView';
 import OrdersView from './OrdersView';
 import EditProfileView from './EditProfileView';
+import WalletView from './WalletView';
 import { Button, Input } from './UI';
 
-export type SettingsSubView = 'list' | 'account' | 'addresses' | 'orders' | 'security';
+export type SettingsSubView = 'list' | 'account' | 'addresses' | 'orders' | 'security' | 'wallet';
 
 interface SettingsViewProps {
     user: UserProfile | null;
@@ -129,6 +130,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 case 'addresses': return 'Saved Addresses';
                 case 'orders': return 'Order History';
                 case 'security': return 'Security & Privacy';
+                case 'wallet': return 'Shopper Wallet';
                 default: return '';
             }
         };
@@ -151,6 +153,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     {currentView === 'addresses' && <AddressesView />}
                     {currentView === 'orders' && <OrdersView />}
                     {currentView === 'security' && <SecurityView />}
+                    {currentView === 'wallet' && <WalletView />}
                 </View>
             </View>
         );
@@ -184,9 +187,25 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 </View>
             </TouchableOpacity>
 
+            {/* Preferences */}
             <Text style={styles.sectionHeader}>Preferences</Text>
 
             <View style={styles.settingsGroup}>
+                {user?.accountType === 'shopper' && (
+                    <React.Fragment>
+                        <TouchableOpacity style={styles.settingItem} onPress={() => onViewChange('wallet')}>
+                            <View style={styles.settingLeft}>
+                                <View style={[styles.iconBox, { backgroundColor: '#1C39BB' }]}>
+                                    <View style={{ width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: '#fff' }} />
+                                </View>
+                                <Text style={styles.settingLabel}>Shopper Wallet</Text>
+                            </View>
+                            <ChevronRight size={18} color="#C7C7CC" />
+                        </TouchableOpacity>
+                        <View style={styles.divider} />
+                    </React.Fragment>
+                )}
+
                 {[
                     { icon: MapPin, label: 'Saved Addresses', action: () => onViewChange('addresses'), color: '#fff', bg: '#007AFF' },
                     { icon: Clock, label: 'Order History', action: () => onViewChange('orders'), color: '#fff', bg: '#FF9500' },

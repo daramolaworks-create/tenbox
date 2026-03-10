@@ -20,18 +20,22 @@ create table if not exists cart_items (
 alter table cart_items enable row level security;
 
 -- Policies
+drop policy if exists "Users can view their own cart items" on cart_items;
 create policy "Users can view their own cart items"
   on cart_items for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert their own cart items" on cart_items;
 create policy "Users can insert their own cart items"
   on cart_items for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update their own cart items" on cart_items;
 create policy "Users can update their own cart items"
   on cart_items for update
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can delete their own cart items" on cart_items;
 create policy "Users can delete their own cart items"
   on cart_items for delete
   using (auth.uid() = user_id);

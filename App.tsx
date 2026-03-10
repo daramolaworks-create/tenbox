@@ -76,10 +76,23 @@ const App: React.FC = () => {
   const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
-    // Initialize session check
+    // Initialize session check, then fetch data only after auth is ready
     const initAuth = async () => {
-      await checkSession();
-      setIsLoading(false);
+      try {
+        await checkSession();
+        // Only fetch data after session is checked to avoid network errors
+        await Promise.allSettled([
+          fetchProducts(),
+          fetchAddresses(),
+          fetchShipments(),
+          fetchOrders(),
+        ]);
+        initializeSubscription();
+      } catch (e) {
+        console.warn('Init error:', e);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     // Register reactive auth listener
@@ -88,17 +101,21 @@ const App: React.FC = () => {
       if (event === 'SIGNED_IN' && session) {
         // Refresh store state when signed in
         await checkSession();
+        // Refresh all data on sign in
+        Promise.allSettled([
+          fetchProducts(),
+          fetchAddresses(),
+          fetchShipments(),
+          fetchOrders(),
+        ]);
+        setActiveTab('home');
       } else if (event === 'SIGNED_OUT') {
         // Already handled by logout() in store
+        setActiveTab('home');
       }
     });
 
     initAuth();
-    fetchProducts();
-    fetchAddresses();
-    fetchShipments();
-    fetchOrders();
-    initializeSubscription();
 
     if (Platform.OS === 'android') {
       if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -244,7 +261,23 @@ const App: React.FC = () => {
       /carrefouruae\.com/,
       /sharafdg\.com/,
       /hm\.com/,
-      /zara\.com/
+      /zara\.com/,
+      /sephora\.com/,
+      /sephora\.ae/,
+      /nordstrom\.com/,
+      /bloomingdales\.com/,
+      /harrods\.com/,
+      /selfridges\.com/,
+      /ounass\.ae/,
+      /thedubaimall\.com/,
+      /harveynichols\.com/,
+      /gucci\.com/,
+      /louisvuitton\.com/,
+      /prada\.com/,
+      /hermes\.com/,
+      /farfetch\.com/,
+      /ssense\.com/,
+      /net-a-porter\.com/
     ];
     try {
       const hostname = new URL(data.url).hostname;
@@ -286,7 +319,10 @@ const App: React.FC = () => {
   }
 
   if (!isAuthenticated || !user) {
-    return <AuthScreen onLogin={() => { }} />;
+    return <AuthScreen onLogin={() => {
+      setActiveTab('home');
+      setSettingsView('list');
+    }} />;
   }
 
   return (
@@ -384,7 +420,12 @@ const App: React.FC = () => {
                 <TouchableOpacity
                   key={tab.id}
                   style={styles.tabItem}
-                  onPress={() => setActiveTab(tab.id as TabType)}
+                  onPress={() => {
+                    setActiveTab(tab.id as TabType);
+                    if (tab.id === 'settings') {
+                      setSettingsView('list');
+                    }
+                  }}
                   activeOpacity={0.6}
                 >
                   <View>
@@ -472,3 +513,4 @@ const styles = StyleSheet.create({
 });
 
 export default App;
+

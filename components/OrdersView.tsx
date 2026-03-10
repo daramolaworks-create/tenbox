@@ -579,6 +579,12 @@ const styles = StyleSheet.create({
         fontFamily: 'Satoshi-Bold',
         color: '#111827',
     },
+    addressText: {
+        fontSize: 15,
+        fontFamily: 'Satoshi-Medium',
+        color: '#4B5563',
+        lineHeight: 22,
+    },
 });
 
 

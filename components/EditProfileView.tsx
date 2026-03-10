@@ -85,6 +85,14 @@ const EditProfileView = () => {
                             autoCapitalize="none"
                         />
                     </View>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.readOnlyLabel}>Account Type</Text>
+                        <View style={styles.readOnlyField}>
+                            <Text style={styles.readOnlyText}>
+                                {user?.accountType === 'shopper' ? 'Personal Shopper' : 'Personal Use'}
+                            </Text>
+                        </View>
+                    </View>
                 </View>
 
                 <Button
@@ -155,8 +163,28 @@ const styles = StyleSheet.create({
     },
     inputGroup: {
         marginBottom: 20,
+    },
+    readOnlyLabel: {
+        fontSize: 13,
+        color: '#6B7280',
+        fontFamily: 'Satoshi-Bold',
+        marginBottom: 8,
+        letterSpacing: 0.5,
+        textTransform: 'uppercase'
+    },
+    readOnlyField: {
+        backgroundColor: '#F9FAFB',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+    },
+    readOnlyText: {
+        color: '#374151',
+        fontSize: 16,
+        fontFamily: 'Satoshi-Medium',
     }
 });
-
 
 export default EditProfileView;

@@ -20,16 +20,16 @@ const DEALS = [
     { store: 'Apple', title: 'Refurbished', subtitle: 'Save up to 15%', url: 'https://www.apple.com/shop/refurbished', image: 'https://images.unsplash.com/photo-1491933382434-500287f9b54b?w=400', currency: 'USD' },
 ];
 
-const REGIONS = ['All', 'USA', 'UK', 'UAE'] as const;
+const REGIONS = ['USA', 'UK', 'UAE'] as const;
 
 const ShopView: React.FC<ShopViewProps> = ({ onOpenImporter, onOpenBrowser }) => {
     const [importUrl, setImportUrl] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
-    const [regionFilter, setRegionFilter] = useState<'All' | 'USA' | 'UK' | 'UAE'>('All');
+    const [regionFilter, setRegionFilter] = useState<'USA' | 'UK' | 'UAE'>('USA');
 
     const filteredStores = STORES
         .filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        .filter(s => regionFilter === 'All' || s.region === regionFilter || s.region === 'Global');
+        .filter(s => s.region === regionFilter);
 
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -123,7 +123,7 @@ const ShopView: React.FC<ShopViewProps> = ({ onOpenImporter, onOpenBrowser }) =>
                             styles.filterText,
                             regionFilter === region && styles.filterTextActive
                         ]}>
-                            {region === 'All' ? '🌍 All' : region === 'USA' ? '🇺🇸 USA' : region === 'UK' ? '🇬🇧 UK' : '🇦🇪 UAE'}
+                            {region === 'USA' ? '🇺🇸 USA' : region === 'UK' ? '🇬🇧 UK' : '🇦🇪 UAE'}
                         </Text>
                     </TouchableOpacity>
                 ))}

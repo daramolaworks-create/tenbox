@@ -23,6 +23,8 @@ export interface UserProfile {
   name: string;
   email: string;
   avatar?: string;
+  accountType?: 'personal' | 'shopper';
+  walletBalance?: number;
 }
 
 export interface NotificationPrefs {
@@ -72,14 +74,16 @@ interface AppState {
   // Orders
   orderHistory: any[];
   fetchOrders: () => Promise<void>;
-  createOrder: (total: number, itemsSummary: string) => Promise<void>;
+  createOrder: (total: number, itemsSummary: string, subtotal: number) => Promise<void>;
   initializeSubscription: () => void;
+  // Wallet Features
+  requestWithdrawal: (amount: number, bankDetails: string) => Promise<boolean>;
 
   // Auth
   user: UserProfile | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (email: string, password: string, name: string, accountType: 'personal' | 'shopper') => Promise<void>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
   loginWithGoogle: () => Promise<void>;
@@ -428,6 +432,8 @@ export const useCartStore = create<AppState>()(
               name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
               email: session.user.email || '',
               avatar: session.user.user_metadata.avatar_url,
+              accountType: session.user.user_metadata.account_type || 'personal',
+              walletBalance: session.user.user_metadata.wallet_balance || 0,
             },
             isAuthenticated: true
           });
@@ -454,6 +460,8 @@ export const useCartStore = create<AppState>()(
               name: data.user.user_metadata.full_name || data.user.email?.split('@')[0] || 'User',
               email: data.user.email || '',
               avatar: data.user.user_metadata.avatar_url,
+              accountType: data.user.user_metadata.account_type || 'personal',
+              walletBalance: data.user.user_metadata.wallet_balance || 0,
             },
             isAuthenticated: true
           });
@@ -462,12 +470,12 @@ export const useCartStore = create<AppState>()(
         }
       },
 
-      signup: async (email, password, name) => {
+      signup: async (email, password, name, accountType) => {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { full_name: name }
+            data: { full_name: name, account_type: accountType, wallet_balance: 0 }
           }
         });
         if (error) throw error;
@@ -480,6 +488,8 @@ export const useCartStore = create<AppState>()(
             user: {
               name: name,
               email: email,
+              accountType: accountType,
+              walletBalance: 0,
             },
             isAuthenticated: true
           });
@@ -622,7 +632,11 @@ export const useCartStore = create<AppState>()(
 
       updateProfile: async (profile) => {
         const updates: any = {};
-        if (profile.name) updates.data = { full_name: profile.name };
+        if (profile.name !== undefined) updates.data = { full_name: profile.name };
+
+        // Append missing fields to data object
+        if (!updates.data) updates.data = {};
+        if (profile.walletBalance !== undefined) updates.data.wallet_balance = profile.walletBalance;
 
         // Handle Avatar Upload
         if (profile.avatar && profile.avatar.startsWith('file://')) {
@@ -881,9 +895,20 @@ export const useCartStore = create<AppState>()(
         }
       },
 
-      createOrder: async (total: number, itemsSummary: string) => {
+      createOrder: async (total: number, itemsSummary: string, subtotal: number) => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
+
+        const state = get();
+        const isShopper = state.user?.accountType === 'shopper';
+
+        // Add 1% Cashback to wallet if Shopper
+        if (isShopper) {
+          const currentBalance = state.user?.walletBalance || 0;
+          const cashback = subtotal * 0.01;
+          const newBalance = currentBalance + cashback;
+          await state.updateProfile({ walletBalance: newBalance });
+        }
 
         const { error } = await supabase
           .from('orders')
@@ -897,8 +922,8 @@ export const useCartStore = create<AppState>()(
         if (error) throw error;
 
         // Refresh history
-        const state = useCartStore.getState();
-        await state.fetchOrders();
+        const currentState = useCartStore.getState();
+        await currentState.fetchOrders();
       },
 
       // Real-time Subscription
@@ -910,6 +935,40 @@ export const useCartStore = create<AppState>()(
             useCartStore.getState().fetchOrders();
           })
           .subscribe();
+      },
+
+      requestWithdrawal: async (amount: number, bankDetails: string) => {
+        const state = get();
+        if (!state.user || state.user.accountType !== 'shopper') return false;
+
+        const currentBalance = state.user.walletBalance || 0;
+        if (amount > currentBalance || amount <= 0) return false;
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return false;
+
+        // Optimistically deduct the balance
+        const newBalance = currentBalance - amount;
+        await state.updateProfile({ walletBalance: newBalance });
+
+        // Insert into withdrawals table
+        const { error } = await supabase
+          .from('withdrawals')
+          .insert({
+            user_id: session.user.id,
+            amount: amount,
+            bank_details: bankDetails,
+            status: 'pending'
+          });
+
+        if (error) {
+          console.error("Failed to insert withdrawal:", error);
+          // Revert balance if insertion fails
+          await state.updateProfile({ walletBalance: currentBalance });
+          return false;
+        }
+
+        return true;
       },
 
       // Products (Supabase)
