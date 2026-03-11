@@ -14,63 +14,10 @@ interface InAppBrowserProps {
 }
 const INTEGRITY_TOKEN = 'tbe-v1-' + Math.random().toString(36).substring(7);
 
-const ALLOWED_DOMAINS = [
-    /amazon\./,
-    /apple\.com/,
-    /noon\.com/,
-    /namshi\.com/,
-    /argos\.co\.uk/,
-    /tesco\.com/,
-    /currys\.co\.uk/,
-    /asos\.com/,
-    /shein\.com/,
-    /nike\.com/,
-    /ebay\.com/,
-    /walmart\.com/,
-    /target\.com/,
-    /bestbuy\.com/,
-    /macys\.com/,
-    /costco\.com/,
-    /homedepot\.com/,
-    /marksandspencer\.com/,
-    /johnlewis\.com/,
-    /carrefouruae\.com/,
-    /sharafdg\.com/,
-    /hm\.com/,
-    /zara\.com/
-];
+// Domain restrictions removed, allowing all domains
 
 const INJECTED_JAVASCRIPT = `
   (function() {
-    const ALLOWED_DOMAINS = [
-      /amazon\\./,
-      /apple\\.com/,
-      /noon\\.com/,
-      /namshi\\.com/,
-      /argos\\.co\\.uk/,
-      /tesco\\.com/,
-      /currys\\.co\\.uk/,
-      /asos\\.com/,
-      /shein\\.com/,
-      /nike\\.com/,
-      /ebay\\.com/,
-      /walmart\\.com/,
-      /target\\.com/,
-      /bestbuy\\.com/,
-      /macys\\.com/,
-      /costco\\.com/,
-      /homedepot\\.com/,
-      /marksandspencer\\.com/,
-      /johnlewis\\.com/,
-      /carrefouruae\\.com/,
-      /sharafdg\\.com/,
-      /hm\\.com/,
-      /zara\\.com/
-    ];
-
-    const isAllowed = ALLOWED_DOMAINS.some(regex => regex.test(window.location.hostname));
-    if (!isAllowed) return;
-
     if (window.TENBOX_EXTRACT_v1) return; // Prevent re-definition
 
     Object.defineProperty(window, 'TENBOX_EXTRACT_v1', {
@@ -246,20 +193,11 @@ const InAppBrowser: React.FC<InAppBrowserProps> = ({ isVisible, url, storeName, 
     }, [url]);
 
     const isAllowedDomain = (targetUrl: string) => {
-        try {
-            const hostname = new URL(targetUrl).hostname;
-            return ALLOWED_DOMAINS.some(regex => regex.test(hostname));
-        } catch (e) {
-            return false;
-        }
+        // ALWAYS returning true to allow extraction on any website
+        return true;
     };
 
     const handleFabPress = () => {
-        // Double check allowed domain on press
-        if (!isAllowedDomain(currentUrl)) {
-            Alert.alert('Not Available', 'You can only add items from supported stores.');
-            return;
-        }
         // Call the globally attached function
         webViewRef.current?.injectJavaScript('if (window.TENBOX_EXTRACT_v1) { window.TENBOX_EXTRACT_v1(); } else { alert("Not supported on this page"); } true;');
     };
