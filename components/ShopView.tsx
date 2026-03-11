@@ -362,10 +362,11 @@ const styles = StyleSheet.create({
   storeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    flex: 1,
+    gap: 5,
   },
   storeCardWrapper: {
-    width: (width - 50) / 2,
+    width: (width - 53) / 2,
   },
   storeCard: {
     padding: 16,
