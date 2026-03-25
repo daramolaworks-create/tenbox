@@ -69,8 +69,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
         setSelectedRate(null);
 
         const addr = addresses.find(a => a.id === selectedAddressId);
-        const storeRegion = items[0].store; // e.g., 'USA', 'UK'
-        const origin = STORE_ADDRESSES[storeRegion] || STORE_ADDRESSES['USA'];
+        const origin = STORE_ADDRESSES[getStoreRegion(items[0].store)] || STORE_ADDRESSES['USA'];
 
         try {
             const { data, error } = await supabase.functions.invoke('get-rates', {
@@ -148,8 +147,8 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
         const payload = {
             amount: total,
             currency: CURRENCY_CODE.toLowerCase(),
-            email: 'user@example.com',
-            name: 'Tenbox User'
+            email: user?.email || 'user@example.com',
+            name: user?.name || 'Tenbox User'
         };
 
         // Debug: Check if the key is loaded correctly
@@ -170,7 +169,23 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                 console.error('Payment Sheet Error Object:', JSON.stringify(error, null, 2));
                 // Supabase Edge Functions often return the error message in error.context or error.message
                 // We want to show the specific error from the backend if possible
-                const backendError = error.context?.json?.error || error.message || JSON.stringify(error);
+                let backendError = error.message || JSON.stringify(error);
+                
+                // Try parsing the error context response if available
+                if (error.context && typeof error.context.text === 'function') {
+                    try {
+                        const errorText = await error.context.text();
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            backendError = errorJson.error || errorJson.message || errorText;
+                        } catch (e) {
+                            backendError = errorText;
+                        }
+                    } catch (e) {
+                        // Ignore
+                    }
+                }
+                
                 Alert.alert('Payment Error', `Server: ${backendError}`);
                 return null;
             }
@@ -211,7 +226,8 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                 allowsDelayedPaymentMethods: true,
                 returnURL: 'tenbox://stripe-redirect',
                 defaultBillingDetails: {
-                    name: 'Tenbox User',
+                    name: user?.name || 'Tenbox User',
+                    email: user?.email || undefined,
                 }
             });
 

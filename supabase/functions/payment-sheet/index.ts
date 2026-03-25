@@ -1,11 +1,11 @@
 // @ts-nocheck - This is a Deno file for Supabase Edge Functions
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import Stripe from 'https://esm.sh/stripe@14.14.0'
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
-    apiVersion: '2023-10-16',
-    httpClient: Stripe.createFetchHttpClient(),
-})
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -15,8 +15,6 @@ const corsHeaders = {
 interface RequestBody {
     amount: number;
     currency: string;
-    email: string;
-    name?: string;
 }
 
 serve(async (req) => {
@@ -25,10 +23,39 @@ serve(async (req) => {
     }
 
     try {
-        const body: RequestBody = await req.json()
-        const { amount, currency, email, name } = body
+        const authHeader = req.headers.get('Authorization')
+        const token = authHeader?.replace(/^Bearer\s+/i, '')
+        if (!token) {
+            throw new Error('Unauthorized')
+        }
+        if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+            throw new Error('Missing Supabase server credentials')
+        }
+        
+        const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+        if (!stripeSecretKey) {
+            throw new Error('Stripe secret key is not configured');
+        }
 
-        if (!amount || !currency || !email) {
+        const stripe = new Stripe(stripeSecretKey, {
+            apiVersion: '2023-10-16',
+            httpClient: Stripe.createFetchHttpClient(),
+        })
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+            auth: { persistSession: false }
+        })
+        const { data: authData, error: authError } = await supabase.auth.getUser(token)
+        if (authError || !authData.user?.email) {
+            throw new Error('Unauthorized')
+        }
+
+        const body: RequestBody = await req.json()
+        const { amount, currency } = body
+        const email = authData.user.email
+        const name = authData.user.user_metadata?.full_name || undefined
+
+        if (!amount || !currency) {
             throw new Error('Missing required fields')
         }
 
