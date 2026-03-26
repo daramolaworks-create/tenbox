@@ -67,15 +67,15 @@ const SecurityView = () => {
     }
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "Are you sure you want to delete your account? This action cannot be undone.",
+    const handleDeleteAccount = () => {
+      Alert.alert(
+      "Account Deletion",
+      "Account deletion is not available in this build yet. You can sign out now and request permanent deletion through support.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Delete",
-          style: "destructive",
+          text: "OK",
+          style: "default",
           onPress: async () => {
             try {
               await deleteAccount();
@@ -154,12 +154,12 @@ const SecurityView = () => {
               <Trash2 size={18} color="#EF4444" />
             </View>
             <Text style={[styles.cardTitle, { color: "#EF4444" }]}>
-              Delete Account
+              Account Deletion
             </Text>
           </View>
           <Text style={styles.cardDesc}>
-            Permanently delete your account and all of your content. This action
-            cannot be undone.
+            Permanent account deletion has not been implemented in this build.
+            Do not present this action as completed to users yet.
           </Text>
           <TouchableOpacity
             style={[
@@ -169,7 +169,7 @@ const SecurityView = () => {
             onPress={handleDeleteAccount}
             activeOpacity={0.7}
           >
-            <Text style={styles.deleteBtnText}>Delete Account</Text>
+            <Text style={styles.deleteBtnText}>Unavailable</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

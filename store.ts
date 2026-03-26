@@ -75,7 +75,7 @@ interface AppState {
   orderHistory: any[];
   fetchOrders: () => Promise<void>;
   createOrder: (total: number, itemsSummary: string, subtotal: number) => Promise<void>;
-  initializeSubscription: () => void;
+  initializeSubscription: () => (() => void) | void;
   // Wallet Features
   requestWithdrawal: (amount: number, bankDetails: string) => Promise<boolean>;
 
@@ -227,9 +227,16 @@ export const useCartStore = create<AppState>()(
         // Sync Delete
         const state = get();
         if (state.isAuthenticated) {
-          // We assume 'id' here maps to 'product_id' in DB
-          supabase.from('cart_items').delete().eq('product_id', id).then(({ error }) => {
-            if (error) console.error('Error deleting cart item:', error);
+          getSessionReliably().then((session) => {
+            if (!session?.user) return;
+            supabase
+              .from('cart_items')
+              .delete()
+              .eq('user_id', session.user.id)
+              .eq('product_id', id)
+              .then(({ error }) => {
+                if (error) console.error('Error deleting cart item:', error);
+              });
           });
         }
       },
@@ -250,7 +257,17 @@ export const useCartStore = create<AppState>()(
         const state = get();
         if (state.isAuthenticated) {
           if (quantity <= 0) {
-            supabase.from('cart_items').delete().eq('product_id', id);
+            getSessionReliably().then((session) => {
+              if (!session?.user) return;
+              supabase
+                .from('cart_items')
+                .delete()
+                .eq('user_id', session.user.id)
+                .eq('product_id', id)
+                .then(({ error }) => {
+                  if (error) console.error('Error deleting cart item:', error);
+                });
+            });
           } else {
             // We need to fetch the item details to upsert or just update quantity? 
             // Upsert requires all non-null fields if row doesn't exist? 
@@ -259,8 +276,16 @@ export const useCartStore = create<AppState>()(
             const item = state.items.find(i => String(i.id) === String(id));
             if (item) {
               // Just update quantity to be efficient, but upsert ensures we don't break
-              supabase.from('cart_items').update({ quantity }).eq('product_id', id).then(({ error }) => {
-                if (error) console.error('Error updating cart quantity:', error);
+              getSessionReliably().then((session) => {
+                if (!session?.user) return;
+                supabase
+                  .from('cart_items')
+                  .update({ quantity })
+                  .eq('user_id', session.user.id)
+                  .eq('product_id', id)
+                  .then(({ error }) => {
+                    if (error) console.error('Error updating cart quantity:', error);
+                  });
               });
             }
           }
@@ -270,12 +295,21 @@ export const useCartStore = create<AppState>()(
         set({ items: [] });
         const state = get();
         if (state.isAuthenticated) {
-          supabase.from('cart_items').delete().neq('id', '00000000-0000-0000-0000-000000000000').then(); // Delete all
+          getSessionReliably().then((session) => {
+            if (!session?.user) return;
+            supabase
+              .from('cart_items')
+              .delete()
+              .eq('user_id', session.user.id)
+              .then(({ error }) => {
+                if (error) console.error('Error clearing cart:', error);
+              });
+          });
         }
       },
 
       fetchCart: async () => {
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = await getSessionReliably();
         if (!session?.user) return;
 
         const { data, error } = await supabase.from('cart_items').select('*').eq('user_id', session.user.id);
@@ -355,6 +389,7 @@ export const useCartStore = create<AppState>()(
               origin: s.origin,
               destination: s.destination,
               estimatedDelivery: s.estimated_delivery,
+              date: s.created_at,
               itemsString: s.items_summary,
               image: s.label_url || 'https://via.placeholder.com/150',
               events: []
@@ -425,20 +460,42 @@ export const useCartStore = create<AppState>()(
       isAuthenticated: false,
 
       checkSession: async () => {
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = await getSessionReliably();
         if (session?.user) {
-          set({
-            user: {
-              name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
-              email: session.user.email || '',
-              avatar: session.user.user_metadata.avatar_url,
-              accountType: session.user.user_metadata.account_type || 'personal',
-              walletBalance: session.user.user_metadata.wallet_balance || 0,
-            },
-            isAuthenticated: true
-          });
-          // Fetch cart on session check
-          get().fetchCart();
+          // Fetch profile and cart on session check
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (!profileError && profileData) {
+            set({
+              user: {
+                name: profileData.full_name || session.user.email?.split('@')[0] || 'User',
+                email: session.user.email || '',
+                avatar: profileData.avatar_url,
+                accountType: (profileData.account_type as any) || 'personal',
+                walletBalance: Number(profileData.wallet_balance) || 0,
+              },
+              isAuthenticated: true
+            });
+          } else {
+            // Fallback to metadata if profile doesn't exist yet (unlikely with trigger)
+            set({
+              user: {
+                name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
+                email: session.user.email || '',
+                avatar: session.user.user_metadata.avatar_url,
+                accountType: session.user.user_metadata.account_type || 'personal',
+                walletBalance: session.user.user_metadata.wallet_balance || 0,
+              },
+              isAuthenticated: true
+            });
+          }
+          await get().fetchCart();
+        } else {
+          get().resetStore();
         }
       },
 
@@ -454,18 +511,9 @@ export const useCartStore = create<AppState>()(
           }
           throw error;
         }
-        if (data.session && data.user) {
-          set({
-            user: {
-              name: data.user.user_metadata.full_name || data.user.email?.split('@')[0] || 'User',
-              email: data.user.email || '',
-              avatar: data.user.user_metadata.avatar_url,
-              accountType: data.user.user_metadata.account_type || 'personal',
-              walletBalance: data.user.user_metadata.wallet_balance || 0,
-            },
-            isAuthenticated: true
-          });
-          // Sync Cart
+        if (data.session) {
+          // Fetch profile then sync
+          await get().checkSession();
           await get().syncCart();
         }
       },
@@ -482,17 +530,9 @@ export const useCartStore = create<AppState>()(
 
         // Check if session was created (email confirmation disabled)
         // or if we need to wait for email confirmation
-        if (data.session && data.user) {
+        if (data.session) {
           // Session exists - user is immediately authenticated
-          set({
-            user: {
-              name: name,
-              email: email,
-              accountType: accountType,
-              walletBalance: 0,
-            },
-            isAuthenticated: true
-          });
+          await get().checkSession();
           await get().syncCart();
         } else if (data.user && !data.session) {
           // User created but no session - email confirmation required
@@ -630,15 +670,7 @@ export const useCartStore = create<AppState>()(
         });
       },
 
-      updateProfile: async (profile) => {
-        const updates: any = {};
-        if (profile.name !== undefined) updates.data = { full_name: profile.name };
-
-        // Append missing fields to data object
-        if (!updates.data) updates.data = {};
-        if (profile.walletBalance !== undefined) updates.data.wallet_balance = profile.walletBalance;
-
-        // Handle Avatar Upload
+      updateProfile: async (profile: Partial<UserProfile>) => {
         if (profile.avatar && profile.avatar.startsWith('file://')) {
           try {
             const response = await fetch(profile.avatar);
@@ -661,7 +693,6 @@ export const useCartStore = create<AppState>()(
             }
 
             const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-            updates.data = { ...updates.data, avatar_url: data.publicUrl };
 
             // Update local object to use the public URL
             profile.avatar = data.publicUrl;
@@ -671,20 +702,43 @@ export const useCartStore = create<AppState>()(
             Alert.alert('Error', 'Failed to upload profile picture. Please try again.');
             return;
           }
-        } else if (profile.avatar) {
-          // If it's already a remote URL (or empty/cleared), just save it
-          updates.data = { ...updates.data, avatar_url: profile.avatar };
         }
 
-        const { error } = await supabase.auth.updateUser(updates);
+        // --- NEW SECURE UPDATE LOGIC ---
+        // Update public.profiles table
+        const profileUpdates: any = {};
+        if (profile.name !== undefined) profileUpdates.full_name = profile.name;
+        if (profile.avatar !== undefined) profileUpdates.avatar_url = profile.avatar;
+        if (profile.accountType !== undefined) profileUpdates.account_type = profile.accountType;
+        // NOTE: walletBalance is NOT updatable by the user via RLS (or should be restricted)
+        // We omit it here if we want to follow the "server-managed" rule strictly.
 
-        if (error) {
-          console.error('Error updating profile:', error);
-          Alert.alert('Error', 'Failed to update profile');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update(profileUpdates)
+          .eq('id', session.user.id);
+
+        if (profileError) {
+          console.error('Error updating profile table:', profileError);
+          Alert.alert('Error', 'Failed to update profile info');
           return;
         }
 
-        set((state) => ({ user: state.user ? { ...state.user, ...profile } : null }));
+        // Also update auth.users metadata for legacy/fallback support if needed
+        // but it's redundant now.
+        const authUpdates: any = { data: {} };
+        if (profile.name !== undefined) authUpdates.data.full_name = profile.name;
+        if (profile.avatar !== undefined) authUpdates.data.avatar_url = profile.avatar;
+
+        await supabase.auth.updateUser(authUpdates);
+
+        // Update local state
+        set((state) => ({ 
+          user: state.user ? { ...state.user, ...profile } : null 
+        }));
       },
 
       resetPassword: async (email) => {
@@ -736,15 +790,7 @@ export const useCartStore = create<AppState>()(
       },
 
       deleteAccount: async () => {
-        // In a real app, this would call a Supabase Edge Function to delete the user from Auth and DB.
-        // For this MVP, we will sign the user out and clear local state, simulating deletion.
-        console.log('⚠️ Deleting account (Mock Implementation)');
-
-        // try calling an edge function if it existed:
-        // await supabase.functions.invoke('delete-account');
-
-        await get().logout();
-        Alert.alert('Account Deleted', 'Your account has been successfully deleted.');
+        throw new Error('Account deletion is not implemented in this build.');
       },
 
       // Addresses
@@ -899,27 +945,45 @@ export const useCartStore = create<AppState>()(
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
 
-        const state = get();
-        const isShopper = state.user?.accountType === 'shopper';
+        // Cashback is now handled SECURELY by a server-side DB trigger 
+        // on the 'orders' table. No client-side increment needed.
 
-        // Add 1% Cashback to wallet if Shopper
-        if (isShopper) {
-          const currentBalance = state.user?.walletBalance || 0;
-          const cashback = subtotal * 0.01;
-          const newBalance = currentBalance + cashback;
-          await state.updateProfile({ walletBalance: newBalance });
-        }
-
-        const { error } = await supabase
+        const { data: orderData, error: orderError } = await supabase
           .from('orders')
           .insert({
             user_id: session.user.id,
             total: total,
             status: 'Processing',
             items_summary: itemsSummary
-          });
+          })
+          .select()
+          .single();
 
-        if (error) throw error;
+        if (orderError) throw orderError;
+
+        // Populate order_items
+        if (orderData) {
+          const items = get().items;
+          const orderItems = items.map(item => ({
+            order_id: orderData.id,
+            product_id: String(item.id),
+            title: item.title,
+            store: item.store,
+            quantity: item.quantity,
+            price: item.price,
+            image: item.image,
+            url: item.url,
+            currency: item.currency || 'USD'
+          }));
+
+          const { error: itemsError } = await supabase
+            .from('order_items')
+            .insert(orderItems);
+          
+          if (itemsError) {
+            console.error('Error populating order items:', itemsError);
+          }
+        }
 
         // Refresh history
         const currentState = useCartStore.getState();
@@ -928,13 +992,39 @@ export const useCartStore = create<AppState>()(
 
       // Real-time Subscription
       initializeSubscription: () => {
-        supabase
-          .channel('public:orders')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
-            // Simple refresh strategy
-            useCartStore.getState().fetchOrders();
-          })
-          .subscribe();
+        let active = true;
+        let channel: any = null;
+
+        getSessionReliably().then((session) => {
+          if (!active || !session?.user) return;
+
+          channel = supabase
+            .channel(`orders:${session.user.id}`)
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'orders',
+                filter: `user_id=eq.${session.user.id}`
+              },
+              () => {
+                useCartStore.getState().fetchOrders();
+              }
+            )
+            .subscribe();
+
+          if (!active) {
+            supabase.removeChannel(channel);
+          }
+        });
+
+        return () => {
+          active = false;
+          if (channel) {
+            supabase.removeChannel(channel);
+          }
+        };
       },
 
       requestWithdrawal: async (amount: number, bankDetails: string) => {
@@ -943,37 +1033,30 @@ export const useCartStore = create<AppState>()(
 
         // Validate amount
         const currentBalance = state.user.walletBalance || 0;
-        if (amount > currentBalance || amount <= 0) return false;
-
-        // Validate bankDetails (must be a Stripe connected account ID)
-        if (!bankDetails || !bankDetails.trim()) return false;
-        const trimmedDetails = bankDetails.trim();
-        if (!trimmedDetails.startsWith('acct_') || trimmedDetails.length < 10) {
-          console.error('Invalid bank details format. Expected Stripe connected account ID (acct_...)');
-          return false;
-        }
+        // Balance deduction is now handled SECURELY by a server-side DB trigger
+        // on the 'withdrawals' table. It fires BEFORE INSERT and validates funds.
 
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return false;
 
-        // Insert into withdrawals table FIRST (server-side validation)
+        // Insert into withdrawals table
         const { error } = await supabase
           .from('withdrawals')
           .insert({
             user_id: session.user.id,
             amount: amount,
-            bank_details_encrypted: trimmedDetails,
+            bank_details_encrypted: bankDetails,
             status: 'pending'
           });
 
         if (error) {
           console.error("Failed to insert withdrawal:", error.message);
+          Alert.alert('Withdrawal Failed', error.message);
           return false;
         }
 
-        // Only deduct balance AFTER server confirms the withdrawal was inserted
-        const newBalance = currentBalance - amount;
-        await state.updateProfile({ walletBalance: newBalance });
+        // Refresh session to get updated balance
+        await get().checkSession();
 
         return true;
       },

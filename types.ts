@@ -30,6 +30,7 @@ export interface Shipment {
   origin: string;
   destination: string;
   estimatedDelivery: string;
+  date?: string;
   events: ShipmentEvent[];
   itemsString: string; // e.g., "Nike Shoes + 2 others"
   image?: string;

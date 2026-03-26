@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Alert, Lay
 import { Button, Input, Card } from './UI';
 import { useCartStore, STORE_ADDRESSES, getStoreRegion } from '../store';
 import { supabase } from '../lib/supabase';
-import { X, Check, MapPin, Truck, ChevronRight, CreditCard, Plus, ArrowLeft, RefreshCw } from 'lucide-react-native';
+import { X, Check, MapPin, Truck, ChevronRight, CreditCard, Plus, ArrowLeft, RefreshCw, Landmark } from 'lucide-react-native';
 import { useStripe } from '@stripe/stripe-react-native';
 
 
@@ -34,23 +34,58 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
     const [newCountry, setNewCountry] = useState('');
     const [countryPickerVisible, setCountryPickerVisible] = useState(false);
 
-
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
     const [rates, setRates] = useState<any[]>([]);
     const [loadingRates, setLoadingRates] = useState(false);
     const [selectedRate, setSelectedRate] = useState<any>(null); // Full rate object
     const [isProcessing, setIsProcessing] = useState(false);
 
+    const [paymentCurrency, setPaymentCurrency] = useState<string>('');
+    const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer'>('card');
+
     // Derived Financials (Moved to Top for Scope)
     const storeRegion = items[0]?.store ? getStoreRegion(items[0].store) : 'USA';
     const storeConfig = STORE_ADDRESSES[storeRegion] || STORE_ADDRESSES['USA'];
-    const CURRENCY_SYMBOL = storeConfig.symbol;
-    const CURRENCY_CODE = storeConfig.currency;
+    const baseCurrencyCode = storeConfig.currency;
 
-    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const deliveryPrice = selectedRate ? parseFloat(selectedRate.amount) : 0;
+    useEffect(() => {
+        if (!paymentCurrency) {
+            setPaymentCurrency(baseCurrencyCode);
+        }
+    }, [baseCurrencyCode, paymentCurrency]);
+
+    const CURRENCY_CODE = paymentCurrency || baseCurrencyCode;
+
+    const CURRENCY_MAP: Record<string, { symbol: string, rate: number }> = {
+        'USD': { symbol: '$', rate: 1 },
+        'GBP': { symbol: '£', rate: 0.8 },
+        'AED': { symbol: 'AED ', rate: 3.67 },
+        'NGN': { symbol: '₦', rate: 1500 },
+        'EUR': { symbol: '€', rate: 0.9 },
+    };
+
+    const currentCurrencyData = CURRENCY_MAP[CURRENCY_CODE] || CURRENCY_MAP['USD'];
+    const CURRENCY_SYMBOL = currentCurrencyData.symbol;
+
+    const baseRate = CURRENCY_MAP[baseCurrencyCode]?.rate || 1;
+    const targetRate = currentCurrencyData.rate;
+    const exchangeMultiplier = targetRate / baseRate;
+
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0) * exchangeMultiplier;
+    const deliveryPrice = (selectedRate ? parseFloat(selectedRate.amount) : 0) * exchangeMultiplier;
     const tax = subtotal * 0.08; // 8% mock tax
     const total = subtotal + deliveryPrice + tax;
+
+    const formatMoney = (amount: number) => {
+        return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    const handleCurrencyChange = (newCurrency: string) => {
+        setPaymentCurrency(newCurrency);
+        if (newCurrency !== 'NGN' && paymentMethod === 'transfer') {
+            setPaymentMethod('card');
+        }
+    };
 
     useEffect(() => {
         if (addresses.some(a => a.default) && !selectedAddressId) {
@@ -210,6 +245,30 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
         setIsProcessing(true);
 
         try {
+            if (paymentMethod === 'transfer') {
+                // Mock Paystack/Bank Transfer flow
+                Alert.alert(
+                    'Bank Transfer',
+                    `Opening Paystack widget to complete transfer of ${CURRENCY_SYMBOL}${formatMoney(total)}`,
+                    [
+                        { text: 'Cancel', style: 'cancel', onPress: () => setIsProcessing(false) },
+                        { text: 'Simulate Success', onPress: async () => {
+                            const itemsSummary = items.length > 1
+                                ? `${items[0].title} & ${items.length - 1} more`
+                                : items[0]?.title || 'Order Items';
+
+                            await createOrder(total, itemsSummary, subtotal);
+                            clearCart();
+
+                            Alert.alert('Success', 'Your order is confirmed!');
+                            onComplete();
+                            setIsProcessing(false);
+                        }}
+                    ]
+                );
+                return;
+            }
+
             // 1. Fetch Params
             const params = await fetchPaymentSheetParams();
             if (!params) {
@@ -481,52 +540,121 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                     {/* STEP 3: REVIEW */}
                     {step === 'review' && (
                         <View style={{ gap: 24 }}>
-                            {/* Items Preview */}
-                            <View>
-                                <Text style={styles.sectionHeader}>ITEMS ({items.length})</Text>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -24, paddingHorizontal: 24 }}>
+                            <View style={styles.fancyCard}>
+                                <Text style={styles.fancySectionTitle}>ORDER DETAILS</Text>
+                                
+                                {/* Items Preview */}
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20, paddingHorizontal: 20 }}>
                                     <View style={{ flexDirection: 'row', gap: 12 }}>
                                         {items.map(item => (
-                                            <Image key={item.id} source={{ uri: item.image }} style={styles.reviewThumb} />
+                                            <Image key={item.id} source={{ uri: item.image }} style={styles.fancyThumb} />
                                         ))}
                                     </View>
                                 </ScrollView>
-                            </View>
 
-                            <View style={styles.divider} />
+                                <View style={styles.fancyDivider} />
 
-                            {/* Shipping Details */}
-                            <View>
-                                <Text style={styles.sectionHeader}>SHIPPING DETAILS</Text>
-                                <View style={styles.reviewRow}>
-                                    <MapPin size={20} color="#8E8E93" />
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={styles.reviewMainText}>{selectedAddress?.street}, {selectedAddress?.city}</Text>
-                                        <Text style={styles.reviewSubText}>{selectedAddress?.zip}, {selectedAddress?.country}</Text>
+                                {/* Shipping Details */}
+                                <View style={styles.fancyRow}>
+                                    <View style={styles.fancyIconWrap}>
+                                        <MapPin size={20} color="#1C39BB" />
                                     </View>
-                                    <Button size="sm" variant="ghost" onPress={() => setStep('address')}>Change</Button>
-                                </View>
-                                <View style={[styles.reviewRow, { marginTop: 12 }]}>
-                                    <Truck size={20} color="#8E8E93" />
                                     <View style={{ flex: 1 }}>
-                                        <Text style={styles.reviewMainText}>{selectedRate?.provider} ({selectedRate?.servicelevel.name})</Text>
-                                        <Text style={styles.reviewSubText}>
+                                        <Text style={styles.fancyMainText}>{selectedAddress?.street}, {selectedAddress?.city}</Text>
+                                        <Text style={styles.fancySubText}>{selectedAddress?.zip}, {selectedAddress?.country}</Text>
+                                    </View>
+                                    <Button size="sm" variant="ghost" onPress={() => setStep('address')} style={{ minWidth: 60, paddingHorizontal: 0 }}>Edit</Button>
+                                </View>
+
+                                <View style={[styles.fancyRow, { marginTop: 20 }]}>
+                                    <View style={styles.fancyIconWrap}>
+                                        <Truck size={20} color="#1C39BB" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.fancyMainText}>{selectedRate?.provider} ({selectedRate?.servicelevel.name})</Text>
+                                        <Text style={styles.fancySubText}>
                                             {selectedRate?.estimated_days || '2-5'} Days • {selectedRate?.currency} {selectedRate?.amount}
                                         </Text>
                                     </View>
-                                    <Button size="sm" variant="ghost" onPress={() => setStep('delivery')}>Change</Button>
+                                    <Button size="sm" variant="ghost" onPress={() => setStep('delivery')} style={{ minWidth: 60, paddingHorizontal: 0 }}>Edit</Button>
                                 </View>
                             </View>
 
+                            {/* Currency & Payment Selection */}
+                            <View>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                                    <Text style={[styles.fancySectionTitle, { marginBottom: 0, paddingLeft: 8 }]}>PAYMENT METHOD</Text>
+                                    
+                                    {/* Currency Picker */}
+                                    <View style={styles.currencyToggle}>
+                                        {['USD', 'GBP', 'EUR', 'NGN'].map(curr => (
+                                            <TouchableOpacity 
+                                                key={curr} 
+                                                onPress={() => handleCurrencyChange(curr)}
+                                                style={[styles.currencyBtn, CURRENCY_CODE === curr && styles.currencyBtnActive]}
+                                                activeOpacity={0.8}
+                                            >
+                                                <Text style={[styles.currencyText, CURRENCY_CODE === curr && styles.currencyTextActive]}>{curr}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </View>
 
+                                {/* Payment Methods */}
+                                <View style={{ gap: 12 }}>
+                                    {/* Card Option */}
+                                    <TouchableOpacity 
+                                        activeOpacity={0.8} 
+                                        style={[styles.payMethodCard, paymentMethod === 'card' && styles.payMethodActive]}
+                                        onPress={() => setPaymentMethod('card')}
+                                    >
+                                        <View style={[styles.radioCircle, paymentMethod === 'card' && styles.radioActive]}>
+                                            {paymentMethod === 'card' && <View style={styles.radioDot} />}
+                                        </View>
+                                        <View style={styles.payMethodIcon}>
+                                            <CreditCard size={24} color={paymentMethod === 'card' ? '#1C39BB' : '#8E8E93'} />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[styles.payMethodTitle, paymentMethod === 'card' && { color: '#1C39BB' }]}>Debit / Credit Card</Text>
+                                            <Text style={styles.payMethodSub}>Pay securely with Stripe</Text>
+                                        </View>
+                                    </TouchableOpacity>
+
+                                    {/* Transfer Option (Only if NGN) */}
+                                    {CURRENCY_CODE === 'NGN' && (
+                                        <TouchableOpacity 
+                                            activeOpacity={0.8} 
+                                            style={[styles.payMethodCard, paymentMethod === 'transfer' && styles.payMethodActive]}
+                                            onPress={() => setPaymentMethod('transfer')}
+                                        >
+                                            <View style={[styles.radioCircle, paymentMethod === 'transfer' && styles.radioActive]}>
+                                                {paymentMethod === 'transfer' && <View style={styles.radioDot} />}
+                                            </View>
+                                            <View style={styles.payMethodIcon}>
+                                                <Landmark size={24} color={paymentMethod === 'transfer' ? '#1C39BB' : '#8E8E93'} />
+                                            </View>
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={[styles.payMethodTitle, paymentMethod === 'transfer' && { color: '#1C39BB' }]}>Bank Transfer</Text>
+                                                <Text style={styles.payMethodSub}>Pay via direct bank transfer</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            </View>
 
                             {/* Summary */}
-                            <Card style={styles.summaryCard}>
-                                <View style={styles.sumRow}><Text style={styles.sumLabel}>Subtotal</Text><Text style={styles.sumVal}>{CURRENCY_SYMBOL}{subtotal.toFixed(2)}</Text></View>
-                                <View style={styles.sumRow}><Text style={styles.sumLabel}>Delivery</Text><Text style={styles.sumVal}>{CURRENCY_SYMBOL}{deliveryPrice.toFixed(2)}</Text></View>
-                                <View style={styles.sumRow}><Text style={styles.sumLabel}>Tax (8%)</Text><Text style={styles.sumVal}>{CURRENCY_SYMBOL}{tax.toFixed(2)}</Text></View>
-                                <View style={styles.sumTotalRow}><Text style={styles.sumTotalLabel}>Total</Text><Text style={styles.sumTotalVal}>{CURRENCY_SYMBOL}{total.toFixed(2)}</Text></View>
-                            </Card>
+                            <View style={[styles.fancyCard, { paddingVertical: 24 }]}>
+                                <View style={styles.sumRow}><Text style={styles.sumLabel}>Subtotal</Text><Text style={styles.sumVal}>{CURRENCY_SYMBOL}{formatMoney(subtotal)}</Text></View>
+                                <View style={styles.sumRow}><Text style={styles.sumLabel}>Delivery</Text><Text style={styles.sumVal}>{CURRENCY_SYMBOL}{formatMoney(deliveryPrice)}</Text></View>
+                                <View style={[styles.sumRow, { marginBottom: 0 }]}><Text style={styles.sumLabel}>Tax (8%)</Text><Text style={styles.sumVal}>{CURRENCY_SYMBOL}{formatMoney(tax)}</Text></View>
+                                
+                                <View style={styles.fancyDivider} />
+                                
+                                <View style={[styles.sumRow, { marginBottom: 0, alignItems: 'center' }]}>
+                                    <Text style={styles.sumTotalLabel}>Total</Text>
+                                    <Text style={styles.sumTotalVal}>{CURRENCY_SYMBOL}{formatMoney(total)}</Text>
+                                </View>
+                            </View>
                         </View>
                     )}
 
@@ -541,7 +669,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ visible, onClose, onComplet
                             </Button>
                         ) : (
                             <Button size="lg" onPress={handlePay} style={{ width: '100%' }} disabled={isProcessing}>
-                                {isProcessing ? <ActivityIndicator color="#fff" /> : `Pay ${CURRENCY_SYMBOL}${total.toFixed(2)}`}
+                                {isProcessing ? <ActivityIndicator color="#fff" /> : `Pay ${CURRENCY_SYMBOL}${formatMoney(total)}`}
                             </Button>
                         )}
                     </View>
@@ -592,16 +720,37 @@ const styles = StyleSheet.create({
     reviewRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
     reviewMainText: { fontSize: 15, fontWeight: '600', color: '#000' },
     reviewSubText: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
-    paymentCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E5E5EA' },
-    paymentText: { fontSize: 15, fontWeight: '600', color: '#000' },
+    
+    // Payment Options UI
+    payMethodCard: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderRadius: 16, borderWidth: 2, borderColor: 'transparent', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+    payMethodActive: { borderColor: '#1C39BB', backgroundColor: '#F5F7FF' },
+    payMethodIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F2F2F7', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+    payMethodTitle: { fontSize: 16, fontWeight: '700', color: '#000', marginBottom: 2 },
+    payMethodSub: { fontSize: 13, color: '#8E8E93' },
 
     summaryCard: { padding: 20, backgroundColor: '#fff' },
     sumRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
     sumLabel: { fontSize: 15, color: '#8E8E93' },
-    sumVal: { fontSize: 15, fontWeight: '500', color: '#000' },
+    sumVal: { fontSize: 16, fontFamily: 'Satoshi-Bold', color: '#111827' },
     sumTotalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F2F2F7' },
-    sumTotalLabel: { fontSize: 17, fontWeight: '700', color: '#000' },
-    sumTotalVal: { fontSize: 24, fontWeight: '800', color: '#1C39BB' },
+    sumTotalLabel: { fontSize: 18, fontFamily: 'Satoshi-Bold', color: '#111827' },
+    sumTotalVal: { fontSize: 26, fontWeight: '900', color: '#1C39BB' },
+
+    // Fancy Refinements
+    fancyCard: { backgroundColor: '#fff', borderRadius: 24, padding: 20, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 2, marginBottom: 24 },
+    fancySectionTitle: { fontSize: 12, fontFamily: 'Satoshi-Bold', color: '#9CA3AF', letterSpacing: 1.2, marginBottom: 16, textTransform: 'uppercase' },
+    fancyThumb: { width: 64, height: 64, borderRadius: 16, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' },
+    fancyDivider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 20 },
+    fancyRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    fancyIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#F5F7FF', alignItems: 'center', justifyContent: 'center' },
+    fancyMainText: { fontSize: 16, fontFamily: 'Satoshi-Bold', color: '#111827' },
+    fancySubText: { fontSize: 14, fontFamily: 'Satoshi-Medium', color: '#6B7280', marginTop: 4 },
+
+    currencyToggle: { flexDirection: 'row', backgroundColor: '#F3F4F6', borderRadius: 10, padding: 4 },
+    currencyBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+    currencyBtnActive: { backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+    currencyText: { fontSize: 13, fontFamily: 'Satoshi-Medium', color: '#6B7280' },
+    currencyTextActive: { fontFamily: 'Satoshi-Bold', color: '#111827' },
 
     footer: { padding: 24, paddingBottom: 40, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F2F2F7' }
 });

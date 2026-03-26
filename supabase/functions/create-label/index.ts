@@ -13,9 +13,28 @@ serve(async (req: Request) => {
     }
 
     try {
-        const { rate_id, user_id, shipment_details } = await req.json()
+        const authHeader = req.headers.get('Authorization')
+        const token = authHeader?.replace(/^Bearer\s+/i, '')
+        if (!token) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                status: 401,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            })
+        }
+
+        const { rate_id, shipment_details } = await req.json()
 
         if (!SHIPPO_API_KEY) throw new Error('Missing SHIPPO_API_KEY')
+        if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error('Missing Supabase server credentials')
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        const { data: authData, error: authError } = await supabase.auth.getUser(token)
+        if (authError || !authData.user) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                status: 401,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            })
+        }
 
         // 1. Purchase Label from Shippo
         const response = await fetch(`https://api.goshippo.com/transactions/`, {
@@ -41,13 +60,11 @@ serve(async (req: Request) => {
             throw new Error(errorText)
         }
 
-        // 2. Save to Supabase (using Service Role to bypass RLS if needed, or just insert)
-        const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
-
+        // 2. Save to Supabase for the authenticated user only
         const { error } = await supabase
             .from('shipments')
             .insert({
-                user_id: user_id,
+                user_id: authData.user.id,
                 tracking_number: transaction.tracking_number,
                 carrier: transaction.rate.provider,
                 status: 'pre_transit',

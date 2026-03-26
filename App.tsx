@@ -76,6 +76,8 @@ const App: React.FC = () => {
   const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
+    let unsubscribeOrders: (() => void) | void;
+
     // Initialize session check, then fetch data only after auth is ready
     const initAuth = async () => {
       try {
@@ -87,7 +89,7 @@ const App: React.FC = () => {
           fetchShipments(),
           fetchOrders(),
         ]);
-        initializeSubscription();
+        unsubscribeOrders = initializeSubscription();
       } catch (e) {
         console.warn('Init error:', e);
       } finally {
@@ -108,9 +110,16 @@ const App: React.FC = () => {
           fetchShipments(),
           fetchOrders(),
         ]);
+        if (!unsubscribeOrders) {
+          unsubscribeOrders = initializeSubscription();
+        }
         setActiveTab('home');
       } else if (event === 'SIGNED_OUT') {
         // Already handled by logout() in store
+        if (unsubscribeOrders) {
+          unsubscribeOrders();
+          unsubscribeOrders = undefined;
+        }
         setActiveTab('home');
       }
     });
@@ -122,6 +131,12 @@ const App: React.FC = () => {
         UIManager.setLayoutAnimationEnabledExperimental(true);
       }
     }
+
+    return () => {
+      if (unsubscribeOrders) {
+        unsubscribeOrders();
+      }
+    };
   }, []);
 
   // Handle Deep Linking (Password Reset)
@@ -513,4 +528,3 @@ const styles = StyleSheet.create({
 });
 
 export default App;
-

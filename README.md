@@ -1,179 +1,70 @@
 # Tenbox Mobile App
 
-Tenbox is a mobile logistics platform that helps users ship parcels internationally and shop from global stores using a single checkout and delivery layer.
+Tenbox is an Expo React Native mobile app for cross-border shopping and shipping. Users can browse supported stores, import products into a Tenbox cart, check out with delivery selection, ship parcels, and track shipments.
 
-This repository contains the **React Native (Expo) mobile app** for Tenbox.
+## Current Scope
 
----
+- Email/password auth plus Google and Apple sign-in via Supabase
+- Persisted cart state with Supabase sync for signed-in users
+- Store browsing and in-app web import flow
+- Checkout flow with live shipping-rate lookup and Stripe payment sheet setup
+- Parcel shipping flow with label purchase via Shippo
+- Shipment tracking via Shippo
+- Address book, order history, and shopper wallet withdrawal flow
 
-## Product Overview
+## Stack
 
-Tenbox allows users to:
+- Expo / React Native / TypeScript
+- Zustand for app state
+- Supabase for auth, data, storage, realtime, and edge functions
+- Stripe for checkout and payout rails
+- Shippo for rates, labels, and tracking
 
-- Ship parcels internationally by comparing courier options
-- Shop from global stores (Amazon, Apple, ASOS, etc.)
-- Import product details into a Tenbox cart
-- Check out once, even when items ship from different countries
-- Track shipments end-to-end
+## Repo Shape
 
-The app is **not a courier** and **not a marketplace**.  
-Tenbox acts as a decision and orchestration layer between stores and global couriers.
+- [App.tsx](/Users/wudan/Downloads/tenbox-mobile-starter/App.tsx) is the main app shell and tab orchestration layer
+- [store.ts](/Users/wudan/Downloads/tenbox-mobile-starter/store.ts) contains most client-side domain logic
+- [components](/Users/wudan/Downloads/tenbox-mobile-starter/components) contains feature views and flows
+- [lib/supabase.ts](/Users/wudan/Downloads/tenbox-mobile-starter/lib/supabase.ts) configures the mobile Supabase client
+- [supabase/functions](/Users/wudan/Downloads/tenbox-mobile-starter/supabase/functions) contains edge functions for rates, payment sheet setup, label purchase, tracking, and payouts
+- [supabase/migrations](/Users/wudan/Downloads/tenbox-mobile-starter/supabase/migrations) contains SQL for RLS and supporting tables
 
-Tagline: **Delivering Choice and Efficiency**
+## Environment
 
----
+The mobile app expects these public env vars:
 
-## Tech Stack
+- `EXPO_PUBLIC_SUPABASE_URL`
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 
-- React Native (Expo)
-- TypeScript
-- React Navigation (tabs + stacks)
-- Zustand (state management)
-- React Query (API calls)
-- react-native-webview (in-app browser)
-- Expo Secure Store
+Supabase edge functions also require server-side secrets such as:
 
----
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `STRIPE_SECRET_KEY`
+- `SHIPPO_API_KEY`
+- `WEBHOOK_SECRET`
+- `SHIPPO_WEBHOOK_SECRET`
 
-## App Structure
+## Security Notes
 
-```
+- Client-owned tables should be protected by RLS. This repo currently includes policies for `cart_items`, `orders`, `products`, `withdrawals`, `addresses`, and `shipments`.
+- High-trust operations should derive the acting user from the bearer token server-side rather than trusting client-supplied `user_id`.
+- The account deletion UI is not implemented end-to-end. Do not present it as a completed destructive action without a backend deletion path.
 
-/app
-/navigation
-/screens
-/components
-/store
-/services
-/theme
-App.tsx
-
-````
-
-### Key Screens
-
-- Home
-- Shop (Store Directory + Add by Link)
-- In-App Browser (WebView)
-- Cart
-- Checkout (placeholder)
-- Tracking
-- Account
-
----
-
-## Core Features (Current)
-
-- Store directory (Amazon, Apple, etc.)
-- In-app browser for external stores
-- Floating “Add to Tenbox Cart” button
-- Product import preview (edit before adding)
-- Local cart state
-- Manual fallback when product parsing fails
-- Dark, minimal UI
-
----
-
-## What’s Intentionally Out of Scope
-
-- Payments
-- Real courier quotes
-- Real tracking integrations
-- Authentication
-- Backend APIs
-
-These will be added incrementally.
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (18+ recommended)
-- npm or yarn
-- Expo Go app (for quick testing)
-
----
-
-### Install Dependencies
-
-```bash
-npm install
-````
-
-or
-
-```bash
-yarn
-```
-
----
-
-### Run the App (Expo)
+## Scripts
 
 ```bash
 npx expo start
+npx tsc --noEmit
+npm test
 ```
 
-* Scan the QR code using **Expo Go** (iOS / Android)
-* Or run on simulator/emulator
+## Regression Coverage
 
----
+This repo uses lightweight Node-based regression checks under [tests](/Users/wudan/Downloads/tenbox-mobile-starter/tests) to guard against reintroducing the recent cart-scoping, checkout-origin, and backend-auth issues.
 
-## Building Testable App Builds
+## Known Gaps
 
-### Android (APK)
-
-```bash
-eas build -p android --profile preview
-```
-
-### iOS (TestFlight)
-
-```bash
-eas build -p ios --profile preview
-eas submit -p ios
-```
-
-> iOS builds require an Apple Developer account.
-
----
-
-## Development Notes
-
-* The app uses **mocked product parsing** and local state for now.
-* Product import is triggered via:
-
-  * Paste link flow
-  * In-app browser floating button
-* Always show an import preview before adding items to cart.
-* Manual product entry must always be possible.
-
----
-
-## Design Principles
-
-* Infrastructure-first UI
-* Dark, technical, minimal
-* Clarity over aesthetics
-* No unnecessary animations
-* No fake marketplace behavior
-
----
-
-## Future Work
-
-* Courier quote engine
-* Multi-shipment checkout logic
-* Payments
-* Real tracking
-* Authentication
-* Backend integration
-* Store-specific parsing improvements
-
----
-
-## License
-
-Private – Tenbox internal use only.
+- Navigation and app orchestration are still concentrated in the top-level app/store rather than separated into clearer domain modules.
+- There is still no full automated integration or E2E suite.
+- Backend schema creation for some tables is assumed to exist outside this repo; the migrations here are additive hardening, not a full schema bootstrap.

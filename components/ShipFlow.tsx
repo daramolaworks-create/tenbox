@@ -356,7 +356,6 @@ const ShipFlow: React.FC<ShipFlowProps> = ({ visible, onClose, onComplete }) => 
             const { data, error } = await supabase.functions.invoke('create-label', {
                 body: {
                     rate_id: rate.object_id,
-                    user_id: session.user.id,
                     shipment_details: {
                         items: description,
                         origin: `${fromStreet}, ${fromCity}, ${fromCountry}`, // Actual street

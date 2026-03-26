@@ -62,17 +62,24 @@ const HomeView: React.FC<HomeViewProps> = ({
     }
   };
 
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  }, []);
+
   const allActivity = useMemo(() => {
     return [
       ...shipments.map((s) => ({
         type: "shipment",
         data: s,
-        date: new Date(),
-      })), // Shipments don't have created_at in interface yet, assuming recent
+        date: s.date ? new Date(s.date) : new Date(0),
+      })),
       ...orderHistory.map((o) => ({
         type: "order",
         data: o,
-        date: new Date(o.date),
+        date: o.date ? new Date(o.date) : new Date(0),
       })),
     ].sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [shipments, orderHistory]);
@@ -84,9 +91,9 @@ const HomeView: React.FC<HomeViewProps> = ({
       showsVerticalScrollIndicator={false}
     >
       <View style={{ marginBottom: 24 }}>
-        <Text style={styles.heroText}>Good Morning,</Text>
+        <Text style={styles.heroText}>{greeting},</Text>
         <Text style={[styles.heroText, { color: "#1C39BB" }]}>
-          {user?.name}.
+          {user?.name || "Guest"}.
         </Text>
       </View>
 
@@ -164,48 +171,40 @@ const HomeView: React.FC<HomeViewProps> = ({
           <Text style={styles.emptyText}>No recent activity.</Text>
         </View>
       ) : (
-        allActivity.slice(0, 3).map((item: any, i) => {
+        allActivity.slice(0, 3).map((item, i) => {
           const isShipment = item.type === "shipment";
           const data = item.data;
 
           let icon, color, title, statusText, subText, idText, DetailsAction;
 
+          const status = (data.status || "pending").toLowerCase();
+          color = getStatusColor(status);
+          icon = getStatusIcon(status);
+          statusText = status.replace(/_/g, " ");
+
           if (isShipment) {
-            icon = data.status === "delivered" ? CheckCircle : Truck;
-            color = getStatusColor(data.status);
-            title = data.itemsString;
-            statusText = data.status.replace("_", " ");
+            title = data.itemsString || "Shipment";
             subText =
-              data.status === "delivered"
-                ? "Delivered"
-                : `Arriving • ${data.estimatedDelivery}`;
-            idText = `${data.carrier} • #${data.trackingNumber.split("-")[1]}`;
+              status === "delivered"
+                ? "Delivered successfully"
+                : `Expected ${data.estimatedDelivery || "soon"}`;
+
+            // Safer ID display: tracking number can be long, show last part or slice
+            const trackNum = data.trackingNumber || "";
+            const shortId = trackNum.includes("-")
+              ? trackNum.split("-")[1]
+              : trackNum.slice(-8);
+            idText = `${data.carrier || "Carrier"} • #${shortId}`;
             DetailsAction = () => onNavigate("track");
           } else {
             // Order Logic
-            icon = Package;
-            // Map Order Status to Color
-            switch (data.status.toLowerCase()) {
-              case "processing":
-                color = "#FF9500";
-                break;
-              case "delivered":
-                color = "#34C759";
-                break;
-              case "cancelled":
-                color = "#FF3B30";
-                break;
-              default:
-                color = "#8E8E93";
-            }
-
-            title = data.items;
-            // Shorten items string if needed
+            title = data.items || "Order";
             if (title.length > 30) title = title.substring(0, 28) + "...";
 
-            statusText = data.status;
             subText = `Placed on ${data.date}`;
-            idText = `Order #${data.id.split("-")[1]}`;
+            // Safer Order ID: UUIDs might not have hyphens where we expect
+            const orderId = data.id || "";
+            idText = `ORDER #${orderId.split("-")[0] || orderId.slice(0, 8)}`;
             DetailsAction = () => {
               onViewSettings("orders");
               onNavigate("settings");
@@ -216,68 +215,53 @@ const HomeView: React.FC<HomeViewProps> = ({
 
           return (
             <TouchableOpacity
-              key={`${item.type}-${i}`}
+              key={`${item.type}-${data.id || i}`}
               style={styles.orderCard}
               activeOpacity={0.9}
               onPress={DetailsAction}
             >
-              <View style={styles.cardTop}>
+              <View style={styles.cardMain}>
                 <View
-                  style={{
-                    flexDirection: "row",
-                    gap: 16,
-                    alignItems: "center",
-                  }}
+                  style={[
+                    styles.statusIconBox,
+                    { backgroundColor: color + "15" },
+                  ]}
                 >
-                  <View
-                    style={[
-                      styles.statusIconBox,
-                      { backgroundColor: color + "15" },
-                    ]}
-                  >
-                    <IconComponent size={24} color={color} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.activityTitle} numberOfLines={1}>
-                      {title}
-                    </Text>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginTop: 4,
-                        gap: 6,
-                      }}
-                    >
-                      <Text style={styles.activityMeta}>{subText}</Text>
-                    </View>
-                  </View>
-                  <View
-                    style={[
-                      styles.miniStatus,
-                      { backgroundColor: color + "15" },
-                    ]}
-                  >
-                    <Text style={[styles.miniStatusText, { color: color }]}>
-                      {statusText.toUpperCase()}
-                    </Text>
-                  </View>
+                  <IconComponent size={24} color={color} strokeWidth={2.5} />
+                </View>
+
+                <View style={styles.activityContent}>
+                  <Text style={styles.activityTitle} numberOfLines={1}>
+                    {title}
+                  </Text>
+                  <Text style={styles.activityMeta}>{subText}</Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: color + "15" },
+                  ]}
+                >
+                  <Text style={[styles.statusBadgeText, { color: color }]}>
+                    {statusText}
+                  </Text>
                 </View>
               </View>
-              <View style={styles.cardBottom}>
-                <View
-                  style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-                >
+
+              <View style={styles.cardFooter}>
+                <View style={styles.idBadge}>
                   <Image
                     source={require("../assets/logo.png")}
-                    style={{ width: 16, height: 16, tintColor: "#8E8E93" }}
+                    style={{ width: 12, height: 12, tintColor: "#AEAEB2" }}
                     resizeMode="contain"
                   />
                   <Text style={styles.orderIdSm}>{idText}</Text>
                 </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text style={styles.viewDetails}>View</Text>
-                  <ChevronRight size={14} color="#1C39BB" />
+
+                <View style={styles.viewAction}>
+                  <Text style={styles.viewText}>{isShipment ? "Track" : "Details"}</Text>
+                  <ChevronRight size={14} color="#1C39BB" strokeWidth={3} />
                 </View>
               </View>
             </TouchableOpacity>
@@ -298,12 +282,12 @@ const HomeView: React.FC<HomeViewProps> = ({
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, paddingBottom: 24, paddingHorizontal: 24 },
+  screen: { flex: 1, backgroundColor: "#F8F9FB", paddingBottom: 24, paddingHorizontal: 24 },
   heroText: {
     color: "#000",
     fontSize: 34,
     fontFamily: "Satoshi-Bold",
-    letterSpacing: -0.4,
+    letterSpacing: -0.6,
   },
   featuredCard: {
     backgroundColor: "#fff",
@@ -313,39 +297,48 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#F2F2F7",
   },
   featuredContent: { flex: 1 },
   featuredLabel: {
     color: "#1C39BB",
     fontSize: 11,
-    fontFamily: "Satoshi-Medium",
-    letterSpacing: 1,
+    fontFamily: "Satoshi-Bold",
+    letterSpacing: 1.2,
     marginBottom: 8,
+    textTransform: "uppercase",
   },
   featuredTitle: {
     color: "#000",
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: "Satoshi-Bold",
     marginBottom: 6,
+    letterSpacing: -0.4,
   },
   featuredDesc: {
     color: "#8E8E93",
     fontSize: 14,
     fontFamily: "Satoshi-Regular",
+    lineHeight: 20,
     marginBottom: 16,
   },
   featuredLogos: { flexDirection: "row", gap: 12, alignItems: "center" },
   featuredIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: "#1C39BB",
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#1C39BB",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
   quickGrid: { flexDirection: "row", gap: 16, marginBottom: 32 },
   quickCard: {
@@ -353,24 +346,33 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 20,
     borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#F2F2F7",
     shadowColor: "#000",
-    shadowOpacity: 0.03,
+    shadowOpacity: 0.02,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
   iconBox: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
   },
   quickTitle: {
-    color: "#000",
+    color: "#1C1C1E",
     fontSize: 16,
-    fontFamily: "Satoshi-Medium",
+    fontFamily: "Satoshi-Bold",
     marginBottom: 4,
   },
-  quickDesc: { color: "#8E8E93", fontSize: 13, fontFamily: "Satoshi-Regular" },
+  quickDesc: {
+    color: "#8E8E93",
+    fontSize: 13,
+    fontFamily: "Satoshi-Medium",
+    opacity: 0.8
+  },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -378,88 +380,115 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    color: "#8E8E93",
-    fontSize: 12,
-    fontFamily: "Satoshi-Medium",
-    letterSpacing: 1,
+    color: "#1C1C1E",
+    fontSize: 16,
+    fontFamily: "Satoshi-Bold",
+    letterSpacing: -0.2,
   },
-  seeAll: { color: "#1C39BB", fontSize: 13, fontFamily: "Satoshi-Medium" },
+  seeAll: {
+    color: "#1C39BB",
+    fontSize: 13,
+    fontFamily: "Satoshi-Bold"
+  },
   emptyActivity: {
-    padding: 30,
+    padding: 40,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#fff",
-    borderRadius: 20,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#F2F2F7",
+    borderStyle: "dashed",
   },
   emptyText: {
     color: "#8E8E93",
     textAlign: "center",
     marginTop: 12,
     fontSize: 15,
-    fontFamily: "Satoshi-Regular",
+    fontFamily: "Satoshi-Medium",
   },
   orderCard: {
     backgroundColor: "#fff",
     borderRadius: 24,
     marginBottom: 16,
-    shadowColor: "rgba(0,0,0,0.04)",
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 12,
-    shadowOpacity: 1,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.02)",
-    overflow: "hidden",
+    borderColor: "#F2F2F7",
   },
-  cardTop: { padding: 16 },
-  cardBottom: {
-    backgroundColor: "#FAFAFC",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  cardMain: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#F2F2F7",
+    gap: 16,
   },
   statusIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
+  activityContent: {
+    flex: 1,
+  },
   activityTitle: {
     fontSize: 16,
-    fontFamily: "Satoshi-Medium",
+    fontFamily: "Satoshi-Bold",
     color: "#1C1C1E",
-    marginBottom: 2,
+    marginBottom: 4,
   },
   activityMeta: {
     fontSize: 13,
     color: "#8E8E93",
-    fontFamily: "Satoshi-Regular",
+    fontFamily: "Satoshi-Medium",
   },
-  miniStatus: {
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#F8F9FB",
+  },
+  idBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#F8F9FB",
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
-  },
-  miniStatusText: {
-    fontSize: 11,
-    fontFamily: "Satoshi-Medium",
-    textTransform: "uppercase",
+    borderRadius: 8,
   },
   orderIdSm: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#8E8E93",
-    fontFamily: "Satoshi-Medium",
+    fontFamily: "Satoshi-Bold",
     letterSpacing: 0.5,
   },
-  viewDetails: {
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontFamily: "Satoshi-Bold",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  viewAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  viewText: {
     fontSize: 13,
     color: "#1C39BB",
-    fontFamily: "Satoshi-Medium",
-    marginRight: 2,
+    fontFamily: "Satoshi-Bold",
   },
 });
 
